@@ -3,6 +3,9 @@
 import sys
 import math
 from collections import namedtuple, defaultdict
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 Edge = namedtuple("Edge", ["vertex", "color"])
 Colors = ["red", "green", "blue", "yellow", "black"]
@@ -72,6 +75,8 @@ def get_scaffolds(contigs, connections):
     contig_index = build_contig_index(contigs)
     scaffolds = []
     visited = set()
+    #for c, to in connections.iteritems():
+    #    print c, to
 
     def extend_scaffold(contig):
         visited.add(contig)
@@ -85,18 +90,27 @@ def get_scaffolds(contigs, connections):
             contig = contigs[contig_index[adjacent.vertex][0]]
             if contig in visited:
                 break
+            #print scf.right
 
-            if abs(contig.blocks[0]) == adjacent.vertex:
+            if (abs(contig.blocks[0]) == adjacent.vertex and
+                    sign(scf.right * contig.blocks[0] * adjacent.sign) > 0):
                 scf.contigs.append(contig)
-                scf.contigs[-1].sign = sign(scf.right * contig.blocks[0] * adjacent.sign)
-                scf.right = contig.blocks[-1] * scf.contigs[-1].sign
+                scf.right = contig.blocks[-1]
                 visited.add(contig)
-            elif abs(contig.blocks[-1]) == adjacent.vertex:
+                continue
+                #scf.contigs[-1].sign = sign(scf.right * contig.blocks[0] * adjacent.sign)
+
+            if (abs(contig.blocks[-1]) == adjacent.vertex and
+                    sign(scf.right * contig.blocks[-1] * adjacent.sign) < 0):
+                #print scf.right, adjacent.vertex
                 scf.contigs.append(contig)
-                scf.contigs[-1].sign = sign(scf.right * contig.blocks[-1] * adjacent.sign)
-                scf.contigs[-1].inverse = True
+                scf.contigs[-1].sign = -1 #sign(scf.right * contig.blocks[-1] * adjacent.sign)
+                #scf.contigs[-1].inverse = True
                 scf.right = contig.blocks[0] * scf.contigs[-1].sign
                 visited.add(contig)
+                continue
+
+            break
 
         #go left
         while abs(scf.left) in connections:
@@ -106,17 +120,24 @@ def get_scaffolds(contigs, connections):
             if contig in visited:
                 break
 
-            if abs(contig.blocks[-1]) == adjacent.vertex:
+            if (abs(contig.blocks[-1]) == adjacent.vertex and
+                    sign(scf.left * contig.blocks[-1] * adjacent.sign) > 0):
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].sign = sign(scf.left * contig.blocks[-1] * adjacent.sign)
-                scf.left = contig.blocks[0] * scf.contigs[0].sign
+                #scf.contigs[0].sign = sign(scf.left * contig.blocks[-1] * adjacent.sign)
+                scf.left = contig.blocks[0] # * scf.contigs[0].sign
                 visited.add(contig)
-            elif abs(contig.blocks[0]) == adjacent.vertex:
+                continue
+
+            if (abs(contig.blocks[0]) == adjacent.vertex and
+                    sign(scf.left * contig.blocks[0] * adjacent.sign) < 0):
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].sign = sign(scf.left * contig.blocks[0] * adjacent.sign)
-                scf.contigs[0].inverse = True
+                scf.contigs[0].sign = -1 #sign(scf.left * contig.blocks[0] * adjacent.sign)
+                #scf.contigs[0].inverse = True
                 scf.left = contig.blocks[-1] * scf.contigs[0].sign
                 visited.add(contig)
+                continue
+
+            break
 
 
     for contig in contigs:
@@ -142,13 +163,58 @@ def simple_connections(graph, contigs):
                 connections[abs(edges[0])] = Link(vertex=abs(block), sign=s)
 
 
-    for scf in get_scaffolds(contigs, connections):
+    scaffolds = get_scaffolds(contigs, connections)
+    scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
+    for scf in scaffolds:
         for contig in scf.contigs:
-            if not contig.inverse:
-                print map(lambda b: int(b * contig.sign), contig.blocks),
+            if contig.sign > 0:
+                print contig.blocks,
             else:
-                print map(lambda b: int(b * contig.sign), contig.blocks)[::-1],
+                print map(lambda b: -b, contig.blocks)[::-1],
+            #if not contig.inverse:
+            #    print map(lambda b: int(b * contig.sign), contig.blocks),
+            #else:
+            #    print map(lambda b: int(b * contig.sign), contig.blocks)[::-1],
         print ""
+
+    return scaffolds
+
+
+def merge_scaffolds(input_contigs, scaffolds, out_file):
+    contigs = SeqIO.parse(input_contigs, "fasta")
+    out_stream = open(out_file, "w")
+    queue = {}
+    for rec in contigs:
+        queue[rec.id] = rec.seq
+
+    counter = 0
+    for scf in scaffolds:
+        scf_seq = Seq("")
+        for i, contig in enumerate(scf.contigs):
+            cont_seq = queue[contig.name]
+            del queue[contig.name]
+
+            if contig.sign < 0:
+                cont_seq = cont_seq.reverse_complement()
+
+            if i > 0:
+                #test for overlapping
+                overlap = False
+                for window in xrange(5, 100):
+                    if str(scf_seq)[-window:] == str(cont_seq)[0:window]:
+                        assert overlap == False
+                        cont_seq = cont_seq[window:]
+                        overlap = True
+                if not overlap:
+                    scf_seq += Seq("NNNNNNNNNNN")
+            scf_seq += cont_seq
+
+        name = "scaffold{0}".format(counter)
+        counter += 1
+        SeqIO.write(SeqRecord(scf_seq, id=name, description=""), out_stream, "fasta")
+
+    #for h, seq in queue.iteritems():
+    #    SeqIO.write(SeqRecord(seq, id=h, description=""), out_stream, "fasta")
 
 
 def output_graph(graph, dot_file):
@@ -167,6 +233,11 @@ def output_graph(graph, dot_file):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print "bg.py permutations contigs"
+        sys.exit(1)
+
     graph, contigs = parse_permutations_file(sys.argv[1])
-    simple_connections(graph, contigs)
+    scaffolds = simple_connections(graph, contigs)
+    merge_scaffolds(sys.argv[2], scaffolds, "scaffolds.fasta")
     #output_graph(graph, open("bg.dot", "w"))
