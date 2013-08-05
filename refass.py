@@ -2,16 +2,15 @@
 
 import sys
 import math
+import graph_tools
 from collections import namedtuple, defaultdict
+from itertools import combinations
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-Edge = namedtuple("Edge", ["vertex", "color"])
-Colors = ["red", "green", "blue", "yellow", "black"]
-#Link = namedtuple("Link", ["vertex", "sign"])
-#Scaffold = namedtuple("Scaffold", ["left", "right", "contigs"])
 
+Edge = namedtuple("Edge", ["vertex", "color"])
 
 class Node:
     def __init__(self):
@@ -32,11 +31,12 @@ class Scaffold:
 
 
 def parse_permutations_file(filename):
-    graph = defaultdict(Node)
     contigs = []
+    permutations = []
     fin = open(filename, "r")
-    color = 0
     contig_name = None
+
+
     for line in fin:
         if line.startswith(">"):
             contig_name = line.strip()[1:] if line.startswith(">contig") else None
@@ -50,14 +50,32 @@ def parse_permutations_file(filename):
             continue
 
         #not a contig
-        for i in xrange(len(blocks) - 1):
-            l = int(blocks[i])
-            r = int(blocks[i + 1])
+        permutations.append(map(int, blocks))
+
+    return permutations, contigs
+
+
+def build_graph(permutations):
+    #find duplications
+    duplications = set()
+    for perm in permutations:
+        current = set()
+        for block in perm:
+            if block in current:
+                duplications.add(block)
+            current.add(block)
+    print duplications
+
+    graph = defaultdict(Node)
+    color = 0
+    for perm in permutations:
+        for i in xrange(len(perm) - 1):
+            l = int(perm[i])
+            r = int(perm[i + 1])
             graph[-l].edges.append(Edge(r, color))
             graph[r].edges.append(Edge(-l, color))
-        color += 1
-
-    return graph, contigs
+            color += 1
+    return graph
 
 
 def build_contig_index(contigs):
@@ -67,11 +85,12 @@ def build_contig_index(contigs):
             index[abs(block)].append(i)
     return index
 
+
 def sign(val):
     return math.copysign(1, val)
 
 
-def get_scaffolds(contigs, connections):
+def extend_scaffolds(contigs, connections):
     contig_index = build_contig_index(contigs)
     scaffolds = []
     visited = set()
@@ -142,21 +161,92 @@ def get_scaffolds(contigs, connections):
     return scaffolds
 
 
-def simple_connections(graph, contigs):
-    NUM_REF = 4 #hardcode!
+def get_component_of(connected_comps, vertex):
+    for con in connected_comps:
+        if vertex in con:
+            return con
+    return None
+
+
+def case_on_vs_one(graph, component, connected_comps, contig_index, num_ref):
+    """
+    a -- a
+    """
+    if len(component) != 2:
+        return None
+
+    num_edges = len(graph[component[0]].edges)
+    if num_edges not in range(2, num_ref + 1):
+        return None
+
+    #print num_edges
+    for fst, snd in [(0, 1), (1, 0)]:
+        if abs(component[fst]) in contig_index and abs(component[snd]) not in contig_index:
+            pair_comp = get_component_of(connected_comps, -component[snd])
+            pair_id = pair_comp.index(-component[snd])
+            other_id = abs(1 - pair_id)
+            if pair_comp[other_id] in contigs:
+                print "indel found!"
+                return (component[fst], pair_comp[other_id])
+
+    if abs(component[0]) in contig_index and abs(component[1]) in contig_index:
+        return (component[0], component[1])
+
+    return None
+
+
+def case_indel(graph, component, connected_comps, contig_index, num_ref):
+    """
+    a    -b
+    |  \  |
+    b     c
+    """
+    if len(component) != 4:
+        return None
+
+    found = False
+    for v1, v2 in combinations(component, 2):
+        if v1 == -v2:
+            found = True
+            similar = [v1, v2]
+            different = filter(lambda v: v != v1 and v != v2, component)
+
+    if not found:
+        return None
+    #TODO: check graph structure
+
+    #print similar, different
+    if abs(similar[0]) in contig_index:
+        print "deletion in some references"
+        return [(s, graph[s].edges[0].vertex) for s in similar]
+    else:
+        print "deletion in assembly and (possibly) references"
+        return [(different[0], different[1])]
+
+
+def simple_connections(graph, connected_comps, contigs, num_ref):
     connections = {}
-    for block in graph:
-        #look into breakpoint graph
-        edges = map(lambda e: e.vertex, graph[block].edges)
+    contig_index = build_contig_index(contigs)
 
-        #only cases with connected component of 2 nodes
-        if edges.count(edges[0]) == NUM_REF == len(edges):
-            back_edges = map(lambda e: e.vertex, graph[edges[0]].edges)
-            if back_edges.count(block) == NUM_REF == len(back_edges):
-                connections[-block] = edges[0]
+    for component in connected_comps:
+        conn = case_on_vs_one(graph, component, conected_comps, contig_index, num_ref)
+        if conn is not None:
+            connections[-conn[0]] = conn[1]
+            connections[-conn[1]] = conn[0]
+
+        conn = case_indel(graph, component, conected_comps, contig_index, num_ref)
+        if conn is not None:
+            #print conn
+            for c in conn:
+                connections[-c[0]] = c[1]
+                connections[-c[1]] = c[0]
+
+    print "connections infered:", len(connections)
+    return connections
 
 
-    scaffolds = get_scaffolds(contigs, connections)
+def get_scaffolds(contigs, connections):
+    scaffolds = extend_scaffolds(contigs, connections)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     for scf in scaffolds:
         for contig in scf.contigs:
@@ -169,7 +259,7 @@ def simple_connections(graph, contigs):
     return scaffolds
 
 
-def merge_scaffolds(input_contigs, scaffolds, out_file):
+def output_scaffolds(input_contigs, scaffolds, out_file):
     contigs = SeqIO.parse(input_contigs, "fasta")
     out_stream = open(out_file, "w")
     queue = {}
@@ -206,27 +296,18 @@ def merge_scaffolds(input_contigs, scaffolds, out_file):
     #    SeqIO.write(SeqRecord(seq, id=h, description=""), out_stream, "fasta")
 
 
-def output_graph(graph, dot_file):
-    dot_file.write("graph {\n")
-    used_vertexes = set()
-    for node_id, node in graph.iteritems():
-        for edge in node.edges:
-            if edge.vertex not in used_vertexes:
-                dot_file.write("""{0} -- {1} [color = "{2}"];\n"""
-                                .format(node_id, edge.vertex, Colors[edge.color]))
-        used_vertexes.add(node_id)
-
-    #for i in xrange(max(graph.keys()) + 1):
-    #    dot_file.write("""{0} -- {1} [color = "black"];\n""".format(i, -i))
-    dot_file.write("}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print "bg.py permutations contigs"
         sys.exit(1)
 
-    graph, contigs = parse_permutations_file(sys.argv[1])
-    scaffolds = simple_connections(graph, contigs)
-    merge_scaffolds(sys.argv[2], scaffolds, "scaffolds.fasta")
+    permutations, contigs = parse_permutations_file(sys.argv[1])
+    graph = build_graph(permutations)
+    conected_comps = graph_tools.get_connected_components(graph)
+    #for c in conected_comp:
+    #    print c
+    connections = simple_connections(graph, conected_comps, contigs, 4)
+    scaffolds = get_scaffolds(contigs, connections)
+
+    output_scaffolds(sys.argv[2], scaffolds, "scaffolds.fasta")
     #output_graph(graph, open("bg.dot", "w"))
