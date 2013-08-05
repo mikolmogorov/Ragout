@@ -62,19 +62,31 @@ def build_graph(permutations):
         current = set()
         for block in perm:
             if block in current:
-                duplications.add(block)
+                duplications.add(abs(block))
             current.add(block)
     print duplications
 
     graph = defaultdict(Node)
     color = 0
     for perm in permutations:
-        for i in xrange(len(perm) - 1):
-            l = int(perm[i])
-            r = int(perm[i + 1])
-            graph[-l].edges.append(Edge(r, color))
-            graph[r].edges.append(Edge(-l, color))
-            color += 1
+        prev = 0
+        while abs(perm[prev]) in duplications:
+            prev += 1
+        cur = prev + 1
+        while cur < len(perm):
+            while abs(perm[cur]) in duplications:
+                cur += 1
+            graph[-perm[prev]].edges.append(Edge(perm[cur], color))
+            graph[perm[cur]].edges.append(Edge(-perm[prev], color))
+            prev = cur
+            cur += 1
+        color += 1
+        #for i in xrange(len(perm) - 1):
+        #    l = int(perm[i])
+        #    r = int(perm[i + 1])
+        #    graph[-l].edges.append(Edge(r, color))
+        #    graph[r].edges.append(Edge(-l, color))
+        #    color += 1
     return graph
 
 
@@ -310,4 +322,4 @@ if __name__ == "__main__":
     scaffolds = get_scaffolds(contigs, connections)
 
     output_scaffolds(sys.argv[2], scaffolds, "scaffolds.fasta")
-    #output_graph(graph, open("bg.dot", "w"))
+    graph_tools.output_graph(graph, open("bg.dot", "w"))
