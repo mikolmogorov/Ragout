@@ -9,7 +9,7 @@ from Bio.SeqRecord import SeqRecord
 
 Edge = namedtuple("Edge", ["vertex", "color"])
 Colors = ["red", "green", "blue", "yellow", "black"]
-Link = namedtuple("Link", ["vertex", "sign"])
+#Link = namedtuple("Link", ["vertex", "sign"])
 #Scaffold = namedtuple("Scaffold", ["left", "right", "contigs"])
 
 
@@ -84,61 +84,56 @@ def get_scaffolds(contigs, connections):
         scaffolds.append(scf)
 
         #go right
-        while abs(scf.right) in connections:
-            adjacent = connections[abs(scf.right)]
-            assert len(contig_index[adjacent.vertex]) == 1
-            contig = contigs[contig_index[adjacent.vertex][0]]
+        while scf.right in connections:
+            adjacent = connections[scf.right]
+            if len(contig_index[abs(adjacent)]) != 1:
+                print "alarm!", len(contig_index[adjacent])
+                break
+
+            contig = contigs[contig_index[abs(adjacent)][0]]
             if contig in visited:
                 break
-            #print scf.right
 
-            if (abs(contig.blocks[0]) == adjacent.vertex and
-                    sign(scf.right * contig.blocks[0] * adjacent.sign) > 0):
+            if contig.blocks[0] == adjacent:
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
                 visited.add(contig)
                 continue
-                #scf.contigs[-1].sign = sign(scf.right * contig.blocks[0] * adjacent.sign)
 
-            if (abs(contig.blocks[-1]) == adjacent.vertex and
-                    sign(scf.right * contig.blocks[-1] * adjacent.sign) < 0):
-                #print scf.right, adjacent.vertex
+            if -contig.blocks[-1] == adjacent:
                 scf.contigs.append(contig)
-                scf.contigs[-1].sign = -1 #sign(scf.right * contig.blocks[-1] * adjacent.sign)
-                #scf.contigs[-1].inverse = True
-                scf.right = contig.blocks[0] * scf.contigs[-1].sign
+                scf.contigs[-1].sign = -1
+                scf.right = -contig.blocks[0]
                 visited.add(contig)
                 continue
 
             break
 
         #go left
-        while abs(scf.left) in connections:
-            adjacent = connections[abs(scf.left)]
-            assert len(contig_index[adjacent.vertex]) == 1
-            contig = contigs[contig_index[adjacent.vertex][0]]
+        while -scf.left in connections:
+            adjacent = -connections[-scf.left]
+            if len(contig_index[abs(adjacent)]) != 1:
+                print "alarm!", len(contig_index[adjacent])
+                break
+
+            contig = contigs[contig_index[abs(adjacent)][0]]
             if contig in visited:
                 break
 
-            if (abs(contig.blocks[-1]) == adjacent.vertex and
-                    sign(scf.left * contig.blocks[-1] * adjacent.sign) > 0):
+            if contig.blocks[-1] == adjacent:
                 scf.contigs.insert(0, contig)
-                #scf.contigs[0].sign = sign(scf.left * contig.blocks[-1] * adjacent.sign)
-                scf.left = contig.blocks[0] # * scf.contigs[0].sign
+                scf.left = contig.blocks[0]
                 visited.add(contig)
                 continue
 
-            if (abs(contig.blocks[0]) == adjacent.vertex and
-                    sign(scf.left * contig.blocks[0] * adjacent.sign) < 0):
+            if -contig.blocks[0] == adjacent:
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].sign = -1 #sign(scf.left * contig.blocks[0] * adjacent.sign)
-                #scf.contigs[0].inverse = True
-                scf.left = contig.blocks[-1] * scf.contigs[0].sign
+                scf.contigs[0].sign = -1
+                scf.left = -contig.blocks[-1]
                 visited.add(contig)
                 continue
 
             break
-
 
     for contig in contigs:
         if contig not in visited:
@@ -158,9 +153,7 @@ def simple_connections(graph, contigs):
         if edges.count(edges[0]) == NUM_REF == len(edges):
             back_edges = map(lambda e: e.vertex, graph[edges[0]].edges)
             if back_edges.count(block) == NUM_REF == len(back_edges):
-                s = sign(-block * edges[0])
-                connections[abs(block)] = Link(vertex=abs(edges[0]), sign=s)
-                connections[abs(edges[0])] = Link(vertex=abs(block), sign=s)
+                connections[-block] = edges[0]
 
 
     scaffolds = get_scaffolds(contigs, connections)
@@ -171,10 +164,6 @@ def simple_connections(graph, contigs):
                 print contig.blocks,
             else:
                 print map(lambda b: -b, contig.blocks)[::-1],
-            #if not contig.inverse:
-            #    print map(lambda b: int(b * contig.sign), contig.blocks),
-            #else:
-            #    print map(lambda b: int(b * contig.sign), contig.blocks)[::-1],
         print ""
 
     return scaffolds
