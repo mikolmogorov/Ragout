@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple, defaultdict
 
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
@@ -10,7 +11,16 @@ class Contig:
         self.blocks = []
 
 
-def parse_permutations_file(filename):
+def parse_sibelia_output(sibelia_dir, contig_names):
+    coords_file = os.path.join(sibelia_dir, "blocks_coords.txt")
+    permutations_file = os.path.join(sibelia_dir, "genomes_permutations.txt")
+
+    permutations, contigs = parse_permutations_file(permutations_file, contig_names)
+    blocks_coords, block_ids = parse_coords_file(coords_file)
+    return permutations, contigs, blocks_coords
+
+
+def parse_permutations_file(filename, contig_names):
     fin = open(filename, "r")
     contigs = []
     permutations = []
@@ -20,10 +30,11 @@ def parse_permutations_file(filename):
 
     for line in fin:
         if line.startswith(">"):
-            if line.startswith(">contig") or line.startswith(">scaffold"):
-                contig_name = line.strip()[1:]
+            name = line.strip()[1:]
+            if name in contig_names:
+                contig_name = name
             else:
-                ref_name = line.strip()[1:]
+                ref_name = name
             continue
 
         blocks = line.strip().split(" ")[0:-1]

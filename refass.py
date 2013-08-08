@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import os
 import argparse
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -23,9 +22,6 @@ class Scaffold:
         self.left = left
         self.right = right
         self.contigs = contigs
-
-#def sign_of(val):
-#    return math.copysign(1, val)
 
 
 def extend_scaffolds(contigs, contig_index, connections):
@@ -111,12 +107,18 @@ def get_scaffolds(contigs, contig_index, connections):
     return scaffolds
 
 
-def output_scaffolds(input_contigs, scaffolds, out_file, write_contigs=False):
+def parse_contigs(contigs_file):
+    contigs = SeqIO.parse(contigs_file, "fasta")
+    seqs = [seq for seq in contigs]
+    names = [contig.id for contig in seqs]
+    return seqs, names
+
+
+def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
     MIN_CONTIG_LEN = 500
-    contigs = SeqIO.parse(input_contigs, "fasta")
     out_stream = open(out_file, "w")
     queue = {}
-    for rec in contigs:
+    for rec in contigs_seqs:
         queue[rec.id] = rec.seq
 
     counter = 0
@@ -164,11 +166,8 @@ def output_scaffolds(input_contigs, scaffolds, out_file, write_contigs=False):
 
 
 def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
-    coords_file = os.path.join(sibelia_dir, "blocks_coords.txt")
-    permutations_file = os.path.join(sibelia_dir, "genomes_permutations.txt")
-
-    blocks_coords, seqid = sp.parse_coords_file(coords_file)
-    permutations, contigs = sp.parse_permutations_file(permutations_file)
+    contigs_seqs, contig_names = parse_contigs(contigs_file)
+    permutations, contigs, blocks_coords = sp.parse_sibelia_output(sibelia_dir, contig_names)
     contig_index = sp.build_contig_index(contigs)
     num_references = len(permutations)
 
@@ -177,7 +176,7 @@ def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
     connections = ic.simple_connections(graph, conected_comps, contigs, contig_index, num_references)
     scaffolds = get_scaffolds(contigs, contig_index, connections)
 
-    output_scaffolds(contigs_file, scaffolds, out_scaffolds)
+    output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, False)
     if out_graph:
         bg.output_graph(graph, open(out_graph, "w"))
 

@@ -18,7 +18,7 @@ def build_graph(permutations, blocks_coords):
             if abs(block) in current:
                 duplications.add(abs(block))
             current.add(abs(block))
-    print duplications
+    print "Duplications found: ", duplications
 
     graph = defaultdict(Node)
     color = 0
@@ -27,7 +27,7 @@ def build_graph(permutations, blocks_coords):
         while abs(perm.blocks[prev]) in duplications:
             prev += 1
         cur = prev + 1
-        while True: #cur < len(perm.blocks):
+        while True:
             while cur < len(perm.blocks) and abs(perm.blocks[cur]) in duplications:
                 cur += 1
             if cur >= len(perm.blocks):
@@ -43,7 +43,7 @@ def build_graph(permutations, blocks_coords):
         color += 1
     return graph
 
-def output_graph(graph, dot_file):
+def output_graph(graph, dot_file, trivial_con=False):
     dot_file.write("graph {\n")
     used_vertexes = set()
     for node_id, node in graph.iteritems():
@@ -53,8 +53,9 @@ def output_graph(graph, dot_file):
                                 .format(node_id, edge.vertex, Colors[edge.color]))
         used_vertexes.add(node_id)
 
-    #for i in xrange(max(graph.keys()) + 1):
-    #    dot_file.write("""{0} -- {1} [color = "black"];\n""".format(i, -i))
+    if trivial_con:
+        for i in xrange(max(graph.keys()) + 1):
+            dot_file.write("""{0} -- {1} [color = "black"];\n""".format(i, -i))
     dot_file.write("}")
 
 
