@@ -24,7 +24,9 @@ class Scaffold:
         self.contigs = contigs
 
 
-def extend_scaffolds(contigs, contig_index, connections):
+def extend_scaffolds(connections, sibelia_output):
+    contigs = sibelia_output.contigs
+    contig_index = sibelia_output.build_contig_index()
     scaffolds = []
     visited = set()
 
@@ -36,7 +38,7 @@ def extend_scaffolds(contigs, contig_index, connections):
         #go right
         while scf.right in connections:
             adjacent = connections[scf.right].end
-            distance = connections[scf.right].distance
+            block_distance = connections[scf.right].distance
             assert len(contig_index[abs(adjacent)]) == 1
 
             contig = contigs[contig_index[abs(adjacent)][0]]
@@ -44,6 +46,11 @@ def extend_scaffolds(contigs, contig_index, connections):
                 break
 
             if contig.blocks[0] == adjacent:
+                offset = sibelia_output.block_offset(abs(adjacent), contig.name)
+                reverse = scf.contigs[-1].sign > 0
+                offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
+                distance = max(0, block_distance - offset)
+
                 scf.contigs.append(DumbContig(distance))
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
@@ -51,6 +58,11 @@ def extend_scaffolds(contigs, contig_index, connections):
                 continue
 
             if -contig.blocks[-1] == adjacent:
+                offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
+                reverse = scf.contigs[-1].sign > 0
+                offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
+                distance = max(0, block_distance - offset)
+
                 scf.contigs.append(DumbContig(distance))
                 scf.contigs.append(contig)
                 scf.contigs[-1].sign = -1
@@ -63,7 +75,7 @@ def extend_scaffolds(contigs, contig_index, connections):
         #go left
         while -scf.left in connections:
             adjacent = -connections[-scf.left].end
-            distance = connections[-scf.left].distance
+            block_distance = connections[-scf.left].distance
             assert len(contig_index[abs(adjacent)]) == 1
 
             contig = contigs[contig_index[abs(adjacent)][0]]
@@ -71,6 +83,11 @@ def extend_scaffolds(contigs, contig_index, connections):
                 break
 
             if contig.blocks[-1] == adjacent:
+                offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
+                reverse = scf.contigs[0].sign < 0
+                offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
+                distance = max(0, block_distance - offset)
+
                 scf.contigs.insert(0, DumbContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.left = contig.blocks[0]
@@ -78,6 +95,13 @@ def extend_scaffolds(contigs, contig_index, connections):
                 continue
 
             if -contig.blocks[0] == adjacent:
+                offset = sibelia_output.block_offset(abs(adjacent), contig.name)
+                reverse = scf.contigs[0].sign < 0
+                offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
+                distance = max(0, block_distance - offset)
+                #print contig.blocks, contig.name
+                #print adjacent, scf.left, block_distance - offset
+
                 scf.contigs.insert(0, DumbContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.contigs[0].sign = -1
@@ -96,7 +120,7 @@ def extend_scaffolds(contigs, contig_index, connections):
 def get_scaffolds(connections, sibelia_output):
     contigs = sibelia_output.contigs
     contig_index = sibelia_output.build_contig_index()
-    scaffolds = extend_scaffolds(contigs, contig_index, connections)
+    scaffolds = extend_scaffolds(connections, sibelia_output)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     for scf in scaffolds:
         contigs = filter(lambda c : not isinstance(c, DumbContig), scf.contigs)

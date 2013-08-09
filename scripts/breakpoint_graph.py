@@ -23,7 +23,7 @@ def build_graph(sibelia_output):
     print "Duplications found: ", duplications
 
     graph = defaultdict(Node)
-    color = 0
+    #color = 0
     for perm in permutations:
         prev = 0
         while abs(perm.blocks[prev]) in duplications:
@@ -37,12 +37,13 @@ def build_graph(sibelia_output):
 
             left_block = perm.blocks[prev]
             right_block = perm.blocks[cur]
-            dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), color)
-            graph[-left_block].edges.append(Edge(right_block, color, dist))
-            graph[right_block].edges.append(Edge(-left_block, color, dist))
+            #print left_block, right_block, perm.chr_num
+            dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
+            graph[-left_block].edges.append(Edge(right_block, perm.chr_num, dist))
+            graph[right_block].edges.append(Edge(-left_block, perm.chr_num, dist))
             prev = cur
             cur += 1
-        color += 1
+        #color += 1
     return graph
 
 def output_graph(graph, dot_file, trivial_con=False):
