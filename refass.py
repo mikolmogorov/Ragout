@@ -93,7 +93,9 @@ def extend_scaffolds(contigs, contig_index, connections):
     return scaffolds
 
 
-def get_scaffolds(contigs, contig_index, connections):
+def get_scaffolds(connections, sibelia_output):
+    contigs = sibelia_output.contigs
+    contig_index = sibelia_output.build_contig_index()
     scaffolds = extend_scaffolds(contigs, contig_index, connections)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     for scf in scaffolds:
@@ -167,14 +169,12 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
 
 def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
     contigs_seqs, contig_names = parse_contigs(contigs_file)
-    permutations, contigs, blocks_coords = sp.parse_sibelia_output(sibelia_dir, contig_names)
-    contig_index = sp.build_contig_index(contigs)
-    num_references = len(permutations)
+    sibelia_output = sp.SibeliaOutput(sibelia_dir, contig_names)
 
-    graph = bg.build_graph(permutations, blocks_coords)
+    graph = bg.build_graph(sibelia_output)
     conected_comps = bg.get_connected_components(graph)
-    connections = ic.simple_connections(graph, conected_comps, contigs, contig_index, num_references)
-    scaffolds = get_scaffolds(contigs, contig_index, connections)
+    connections = ic.simple_connections(graph, conected_comps, sibelia_output)
+    scaffolds = get_scaffolds(connections, sibelia_output)
 
     output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, False)
     if out_graph:

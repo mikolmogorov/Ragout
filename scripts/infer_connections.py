@@ -81,7 +81,10 @@ def case_indel(graph, component, connected_comps, contig_index, num_ref):
         return [Connection(different[0], different[1], distance)]
 
 
-def simple_connections(graph, connected_comps, contigs, contig_index, num_ref):
+def simple_connections(graph, connected_comps, sibelia_output):
+    contigs = sibelia_output.contigs
+    contig_index = sibelia_output.build_contig_index()
+    num_ref = sibelia_output.get_reference_count()
     connections = {}
 
     for component in connected_comps:

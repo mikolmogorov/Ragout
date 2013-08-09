@@ -9,7 +9,9 @@ class Node:
         self.edges = []
 
 
-def build_graph(permutations, blocks_coords):
+def build_graph(sibelia_output):
+    permutations = sibelia_output.permutations
+    blocks_coords = sibelia_output.blocks_info
     #find duplications
     duplications = set()
     for perm in permutations:
@@ -35,7 +37,7 @@ def build_graph(permutations, blocks_coords):
 
             left_block = perm.blocks[prev]
             right_block = perm.blocks[cur]
-            dist = sp.get_blocks_distance(abs(left_block), abs(right_block), color, blocks_coords)
+            dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), color)
             graph[-left_block].edges.append(Edge(right_block, color, dist))
             graph[right_block].edges.append(Edge(-left_block, color, dist))
             prev = cur
