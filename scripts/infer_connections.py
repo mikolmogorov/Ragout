@@ -27,12 +27,14 @@ def case_trivial(graph, component, connected_comps, contig_index, num_ref):
         return []
 
     for fst, snd in [(0, 1), (1, 0)]:
-        #TODO: test this case (never happened yet)
         if abs(component[fst]) in contig_index and abs(component[snd]) not in contig_index:
             pair_comp = get_component_of(connected_comps, -component[snd])
             pair_id = pair_comp.index(-component[snd])
             other_id = abs(1 - pair_id)
             if pair_comp[other_id] in contigs:
+                #TODO: test this case (never happened yet)
+                assert False #be warned if so
+
                 print "indel found!"
                 return [Connection(component[fst], pair_comp[other_id], None)]
 
@@ -43,6 +45,12 @@ def case_trivial(graph, component, connected_comps, contig_index, num_ref):
         return [Connection(start, end, distance)]
 
     return []
+
+
+def all_equal(lst):
+    if not lst:
+        return True
+    return lst.count(lst[0]) == len(lst)
 
 
 def case_indel(graph, component, connected_comps, contig_index, num_ref):
@@ -63,7 +71,16 @@ def case_indel(graph, component, connected_comps, contig_index, num_ref):
 
     if not found:
         return []
-    #TODO: check graph structure
+    #both b and -b have degree 1
+    vertexes_1 = map(lambda e: e.vertex, graph[similar[0]].edges)
+    vertexes_2 = map(lambda e: e.vertex, graph[similar[1]].edges)
+    if not all_equal(vertexes_1) or not all_equal(vertexes_2):
+        print "strange component!"
+        return []
+    #and they are connected to different vertexes
+    if vertexes_1[0] == vertexes_2[0]:
+        print "strange component!"
+        return []
 
     if abs(similar[0]) in contig_index:
         print "deletion in some references"
