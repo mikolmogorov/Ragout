@@ -154,7 +154,7 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
 
         for i, contig in enumerate(scf.contigs):
             if isinstance(contig, DumbContig):
-                buffer = "N" * contig.length
+                buffer = "N" * max(11, contig.length) #for quasts`s scaffold splitting
                 continue
 
             cont_seq = queue[contig.name]

@@ -1,5 +1,6 @@
 from collections import namedtuple, defaultdict
 import sibelia_parser as sp
+import numpy
 
 Colors = ["red", "green", "blue", "yellow", "black"]
 Edge = namedtuple("Edge", ["vertex", "color", "distance"])
@@ -76,3 +77,22 @@ def get_connected_components(graph):
             dfs(vertex, con_comp[-1])
 
     return con_comp
+
+
+def median(vals_list):
+    return numpy.median(vals_list)
+
+
+def get_component_of(connected_comps, vertex):
+    for con in connected_comps:
+        if vertex in con:
+            return con
+    return None
+
+
+def vertex_distance(graph, v1, v2):
+    edges = filter(lambda e : e.vertex == v2, graph[v1].edges)
+    assert edges
+    distance = median(map(lambda e: e.distance, edges))
+    #print distance
+    return int(distance)
