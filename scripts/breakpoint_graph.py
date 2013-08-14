@@ -13,6 +13,7 @@ class Node:
 def build_graph(sibelia_output):
     permutations = sibelia_output.permutations
     blocks_coords = sibelia_output.blocks_info
+    contig_index = sibelia_output.build_contig_index()
     #find duplications
     duplications = set()
     for perm in permutations:
@@ -37,9 +38,10 @@ def build_graph(sibelia_output):
 
             left_block = perm.blocks[prev]
             right_block = perm.blocks[cur]
-            dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
-            graph[-left_block].edges.append(Edge(right_block, perm.chr_num, dist))
-            graph[right_block].edges.append(Edge(-left_block, perm.chr_num, dist))
+            if abs(left_block) in contig_index and abs(right_block) in contig_index:
+                dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
+                graph[-left_block].edges.append(Edge(right_block, perm.chr_num, dist))
+                graph[right_block].edges.append(Edge(-left_block, perm.chr_num, dist))
             prev = cur
             cur += 1
     return graph

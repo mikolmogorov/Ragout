@@ -12,7 +12,7 @@ import scripts.breakpoint_graph as bg
 import scripts.sibelia_parser as sp
 
 
-class DumbContig(sp.Contig):
+class DummyContig(sp.Contig):
     def __init__(self, length):
         sp.Contig.__init__(self, "")
         self.length = length
@@ -22,6 +22,13 @@ class Scaffold:
         self.left = left
         self.right = right
         self.contigs = contigs
+
+
+def calc_distance(offset, block_distance):
+    if block_distance:
+        return max(0, block_distance - offset)
+    else:
+        return 0
 
 
 def extend_scaffolds(connections, sibelia_output):
@@ -49,9 +56,10 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name)
                 reverse = scf.contigs[-1].sign > 0
                 offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
-                distance = max(0, block_distance - offset)
+                #distance = max(0, block_distance - offset)
+                distance = calc_distance(offset, block_distance)
 
-                scf.contigs.append(DumbContig(distance))
+                scf.contigs.append(DummyContig(distance))
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
                 visited.add(contig)
@@ -61,9 +69,9 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
                 reverse = scf.contigs[-1].sign > 0
                 offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
-                distance = max(0, block_distance - offset)
+                distance = calc_distance(offset, block_distance)
 
-                scf.contigs.append(DumbContig(distance))
+                scf.contigs.append(DummyContig(distance))
                 scf.contigs.append(contig)
                 scf.contigs[-1].sign = -1
                 scf.right = -contig.blocks[0]
@@ -86,9 +94,10 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
                 reverse = scf.contigs[0].sign < 0
                 offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                distance = max(0, block_distance - offset)
+                #distance = max(0, block_distance - offset)
+                distance = calc_distance(offset, block_distance)
 
-                scf.contigs.insert(0, DumbContig(distance))
+                scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.left = contig.blocks[0]
                 visited.add(contig)
@@ -98,11 +107,10 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name)
                 reverse = scf.contigs[0].sign < 0
                 offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                distance = max(0, block_distance - offset)
-                #print contig.blocks, contig.name
-                #print adjacent, scf.left, block_distance - offset
+                #distance = max(0, block_distance - offset)
+                distance = calc_distance(offset, block_distance)
 
-                scf.contigs.insert(0, DumbContig(distance))
+                scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.contigs[0].sign = -1
                 scf.left = -contig.blocks[-1]
@@ -123,7 +131,7 @@ def get_scaffolds(connections, sibelia_output):
     scaffolds = extend_scaffolds(connections, sibelia_output)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     for scf in scaffolds:
-        contigs = filter(lambda c : not isinstance(c, DumbContig), scf.contigs)
+        contigs = filter(lambda c : not isinstance(c, DummyContig), scf.contigs)
         for contig in contigs:
             if contig.sign > 0:
                 print contig.blocks,
@@ -153,7 +161,7 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
         buffer = ""
 
         for i, contig in enumerate(scf.contigs):
-            if isinstance(contig, DumbContig):
+            if isinstance(contig, DummyContig):
                 buffer = "N" * max(11, contig.length) #for quasts`s scaffold splitting
                 continue
 
@@ -186,9 +194,12 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
         if len(seq) > MIN_CONTIG_LEN:
             count += 1
     print "Done,", count, "contigs left"
+
+    counter = 0
     if write_contigs:
-        for h, seq in queue.iteritems():
-            SeqIO.write(SeqRecord(seq, id=h, description=""), out_stream, "fasta")
+        for i, seq in enumerate(queue.itervalues()):
+            SeqIO.write(SeqRecord(seq, id="contig{0}".format(i), description=""),
+                                out_stream, "fasta")
 
 
 def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
@@ -196,13 +207,14 @@ def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
     sibelia_output = sp.SibeliaOutput(sibelia_dir, contig_names)
 
     graph = bg.build_graph(sibelia_output)
-    conected_comps = bg.get_connected_components(graph)
-    connections = ic.simple_connections(graph, conected_comps, sibelia_output)
+    if out_graph:
+        bg.output_graph(graph, open(out_graph, "w"))
+
+    adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
+    connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
     output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, False)
-    if out_graph:
-        bg.output_graph(graph, open(out_graph, "w"))
 
 
 def main():
