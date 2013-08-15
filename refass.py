@@ -148,17 +148,23 @@ def parse_contigs(contigs_file):
     return seqs, names
 
 
-def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
+def output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, write_contigs=False):
     MIN_CONTIG_LEN = 500
-    out_stream = open(out_file, "w")
+    out_stream = open(out_scaffolds, "w")
+    if out_order:
+        out_order_stream = open(out_order, "w")
     queue = {}
     for rec in contigs_seqs:
         queue[rec.id] = rec.seq
 
     counter = 0
     for scf in scaffolds:
+        name = "scaffold{0}".format(counter)
+        counter += 1
         scf_seq = Seq("")
         buffer = ""
+        if out_order:
+            out_order_stream.write(">" + name + "\n")
 
         for i, contig in enumerate(scf.contigs):
             if isinstance(contig, DummyContig):
@@ -181,12 +187,14 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
                         overlap = True
                 if not overlap:
                     scf_seq += Seq(buffer)
+                    if out_order:
+                        out_order_stream.write("gaps {0}\n".format(len(buffer)))
                 #scf_seq += Seq("N" * 11)    #easy mode
             buffer = ""
             scf_seq += cont_seq
+            if out_order:
+                out_order_stream.write(contig.name + "\n")
 
-        name = "scaffold{0}".format(counter)
-        counter += 1
         SeqIO.write(SeqRecord(scf_seq, id=name, description=""), out_stream, "fasta")
 
     count = 0
@@ -202,7 +210,7 @@ def output_scaffolds(contigs_seqs, scaffolds, out_file, write_contigs=False):
                                 out_stream, "fasta")
 
 
-def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
+def do_job(sibelia_dir, contigs_file, out_scaffolds, out_order, out_graph):
     contigs_seqs, contig_names = parse_contigs(contigs_file)
     sibelia_output = sp.SibeliaOutput(sibelia_dir, contig_names)
 
@@ -214,7 +222,7 @@ def do_job(sibelia_dir, contigs_file, out_scaffolds, out_graph):
     connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
-    output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, False)
+    output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, False)
 
 
 def main():
@@ -227,8 +235,11 @@ def main():
                         default="scaffolds.fasta", help="Output scaffolds file (default: scaffolds.fasta)")
     parser.add_argument("-g", action="store", metavar="graph_file", dest="graph_file",
                         default=None, help="Output file for breakpoint graph (default: Not set)")
+    parser.add_argument("-r", action="store", metavar="order_file", dest="order_file",
+                        default=None, help="Output file for contigs order (default: Not set)")
+
     args = parser.parse_args()
-    do_job(args.sibelia_dir, args.contigs_file, args.output_file, args.graph_file)
+    do_job(args.sibelia_dir, args.contigs_file, args.output_file, args.order_file, args.graph_file)
 
 if __name__ == "__main__":
     main()
