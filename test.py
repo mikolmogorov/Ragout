@@ -43,16 +43,40 @@ def main():
     for entry in entries:
         by_name[entry.contig_id].append(entry)
     for name in by_name:
-        by_name[name] = sorted(by_name[name], key=lambda e: e.len_qry)
-    filtered = [e[-1] for e in by_name.itervalues()]
+        by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
+        #print map(lambda e: e.len_qry, by_name[name])
+    filtered = [e[0] for e in by_name.itervalues()]
 
     by_start = sorted(filtered, key=lambda e: e.s_ref)
     ordered = map(lambda e: e.contig_id, by_start)
 
     scaffolds = parse_contigs_order(sys.argv[2])
+    zero_step = False
     for s in scaffolds:
         order = map(lambda c: ordered.index(c), s.contigs)
+
+        #check order
+        fail = False
         print s.name, order
+        for i, num in enumerate(order):
+            if i == 0:
+                prev = num
+            elif i == 1:
+                increasing = num > prev
+                prev = num
+            else:
+                if num > prev != increasing:
+                    if not zero_step and abs(num - prev) > max(order) / 2:
+                        zero_step = True
+                        print "zero step"
+                    else:
+                        print ("fail between {0} ({1}) and {2} ({3})"
+                                .format(s.contigs[i - 1], prev, s.contigs[i], num))
+                        fail = True
+                prev = num
+
+        if not fail:
+            print "ok"
 
 
 if __name__ == "__main__":
