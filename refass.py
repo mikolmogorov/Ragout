@@ -215,14 +215,14 @@ def do_job(sibelia_dir, contigs_file, out_scaffolds, out_order, out_graph):
     sibelia_output = sp.SibeliaOutput(sibelia_dir, contig_names)
 
     graph = bg.build_graph(sibelia_output)
-    if out_graph:
-        bg.output_graph(graph, open(out_graph, "w"))
 
     adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
-    connections = adj_finder.find_adjacencies()
+    connections, unresolved_components = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
     output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, False)
+    if out_graph:
+        bg.output_graph(graph, unresolved_components, open(out_graph, "w"))
 
 
 def main():

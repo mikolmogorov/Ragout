@@ -55,19 +55,31 @@ def build_graph(sibelia_output):
             cur += 1
     return graph
 
-def output_graph(graph, dot_file, trivial_con=False):
-    dot_file.write("graph {\n")
+
+def output_graph(graph, unresolved_comps, dot_file, trivial_con=False):
     used_vertexes = set()
+    def output_list(node_list):
+        for node_id in node_list:
+            for edge in graph[node_id].edges:
+                if edge.vertex not in used_vertexes:
+                    dot_file.write("""{0} -- {1} [color = "{2}"];\n"""
+                                    .format(node_id, edge.vertex, Colors[edge.color - 1]))
+            used_vertexes.add(node_id)
+
+    dot_file.write("graph {\n")
     for node in graph.itervalues():
         color = "black" if node.in_assembly else "grey"
         dot_file.write("""{0} [color = "{1}"];\n""".format(node.node_id, color))
 
-    for node_id, node in graph.iteritems():
-        for edge in node.edges:
-            if edge.vertex not in used_vertexes:
-                dot_file.write("""{0} -- {1} [color = "{2}"];\n"""
-                                .format(node_id, edge.vertex, Colors[edge.color - 1]))
-        used_vertexes.add(node_id)
+    #print unresolved_comps
+    unresolved = sum(unresolved_comps, [])
+    resolved = [v for v in sum(get_connected_components(graph), []) if v not in unresolved]
+    #draving resolved components
+    dot_file.write("""subgraph cluster_0 {\nlabel = "resolved components"\n""")
+    output_list(resolved)
+    dot_file.write("""}\nsubgraph cluster_1 {\nlabel = "unresolved components"\n""")
+    output_list(unresolved)
+    dot_file.write("}\n")
 
     if trivial_con:
         for i in xrange(max(graph.keys()) + 1):
