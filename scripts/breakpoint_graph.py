@@ -6,7 +6,9 @@ Colors = ["red", "green", "blue", "yellow", "black"]
 Edge = namedtuple("Edge", ["vertex", "color", "distance"])
 
 class Node:
-    def __init__(self):
+    def __init__(self, n_id, in_assembly):
+        self.node_id = n_id
+        self.in_assembly = in_assembly
         self.edges = []
 
 
@@ -24,7 +26,7 @@ def build_graph(sibelia_output):
             current.add(abs(block))
     print "Duplications found: ", duplications
 
-    graph = defaultdict(Node)
+    graph = {}
     for perm in permutations:
         prev = 0
         while abs(perm.blocks[prev]) in duplications:
@@ -38,10 +40,17 @@ def build_graph(sibelia_output):
 
             left_block = perm.blocks[prev]
             right_block = perm.blocks[cur]
-            if abs(left_block) in contig_index and abs(right_block) in contig_index:
-                dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
-                graph[-left_block].edges.append(Edge(right_block, perm.chr_num, dist))
-                graph[right_block].edges.append(Edge(-left_block, perm.chr_num, dist))
+            dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
+
+            #if abs(left_block) in contig_index and abs(right_block) in contig_index:
+            if -left_block not in graph:
+                graph[-left_block] = Node(-left_block, abs(left_block) in contig_index)
+            graph[-left_block].edges.append(Edge(right_block, perm.chr_num, dist))
+
+            if right_block not in graph:
+                graph[right_block] = Node(right_block, abs(right_block) in contig_index)
+            graph[right_block].edges.append(Edge(-left_block, perm.chr_num, dist))
+
             prev = cur
             cur += 1
     return graph
@@ -49,6 +58,10 @@ def build_graph(sibelia_output):
 def output_graph(graph, dot_file, trivial_con=False):
     dot_file.write("graph {\n")
     used_vertexes = set()
+    for node in graph.itervalues():
+        color = "black" if node.in_assembly else "grey"
+        dot_file.write("""{0} [color = "{1}"];\n""".format(node.node_id, color))
+
     for node_id, node in graph.iteritems():
         for edge in node.edges:
             if edge.vertex not in used_vertexes:

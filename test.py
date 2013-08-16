@@ -65,7 +65,7 @@ def main():
                 increasing = num > prev
                 prev = num
             else:
-                if num > prev != increasing:
+                if (num > prev) != increasing:
                     if not zero_step and abs(num - prev) > max(order) / 2:
                         zero_step = True
                         print "zero step"
