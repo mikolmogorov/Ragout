@@ -50,6 +50,9 @@ class AdjacencyFinder:
             for fst, snd in [(0, 1), (1, 0)]:
                 if self.in_assembly(vertex_pair[fst]) and not self.in_assembly(vertex_pair[snd]):
                     pair_comp = get_component_of(self.connected_comps, -vertex_pair[snd])
+                    if len(pair_comp) != 2:
+                        continue
+
                     pair_id = pair_comp.index(-vertex_pair[snd])
                     other_id = abs(1 - pair_id)
 
@@ -296,11 +299,15 @@ class AdjacencyFinder:
         components = self.connected_comps
         result = []
 
+        #print components
         for fun in functions:
             connect, resolved_comps_ids = fun(self, components)
             result.extend(connect)
             filtered = filter(lambda (i, _): i not in resolved_comps_ids, enumerate(components))
+            #print len(resolved_comps_ids), len(components), len(filtered)
+            #print filter(lambda (i, _): i in resolved_comps_ids, enumerate(components))
             components = map(lambda p: p[1], filtered)
+            #print components
 
         for c in result:
             assert self.in_assembly(c.start)
@@ -310,5 +317,6 @@ class AdjacencyFinder:
 
         print "connections infered:", len(connections) / 2
         print "still {0} unresolved components".format(len(components))
+        #print components
         return connections, components
 

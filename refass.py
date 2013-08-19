@@ -182,7 +182,7 @@ def output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, write_co
                 overlap = False
                 for window in xrange(5, 100):
                     if str(scf_seq)[-window:] == str(cont_seq)[0:window]:
-                        assert overlap == False
+                        #assert overlap == False
                         cont_seq = cont_seq[window:]
                         overlap = True
                 if not overlap:
@@ -193,7 +193,8 @@ def output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, write_co
             buffer = ""
             scf_seq += cont_seq
             if out_order:
-                out_order_stream.write(contig.name + "\n")
+                sign = "+" if contig.sign > 0 else "-"
+                out_order_stream.write(sign + contig.name + "\n")
 
         SeqIO.write(SeqRecord(scf_seq, id=name, description=""), out_stream, "fasta")
 

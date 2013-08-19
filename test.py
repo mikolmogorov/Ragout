@@ -5,6 +5,7 @@ from collections import namedtuple, defaultdict
 
 Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry", "len_ref", "len_qry", "contig_id"])
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
+Contig = namedtuple("Contig", ["name", "sign"])
 
 def parse_quast_output(filename):
     entries = []
@@ -32,11 +33,17 @@ def parse_contigs_order(filename):
                 pass
             else:
                 name = line.strip("\n").replace("=", "_") #fix for quast
-                scaffolds[-1].contigs.append(name)
+                without_sign = name[1:]
+                sign = 1 if name[0] == "+" else -1
+                scaffolds[-1].contigs.append(Contig(without_sign, sign))
     return scaffolds
 
 
 def main():
+    if len(sys.argv) < 3:
+        print "Usage: test.py quast_out contigs_order"
+        return
+
     entries = parse_quast_output(sys.argv[1])
 
     by_name = defaultdict(list)
@@ -46,6 +53,8 @@ def main():
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
         #print map(lambda e: e.len_qry, by_name[name])
     filtered = [e[0] for e in by_name.itervalues()]
+    #true_signs = map(lambda e: 1 if e[0].e_qry > e[0].s_qry else -1, by_name.itervalues())
+    #print true_signs
 
     by_start = sorted(filtered, key=lambda e: e.s_ref)
     ordered = map(lambda e: e.contig_id, by_start)
@@ -53,7 +62,8 @@ def main():
     scaffolds = parse_contigs_order(sys.argv[2])
     zero_step = False
     for s in scaffolds:
-        order = map(lambda c: ordered.index(c), s.contigs)
+        order = map(lambda c: ordered.index(c.name), s.contigs)
+        signs = map(lambda c: c.sign, s.contigs)
 
         #check order
         fail = False
