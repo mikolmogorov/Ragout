@@ -189,7 +189,6 @@ def output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, write_co
                     scf_seq += Seq(buffer)
                     if out_order:
                         out_order_stream.write("gaps {0}\n".format(len(buffer)))
-                #scf_seq += Seq("N" * 11)    #easy mode
             buffer = ""
             scf_seq += cont_seq
             if out_order:

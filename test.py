@@ -53,7 +53,19 @@ def main():
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
         #print map(lambda e: e.len_qry, by_name[name])
     filtered = [e[0] for e in by_name.itervalues()]
-    #true_signs = map(lambda e: 1 if e[0].e_qry > e[0].s_qry else -1, by_name.itervalues())
+
+    true_signs = {}
+    for e in by_name.itervalues():
+        if abs(e[0].e_qry - e[0].s_qry) < 1000000:
+            if e[0].e_qry > e[0].s_qry:
+                true_signs[e[0].contig_id] = 1
+            else:
+                true_signs[e[0].contig_id] = -1
+        else:
+            if e[0].e_qry > e[0].s_qry:
+                true_signs[e[0].contig_id] = -1
+            else:
+                true_signs[e[0].contig_id] = 1
     #print true_signs
 
     by_start = sorted(filtered, key=lambda e: e.s_ref)
@@ -65,9 +77,14 @@ def main():
         order = map(lambda c: ordered.index(c.name), s.contigs)
         signs = map(lambda c: c.sign, s.contigs)
 
+        #check signs
+
         #check order
         fail = False
-        print s.name, order
+        print s.name
+        for contig, pos in zip(s.contigs, order):
+            print contig.name, pos
+
         for i, num in enumerate(order):
             if i == 0:
                 prev = num
@@ -81,7 +98,8 @@ def main():
                         print "zero step"
                     else:
                         print ("fail between {0} ({1}) and {2} ({3})"
-                                .format(s.contigs[i - 1], prev, s.contigs[i], num))
+                                        .format(s.contigs[i - 1].name,
+                                        prev, s.contigs[i].name, num))
                         fail = True
                 prev = num
 
