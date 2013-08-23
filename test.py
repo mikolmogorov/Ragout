@@ -3,21 +3,24 @@
 import sys
 from collections import namedtuple, defaultdict
 
+
 Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry", "len_ref", "len_qry", "contig_id"])
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
 
+
 def parse_quast_output(filename):
     entries = []
     for line in open(filename, "r"):
-        if line.startswith(" ") or line.startswith("="):
+        line = line.strip()
+        if line.startswith("[") or line.startswith("="):
             continue
 
-        vals = line.strip("\n").split(" | ")
-        coord_ref = map(int, vals[0].split(" "))
-        coord_qry = map(int, vals[1].split(" "))
-        lengths = map(int, vals[2].split(" "))
-        cname = vals[4].split(" ")[1]
+        vals = line.split("|")
+        coord_ref = map(int, vals[0].split())
+        coord_qry = map(int, vals[1].split())
+        lengths = map(int, vals[2].split())
+        cname = vals[4].split("\t")[1]
         entries.append(Entry( *(coord_ref + coord_qry + lengths + [cname]) ))
 
     return entries
@@ -49,11 +52,23 @@ def main():
     by_name = defaultdict(list)
     for entry in entries:
         by_name[entry.contig_id].append(entry)
+
     for name in by_name:
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
+        by_name[name] = filter(lambda e: e.len_qry > 0.8 * by_name[name][0].len_qry, by_name[name])
         #print map(lambda e: e.len_qry, by_name[name])
-    filtered = [e[0] for e in by_name.itervalues()]
 
+    filtered_entries = []
+    for ent_lst in by_name.itervalues():
+        filtered_entries.extend(ent_lst)
+    filtered_entries.sort(key=lambda e: e.s_ref)
+
+    entry_ord = defaultdict(list)
+    for i, e in enumerate(filtered_entries):
+        entry_ord[e.contig_id].append(i)
+    #print entry_ord
+
+    """
     true_signs = {}
     for e in by_name.itervalues():
         if abs(e[0].e_qry - e[0].s_qry) < 1000000:
@@ -67,45 +82,15 @@ def main():
             else:
                 true_signs[e[0].contig_id] = 1
     #print true_signs
-
-    by_start = sorted(filtered, key=lambda e: e.s_ref)
-    ordered = map(lambda e: e.contig_id, by_start)
+    """
 
     scaffolds = parse_contigs_order(sys.argv[2])
     zero_step = False
     for s in scaffolds:
-        order = map(lambda c: ordered.index(c.name), s.contigs)
-        signs = map(lambda c: c.sign, s.contigs)
-
-        #check signs
-
-        #check order
-        fail = False
+        #TODO: check signs
         print s.name
-        for contig, pos in zip(s.contigs, order):
-            print contig.name, pos
-
-        for i, num in enumerate(order):
-            if i == 0:
-                prev = num
-            elif i == 1:
-                increasing = num > prev
-                prev = num
-            else:
-                if (num > prev) != increasing:
-                    if not zero_step and abs(num - prev) > max(order) / 2:
-                        zero_step = True
-                        print "zero step"
-                    else:
-                        print ("fail between {0} ({1}) and {2} ({3})"
-                                        .format(s.contigs[i - 1].name,
-                                        prev, s.contigs[i].name, num))
-                        fail = True
-                prev = num
-
-        if not fail:
-            print "ok"
-
+        for i, contig in enumerate(s.contigs):
+            print contig.name, entry_ord[contig.name]
 
 if __name__ == "__main__":
     main()
