@@ -3,52 +3,56 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from collections import defaultdict, namedtuple
 import sys
-from collections import defaultdict
-from itertools import combinations
 
 
-def haming(seq1, seq2):
-    count = 0
-    for i in xrange(len(seq1)):
-        if seq1[i] != seq2[i]:
-            count += 1
-    return count
+Node = namedtuple("Node", ["v_in", "v_out"])
+def check_graph(filename, contigs):
+    KMER = 55
+    nodes = defaultdict(lambda : Node([], []))
+    for line in open(filename, "r"):
+        edge_id, start, end = line.strip().split(" ")
+        nodes[start].v_out.append(edge_id)
+        nodes[end].v_in.append(edge_id)
+
+    for node in nodes.itervalues():
+        kmers = []
+        for edge in node.v_out:
+            cont_seq = contigs[edge[1:]]
+            if edge[0] == "-":
+                cont_seq = cont_seq.reverse_complement()
+            kmers.append(str(cont_seq)[0:KMER])
+        for edge in node.v_in:
+            cont_seq = contigs[edge[1:]]
+            if edge[0] == "-":
+                cont_seq = cont_seq.reverse_complement()
+            kmers.append(str(cont_seq)[-KMER:])
+        if len(kmers) > 1:
+            assert len(kmers) == kmers.count(kmers[0])
 
 
-def main(filename, k_size):
-    kmers = defaultdict(int)
-    ids = defaultdict(list)
-    contigs = SeqIO.parse(filename, "fasta")
-    for seq in contigs:
-        km = [str(seq.seq[0:k_size]), str(seq.seq[-k_size:]),
-              str(seq.seq.reverse_complement()[0:k_size]),
-              str(seq.seq.reverse_complement()[-k_size:])]
-        for kmer in km:
-            if seq.id == "7":
-                print "7", kmer
-            if seq.id == "79":
-                print "79", kmer
-            kmers[kmer] += 1
-            ids[kmer].append(seq.id)
+def build_graph(contigs, kmer_len, out_file, out_dot):
+    counter = [0]
+    def new_kmer():
+        counter[0] += 1
+        return counter[0]
 
-    """
-    for kmer1, kmer2 in combinations(kmers, 2):
-        if haming(kmer1, kmer2) == 1:
-            print "a"
-    """
-
-    count = 0
-    for km in sorted(kmers):
-        #print km, kmers[km]
-        if kmers[km] == 1:
-            assert kmers[str(Seq(km).reverse_complement())] == 1
-            #print km
-            print km, ids[km]
-            count += 1
-    print count, len(kmers)
+    out_dot.write("digraph {\n")
+    kmer_to_num = defaultdict(new_kmer)
+    for hdr, seq in contigs.iteritems():
+        start = str(seq)[0:kmer_len]
+        end = str(seq)[-kmer_len:]
+        #out_file.write("+{0} {1} {2}\n".format(hdr, kmer_to_num[start], kmer_to_num[end]))
+        out_dot.write("""{0} -> {1} [label="+{2}"]\n""".format(kmer_to_num[start], kmer_to_num[end], hdr))
+        start = str(seq.reverse_complement())[0:kmer_len]
+        end = str(seq.reverse_complement())[-kmer_len:]
+        #out_file.write("-{0} {1} {2}\n".format(hdr, kmer_to_num[start], kmer_to_num[end]))
+        out_dot.write("""{0} -> {1} [label="-{2}"]\n""".format(kmer_to_num[start], kmer_to_num[end], hdr))
+    out_dot.write("}")
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1], 55)
-    build_graph("final_paths.dat", "graph.dot")
+    contigs = {s.id : s.seq for s in SeqIO.parse(sys.argv[1], "fasta")}
+    build_graph(contigs, 55, sys.stdout, open("overlap.dot", "w"))
+    #check_graph(sys.argv[1], contigs)

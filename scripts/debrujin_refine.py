@@ -11,6 +11,7 @@ from Bio.SeqRecord import SeqRecord
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Edge = namedtuple("Edge", ["start", "end"])
 
+
 class Contig:
     def __init__(self, name, sign, gap = 0):
         self.name = name
