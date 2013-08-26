@@ -16,7 +16,7 @@ def parse_quast_output(filename):
         if line.startswith("[") or line.startswith("="):
             continue
 
-        vals = line.split("|")
+        vals = line.split(" | ")
         coord_ref = map(int, vals[0].split())
         coord_qry = map(int, vals[1].split())
         lengths = map(int, vals[2].split())

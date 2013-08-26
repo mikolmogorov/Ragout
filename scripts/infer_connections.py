@@ -120,6 +120,9 @@ class AdjacencyFinder:
                 print "strange component!"
                 continue
             ####################
+            if not self.in_assembly(different.fst) or not self.in_assembly(different.snd):
+                print "indel borders are not in assembly"
+                continue
 
             #checking, if indel has occured in assembly
             ###########

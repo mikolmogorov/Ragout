@@ -33,10 +33,27 @@ def build_graph(sibelia_output):
             prev += 1
         cur = prev + 1
         while True:
-            while cur < len(perm.blocks) and abs(perm.blocks[cur]) in duplications:
+
+            end = False
+            while True:
+                if cur >= len(perm.blocks):
+                    end = True
+                    break
+                in_assembly = abs(perm.blocks[cur]) in contig_index
+                duplication = abs(perm.blocks[cur]) in duplications
+                if not duplication and in_assembly:
+                    break
+                cur += 1
+
+            if end:
+                break
+            """
+            while (cur < len(perm.blocks) and
+                (abs(perm.blocks[cur]) in duplications or abs(perm.blocks[cur]) not in contig_index)):
                 cur += 1
             if cur >= len(perm.blocks):
                 break
+            """
 
             left_block = perm.blocks[prev]
             right_block = perm.blocks[cur]
