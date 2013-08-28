@@ -1,15 +1,27 @@
 import os
+import shutil
+import subprocess
 from collections import namedtuple, defaultdict
+from datatypes import *
 
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 Permutation = namedtuple("Permutation", ["chr_id", "chr_num", "blocks"])
 
-class Contig:
-    def __init__(self, name):
-        self.name = name
-        self.sign = 1
-        self.blocks = []
+
+SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/Sibelia"
+
+
+def run_sibelia(references, contigs, block_size, out_dir):
+    print "Running Sibelia..."
+    cmdline = [SIBELIA_BIN, "-s", "loose", "-m", str(block_size), "-o", out_dir]
+    cmdline.extend(references)
+    cmdline.append(contigs)
+    process = subprocess.Popen(cmdline)
+    process.wait()
+    os.remove(os.path.join(out_dir, "coverage_report.txt"))
+    os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
+    shutil.rmtree(os.path.join(out_dir, "circos"))
 
 
 class SibeliaOutput:

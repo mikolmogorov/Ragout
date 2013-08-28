@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import argparse
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -10,18 +11,10 @@ from Bio.SeqRecord import SeqRecord
 import scripts.infer_connections as ic
 import scripts.breakpoint_graph as bg
 import scripts.sibelia_parser as sp
-
-
-class DummyContig(sp.Contig):
-    def __init__(self, length):
-        sp.Contig.__init__(self, "")
-        self.length = length
-
-class Scaffold:
-    def __init__(self, left, right, contigs):
-        self.left = left
-        self.right = right
-        self.contigs = contigs
+import scripts.overlap as ovlp
+import scripts.debrujin_refine as debrujin
+from scripts.datatypes import Contig, Scaffold
+from scripts.scaffold_writer import output_scaffolds
 
 
 def calc_distance(offset, block_distance):
@@ -36,10 +29,13 @@ def extend_scaffolds(connections, sibelia_output):
     contig_index = sibelia_output.build_contig_index()
     scaffolds = []
     visited = set()
+    counter = [0]
 
     def extend_scaffold(contig):
         visited.add(contig)
-        scf = Scaffold(contig.blocks[0], contig.blocks[-1], [contig])
+        scf_name = "scaffold{0}".format(counter[0])
+        counter[0] += 1
+        scf = Scaffold.with_contigs(scf_name, contig.blocks[0], contig.blocks[-1], [contig])
         scaffolds.append(scf)
 
         #go right
@@ -59,7 +55,8 @@ def extend_scaffolds(connections, sibelia_output):
                 #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                scf.contigs.append(DummyContig(distance))
+                #scf.contigs.append(DummyContig(distance))
+                scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
                 visited.add(contig)
@@ -71,7 +68,8 @@ def extend_scaffolds(connections, sibelia_output):
                 offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
                 distance = calc_distance(offset, block_distance)
 
-                scf.contigs.append(DummyContig(distance))
+                #scf.contigs.append(DummyContig(distance))
+                scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.contigs[-1].sign = -1
                 scf.right = -contig.blocks[0]
@@ -97,8 +95,9 @@ def extend_scaffolds(connections, sibelia_output):
                 #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                scf.contigs.insert(0, DummyContig(distance))
+                #scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
+                scf.contigs[0].gap = distance
                 scf.left = contig.blocks[0]
                 visited.add(contig)
                 continue
@@ -110,8 +109,9 @@ def extend_scaffolds(connections, sibelia_output):
                 #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                scf.contigs.insert(0, DummyContig(distance))
+                #scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
+                scf.contigs[0].gap = distance
                 scf.contigs[0].sign = -1
                 scf.left = -contig.blocks[-1]
                 visited.add(contig)
@@ -130,14 +130,18 @@ def get_scaffolds(connections, sibelia_output):
     contig_index = sibelia_output.build_contig_index()
     scaffolds = extend_scaffolds(connections, sibelia_output)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
+
+    """
     for scf in scaffolds:
-        contigs = filter(lambda c : not isinstance(c, DummyContig), scf.contigs)
-        for contig in contigs:
+        #contigs = filter(lambda c : not isinstance(c, DummyContig), scf.contigs)
+        for contig in scf.contigs:
             if contig.sign > 0:
                 print contig.blocks,
             else:
                 print map(lambda b: -b, contig.blocks)[::-1],
         print ""
+    """
+    print "Done, {0} scaffolds".format(len(scaffolds))
     return scaffolds
 
 
@@ -148,71 +152,25 @@ def parse_contigs(contigs_file):
     return seqs, names
 
 
-def output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, write_contigs=False):
-    MIN_CONTIG_LEN = 500
-    out_stream = open(out_scaffolds, "w")
-    if out_order:
-        out_order_stream = open(out_order, "w")
-    queue = {}
-    for rec in contigs_seqs:
-        queue[rec.id] = rec.seq
+def do_job(references, contigs_file, out_dir, skip_sibelia):
+    if not os.path.isdir(out_dir):
+        sys.stderr.write("Output directory doesn`t exists\n")
+        return
 
-    counter = 0
-    for scf in scaffolds:
-        name = "scaffold{0}".format(counter)
-        counter += 1
-        scf_seq = Seq("")
-        buffer = ""
-        if out_order:
-            out_order_stream.write(">" + name + "\n")
+    BLOCK_SIZE = 5000
+    KMER = 55
 
-        for i, contig in enumerate(scf.contigs):
-            if isinstance(contig, DummyContig):
-                buffer = "N" * max(11, contig.length) #for quasts`s scaffold splitting
-                continue
+    out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
+    out_order = os.path.join(out_dir, "order.txt")
+    out_ref_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
+    out_ref_order = os.path.join(out_dir, "order_refined.txt")
+    out_graph = os.path.join(out_dir, "breakpoing_graph.dot")
+    out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
-            cont_seq = queue[contig.name]
-            del queue[contig.name]
-
-            if contig.sign < 0:
-                cont_seq = cont_seq.reverse_complement()
-
-            if i > 0:
-                #check for overlapping
-                overlap = False
-                for window in xrange(5, 100):
-                    if str(scf_seq)[-window:] == str(cont_seq)[0:window]:
-                        #assert overlap == False
-                        cont_seq = cont_seq[window:]
-                        overlap = True
-                if not overlap:
-                    scf_seq += Seq(buffer)
-                    if out_order:
-                        out_order_stream.write("gaps {0}\n".format(len(buffer)))
-            buffer = ""
-            scf_seq += cont_seq
-            if out_order:
-                sign = "+" if contig.sign > 0 else "-"
-                out_order_stream.write(sign + contig.name + "\n")
-
-        SeqIO.write(SeqRecord(scf_seq, id=name, description=""), out_stream, "fasta")
-
-    count = 0
-    for h, seq in queue.iteritems():
-        if len(seq) > MIN_CONTIG_LEN:
-            count += 1
-    print "Done,", count, "contigs left"
-
-    counter = 0
-    if write_contigs:
-        for i, seq in enumerate(queue.itervalues()):
-            SeqIO.write(SeqRecord(seq, id="contig{0}".format(i), description=""),
-                                out_stream, "fasta")
-
-
-def do_job(sibelia_dir, contigs_file, out_scaffolds, out_order, out_graph):
+    if not skip_sibelia:
+        sp.run_sibelia(references, contigs_file, BLOCK_SIZE, out_dir)
     contigs_seqs, contig_names = parse_contigs(contigs_file)
-    sibelia_output = sp.SibeliaOutput(sibelia_dir, contig_names)
+    sibelia_output = sp.SibeliaOutput(out_dir, contig_names)
 
     graph = bg.build_graph(sibelia_output)
 
@@ -220,26 +178,31 @@ def do_job(sibelia_dir, contigs_file, out_scaffolds, out_order, out_graph):
     connections, unresolved_components = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
-    output_scaffolds(contigs_seqs, scaffolds, out_scaffolds, out_order, False)
-    if out_graph:
-        bg.output_graph(graph, unresolved_components, open(out_graph, "w"))
+    contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
+    output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order, KMER, False)
+    bg.output_graph(graph, unresolved_components, open(out_graph, "w"))
+
+    ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
+    refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
+    output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
+                                                out_ref_order, KMER, False)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Tool for reference-assisted assembly")
-    parser.add_argument("-s", action="store", metavar="sibelia_dir", dest="sibelia_dir",
-                        required=True, help="Directory with Sibelia output")
+    parser.add_argument("-r", action="store", metavar="references", dest="references",
+                        required=True, nargs="+", help="References filenames")
     parser.add_argument("-c", action="store", metavar="contigs_file", dest="contigs_file",
                         required=True, help="File with contigs in fasta format")
-    parser.add_argument("-o", action="store", metavar="output_file", dest="output_file",
-                        default="scaffolds.fasta", help="Output scaffolds file (default: scaffolds.fasta)")
-    parser.add_argument("-g", action="store", metavar="graph_file", dest="graph_file",
-                        default=None, help="Output file for breakpoint graph (default: Not set)")
-    parser.add_argument("-r", action="store", metavar="order_file", dest="order_file",
-                        default=None, help="Output file for contigs order (default: Not set)")
+    parser.add_argument("-o", action="store", metavar="output_dir", dest="output_dir",
+                        required=True, help="Output directory")
+    parser.add_argument("-s", action="store_const", metavar="skip_sibelia", dest="skip_sibelia",
+                        default=False, const=True, help="Skip Sibelia running step")
+    #parser.add_argument("-g", action="store_const", metavar="debrujin_refine", dest="debrujin_refine",
+    #                    default=False, const=True, help="Refine with Debrujin graph")
 
     args = parser.parse_args()
-    do_job(args.sibelia_dir, args.contigs_file, args.output_file, args.order_file, args.graph_file)
+    do_job(args.references, args.contigs_file, args.output_dir, args.skip_sibelia)
 
 if __name__ == "__main__":
     main()

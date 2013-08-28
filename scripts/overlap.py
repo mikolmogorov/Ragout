@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -32,7 +30,7 @@ def check_graph(filename, contigs):
             assert len(kmers) == kmers.count(kmers[0])
 
 
-def build_graph(contigs, kmer_len, out_file, out_dot):
+def build_graph(contigs, kmer_len, out_dot):
     counter = [0]
     def new_kmer():
         counter[0] += 1
@@ -54,5 +52,5 @@ def build_graph(contigs, kmer_len, out_file, out_dot):
 
 if __name__ == "__main__":
     contigs = {s.id : s.seq for s in SeqIO.parse(sys.argv[1], "fasta")}
-    build_graph(contigs, 55, sys.stdout, open("overlap.dot", "w"))
+    build_graph(contigs, 55, open("overlap.dot", "w"))
     #check_graph(sys.argv[1], contigs)
