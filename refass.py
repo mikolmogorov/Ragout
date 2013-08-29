@@ -152,12 +152,12 @@ def parse_contigs(contigs_file):
     return seqs, names
 
 
-def do_job(references, contigs_file, out_dir, skip_sibelia):
+def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
-    BLOCK_SIZE = 5000
+    #BLOCK_SIZE = 5000
     KMER = 55
 
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
@@ -168,7 +168,7 @@ def do_job(references, contigs_file, out_dir, skip_sibelia):
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
     if not skip_sibelia:
-        sp.run_sibelia(references, contigs_file, BLOCK_SIZE, out_dir)
+        sp.run_sibelia(references, contigs_file, block_size, out_dir)
     contigs_seqs, contig_names = parse_contigs(contigs_file)
     sibelia_output = sp.SibeliaOutput(out_dir, contig_names)
 
@@ -198,11 +198,13 @@ def main():
                         required=True, help="Output directory")
     parser.add_argument("-s", action="store_const", metavar="skip_sibelia", dest="skip_sibelia",
                         default=False, const=True, help="Skip Sibelia running step")
+    parser.add_argument("-m", action="store", metavar="block_size", dest="block_size",
+                        default="5000", help="Sibeia minimum block size (default: 5000)")
     #parser.add_argument("-g", action="store_const", metavar="debrujin_refine", dest="debrujin_refine",
     #                    default=False, const=True, help="Refine with Debrujin graph")
 
     args = parser.parse_args()
-    do_job(args.references, args.contigs_file, args.output_dir, args.skip_sibelia)
+    do_job(args.references, args.contigs_file, args.output_dir, args.block_size, args.skip_sibelia)
 
 if __name__ == "__main__":
     main()

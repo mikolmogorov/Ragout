@@ -56,10 +56,14 @@ def insert_from_graph(graph_file, scaffolds_in):
         new_scaffolds.append(Scaffold(scf.name))
 
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            src = edges[str(prev_cont)].end
-            dst = edges[str(new_cont)].start
-
             new_scaffolds[-1].contigs.append(prev_cont)
+
+            try:
+                src = edges[str(prev_cont)].end
+                dst = edges[str(new_cont)].start
+            except KeyError:
+                #print "contig is not in graph"
+                continue
 
             if src == dst:
                 print "adjacent contigs {0} and {1}".format(prev_cont, new_cont)
