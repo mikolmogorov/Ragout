@@ -43,7 +43,6 @@ def parse_contigs_order(filename):
                 scaffolds[-1].contigs[-1].gap = gaplen
             else:
                 #name = line.strip("\n").replace("=", "_") #fix for quast
-                #name, sign = parse_contig_(line.strip())
                 scaffolds[-1].contigs.append(Contig.from_sting(line))
     return scaffolds
 
@@ -80,7 +79,7 @@ def insert_from_graph(graph_file, scaffolds_in):
                 continue
 
             path = paths[0]
-            if len(path) > 4:
+            if len(path) > 2:
                 #print "too long path between {0} and {1}".format(prev_cont, new_cont)
                 continue
 
@@ -99,6 +98,7 @@ def insert_from_graph(graph_file, scaffolds_in):
                 new_scaffolds[-1].contigs[-1].gap = 0
                 new_scaffolds[-1].contigs.append(Contig.from_sting(found_edge))
                 new_scaffolds[-1].contigs[-1].gap = 0
+                print "\tinserting", found_edge
 
         new_scaffolds[-1].contigs.append(new_cont)
 

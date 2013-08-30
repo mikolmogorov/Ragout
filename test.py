@@ -6,7 +6,7 @@ from collections import namedtuple, defaultdict
 
 Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry", "len_ref", "len_qry", "contig_id"])
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
-Contig = namedtuple("Contig", ["name", "sign"])
+Contig = namedtuple("Contig", ["name", "sign", "gap"])
 
 
 def parse_quast_output(filename):
@@ -28,17 +28,21 @@ def parse_quast_output(filename):
 
 def parse_contigs_order(filename):
     scaffolds = []
+    #cont_name = ""
+    #sign = 1
     for line in open(filename, "r"):
         if line.startswith(">"):
             scaffolds.append(Scaffold(line.strip()[1:], []))
         else:
             if line.startswith("gaps"):
-                pass
+                gaplen = int(line.strip().split(" ")[1])
+                scaffolds[-1].contigs.append(Contig(without_sign, sign, gaplen))
             else:
                 name = line.strip("\n").replace("=", "_") #fix for quast
                 without_sign = name[1:]
                 sign = 1 if name[0] == "+" else -1
-                scaffolds[-1].contigs.append(Contig(without_sign, sign))
+                #scaffolds[-1].contigs.append(Contig(without_sign, sign, 0))
+                #cont_name = without_sign
     return scaffolds
 
 
@@ -90,7 +94,7 @@ def main():
         #TODO: check signs
         print s.name
         for i, contig in enumerate(s.contigs):
-            print contig.name, entry_ord[contig.name]
+            print contig.name, entry_ord[contig.name], contig.gap
 
 if __name__ == "__main__":
     main()

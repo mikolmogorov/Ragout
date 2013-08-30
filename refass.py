@@ -172,15 +172,17 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     contigs_seqs, contig_names = parse_contigs(contigs_file)
     sibelia_output = sp.SibeliaOutput(out_dir, contig_names)
 
-    graph = bg.build_graph(sibelia_output)
+    #graph = bg.build_graph(sibelia_output)
+    graph = bg.BreakpointGraph()
+    graph.build_from(sibelia_output)
 
     adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
-    connections, unresolved_components = adj_finder.find_adjacencies()
+    connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
     contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
     output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order, KMER, False)
-    bg.output_graph(graph, unresolved_components, open(out_graph, "w"))
+    graph.write_dot(open(out_graph, "w"))
 
     ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
     refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)

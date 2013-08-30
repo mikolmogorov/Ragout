@@ -1,6 +1,6 @@
 from collections import namedtuple
 from itertools import combinations, product
-from breakpoint_graph import get_component_of, vertex_distance, get_connected_components
+from breakpoint_graph import *
 
 Connection = namedtuple("Connection", ["start", "end", "distance"])
 Pair = namedtuple("Pair", ["fst", "snd"])
@@ -21,26 +21,27 @@ class AdjacencyFinder:
 
 
     def in_assembly(self, block):
-        return self.graph[block].in_assembly
+        return self.graph.in_assembly(block)
 
 
-    def component_simple(self, components):
-        """
-        Cases with components of length 2
-        """
+    def component_simple(self):
+        #
+        #Cases with components of length 2
+        #
         MIN_REF_THRESHOLD = 1
 
         connections = []
         resolved_comps_ids = []
 
-        for comp_num, component in enumerate(components):
-            if len(component) != 2:
+        subgraphs = self.graph.get_unresolved_subgraphs()
+        for subgr_id, subgraph in enumerate(subgraphs):
+            if len(subgraph) != 2:
                 continue
-            if comp_num in resolved_comps_ids:
+            if subgr_id in resolved_comps_ids:
                 continue
 
-            vertex_pair = Pair(*component)
-            num_edges = len(self.graph[vertex_pair.fst].edges)
+            vertex_pair = Pair(*subgraph.nodes())
+            num_edges = len(subgraph.edges())
             if num_edges < MIN_REF_THRESHOLD:
                 continue
 
@@ -49,76 +50,73 @@ class AdjacencyFinder:
             ###############
             for fst, snd in [(0, 1), (1, 0)]:
                 if self.in_assembly(vertex_pair[fst]) and not self.in_assembly(vertex_pair[snd]):
-                    pair_comp = get_component_of(self.connected_comps, -vertex_pair[snd])
-                    if len(pair_comp) != 2:
+                    pair_subgr = self.graph.get_subgraph_with(-vertex_pair[snd])
+                    if len(pair_subgr) != 2:
                         continue
 
-                    pair_id = pair_comp.index(-vertex_pair[snd])
-                    other_id = abs(1 - pair_id)
+                    next_node = pair_subgr.neighbors(-vertex_pair[snd])[0]
 
-                    if self.in_assembly(pair_comp[other_id]):
+                    if self.in_assembly(next_node):
                         print "indel found!"
                         start = vertex_pair[fst]
                         middle = vertex_pair[snd]
-                        end = pair_comp[other_id]
+                        end = next_node
 
-                        distance = (vertex_distance(self.graph, start, middle) +
-                                    vertex_distance(self.graph, -middle, end))
+                        distance = (self.graph.vertex_distance(start, middle) +
+                                    self.graph.vertex_distance(-middle, end))
                         connections.append(Connection(start, end, distance))
-                        resolved_comps_ids.extend([comp_num, components.index(pair_comp)])
+                        resolved_comps_ids.extend([subgr_id, subgraphs.index(pair_subgr)])
                         continue
             #######
-
             #both exists in assembly
             ##############
             if self.in_assembly(vertex_pair.fst) and self.in_assembly(vertex_pair.snd):
                 start = vertex_pair.fst
                 end = vertex_pair.snd
 
-                distance = vertex_distance(self.graph, start, end)
+                distance = self.graph.vertex_distance(start, end)
                 connections.append(Connection(start, end, distance))
-                resolved_comps_ids.append(comp_num)
+                resolved_comps_ids.append(subgr_id)
             ######
 
-        return (connections, resolved_comps_ids)
+        self.graph.mark_resolved(resolved_comps_ids)
+        return connections
 
 
-    def component_indel(self, components):
-        """
-        special case with 4 vertexes
-        a    -b
-        |  \  |
-        b     c
-        """
+
+    def component_indel(self):
+        ####
+        #special case with 4 vertexes
+        #a    -b
+        #|  \  |
+        #b     c
+        ####
         connections = []
         resolved_comps_ids = []
 
-        for comp_num, component in enumerate(components):
-            if len(component) != 4:
+        for subgr_id, subgraph in enumerate(self.graph.get_unresolved_subgraphs()):
+            if len(subgraph) != 4:
                 continue
 
             #checking topology
             ###################
             #should have two similar vertexes
             found = False
-            for v1, v2 in combinations(component, 2):
+            for v1, v2 in combinations(subgraph.nodes(), 2):
                 if v1 == -v2:
                     found = True
                     similar = Pair(v1, v2)
-                    different = Pair(*filter(lambda v: v != v1 and v != v2, component))
+                    different = Pair(*filter(lambda v: v != v1 and v != v2, subgraph.nodes()))
             if not found:
                 continue
 
             #both b and -b have degree 1
-            vertexes_1 = map(lambda e: e.vertex, self.graph[similar.fst].edges)
-            vertexes_2 = map(lambda e: e.vertex, self.graph[similar.snd].edges)
-            if not all_equal(vertexes_1) or not all_equal(vertexes_2):
-                print "strange component!"
+            neighbors_1 = subgraph.neighbors(similar.fst)
+            neighbors_2 = subgraph.neighbors(similar.snd)
+            if len(neighbors_1) != 1 or len(neighbors_2) != 1 or neighbors_1[0] == neighbors_2[0]:
+                print "strange components"
                 continue
-            #and they are connected to different vertexes
-            if vertexes_1[0] == vertexes_2[0]:
-                print "strange component!"
-                continue
+
             ####################
             if not self.in_assembly(different.fst) or not self.in_assembly(different.snd):
                 print "indel borders are not in assembly"
@@ -129,26 +127,27 @@ class AdjacencyFinder:
             if self.in_assembly(similar.fst):
                 print "indel in some references"
                 for s in similar:
-                    pair_vertex = self.graph[s].edges[0].vertex
+                    #pair_vertex = self.graph[s].edges[0].vertex
+                    pair_vertex = subgraph.neighbors(s)[0]
 
-                    distance = vertex_distance(self.graph, s, pair_vertex)
+                    distance = self.graph.vertex_distance(s, pair_vertex)
                     connections.append(Connection(s, pair_vertex, distance))
-                resolved_comps_ids.append(comp_num)
+                resolved_comps_ids.append(subgr_id)
             else:
                 print "deletion in assembly and references"
-                distance = vertex_distance(self.graph, different.fst, different.snd)
+                distance = self.graph.vertex_distance(different.fst, different.snd)
                 connections.append(Connection(different.fst, different.snd, distance))
-                resolved_comps_ids.append(comp_num)
+                resolved_comps_ids.append(subgr_id)
             ############
 
-        return (connections, resolved_comps_ids)
-
+        self.graph.mark_resolved(resolved_comps_ids)
+        return connections
 
     #TODO: check graph topology
     def component_double_indel(self, components):
-        """
-        case with component of size 6 (double indel)
-        """
+        ###
+        #case with component of size 6 (double indel)
+        ###
         connections = []
         resolved_comps_ids = []
 
@@ -236,9 +235,10 @@ class AdjacencyFinder:
         return (connections, resolved_comps_ids)
 
     def component_substitution(self, components):
-        """
-        substitution of one block, corresponds to two components of length 3
-        """
+        ###
+        #substitution of one block, corresponds to two components of length 3
+        ###
+
         connections = []
         resolved_comps_ids = []
 
@@ -291,25 +291,24 @@ class AdjacencyFinder:
 
 
     def find_adjacencies(self):
-        self.num_ref = self.sibelia_output.get_reference_count()
-        self.connected_comps = get_connected_components(self.graph)
         connections = {}
 
         functions = [AdjacencyFinder.component_simple,
-                     AdjacencyFinder.component_indel,
-                     AdjacencyFinder.component_double_indel,
-                     AdjacencyFinder.component_substitution]
-        components = self.connected_comps
+                    AdjacencyFinder.component_indel]
+        #functions = [AdjacencyFinder.component_simple,
+        #             AdjacencyFinder.component_indel,
+        #             AdjacencyFinder.component_double_indel,
+        #             AdjacencyFinder.component_substitution]
         result = []
 
         #print components
         for fun in functions:
-            connect, resolved_comps_ids = fun(self, components)
+            connect = fun(self)
             result.extend(connect)
-            filtered = filter(lambda (i, _): i not in resolved_comps_ids, enumerate(components))
+            #filtered = filter(lambda (i, _): i not in resolved_comps_ids, enumerate(components))
             #print len(resolved_comps_ids), len(components), len(filtered)
             #print filter(lambda (i, _): i in resolved_comps_ids, enumerate(components))
-            components = map(lambda p: p[1], filtered)
+            #components = map(lambda p: p[1], filtered)
             #print components
 
         for c in result:
@@ -319,7 +318,6 @@ class AdjacencyFinder:
             connections[-c.end] = Connection(-c.end, c.start, c.distance)
 
         print "connections infered:", len(connections) / 2
-        print "still {0} unresolved components".format(len(components))
-        #print components
-        return connections, components
+        print "still {0} unresolved components".format(len(self.graph.get_unresolved_subgraphs()))
+        return connections
 

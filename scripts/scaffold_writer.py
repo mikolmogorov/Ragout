@@ -3,7 +3,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, write_contigs=False):
-    MIN_CONTIG_LEN = 500
+    MIN_CONTIG_LEN = 0
     #KMER = kmer_len
     OVERLAP_DIST = [kmer_len]
 
