@@ -8,7 +8,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
-import scripts.infer_connections as ic
+#import scripts.infer_connections as ic
+import scripts.graph_partiton as gp
 import scripts.breakpoint_graph as bg
 import scripts.sibelia_parser as sp
 import scripts.overlap as ovlp
@@ -164,7 +165,7 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     out_order = os.path.join(out_dir, "order.txt")
     out_ref_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     out_ref_order = os.path.join(out_dir, "order_refined.txt")
-    out_graph = os.path.join(out_dir, "breakpoing_graph.dot")
+    out_graph = os.path.join(out_dir, "breakpoint_graph.dot")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
     if not skip_sibelia:
@@ -176,7 +177,8 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     graph = bg.BreakpointGraph()
     graph.build_from(sibelia_output)
 
-    adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
+    #adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
+    adj_finder = gp.AdjacencyFinder(graph, sibelia_output)
     connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 

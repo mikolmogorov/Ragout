@@ -53,8 +53,8 @@ class BreakpointGraph:
                         break
                     in_assembly = abs(perm.blocks[cur]) in contig_index
                     duplication = abs(perm.blocks[cur]) in duplications
-                    #if not duplication and in_assembly:
-                    if not duplication:
+                    if not duplication and in_assembly:
+                    #if not duplication:
                         break
                     cur += 1
 

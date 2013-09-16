@@ -83,7 +83,6 @@ class AdjacencyFinder:
         return connections
 
 
-
     def component_indel(self):
         ####
         #special case with 4 vertexes
