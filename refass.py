@@ -16,6 +16,7 @@ import scripts.overlap as ovlp
 import scripts.debrujin_refine as debrujin
 from scripts.datatypes import Contig, Scaffold
 from scripts.scaffold_writer import output_scaffolds
+from scripts.phylogeny import Phylogeny
 
 
 def calc_distance(offset, block_distance):
@@ -173,12 +174,14 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     contigs_seqs, contig_names = parse_contigs(contigs_file)
     sibelia_output = sp.SibeliaOutput(out_dir, contig_names)
 
-    #graph = bg.build_graph(sibelia_output)
     graph = bg.BreakpointGraph()
     graph.build_from(sibelia_output)
 
-    #adj_finder = ic.AdjacencyFinder(graph, sibelia_output)
-    adj_finder = gp.AdjacencyFinder(graph, sibelia_output)
+    #print sibelia_output.permutations
+    phylogeny = Phylogeny("(target:0.1,((ref2:0.1,(ref4:0.1,ref3:0.1):0.1):0.1,ref1:0.1):0.1);")
+
+    #adj_finder = ic.AdjacencyFinder(graph)
+    adj_finder = gp.AdjacencyFinder(graph, phylogeny)
     connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 

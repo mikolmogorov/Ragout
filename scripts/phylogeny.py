@@ -7,6 +7,7 @@ from itertools import product
 class Phylogeny:
     def __init__(self, newick_string):
         self.tree = Phylo.read(StringIO(newick_string), "newick")
+        #print self.tree
         self.validate_tree()
 
 
@@ -15,7 +16,7 @@ class Phylogeny:
         pass
 
 
-    def estimate_adjacency(self, adjacencies):
+    def estimate_tree(self, adjacencies):
         def make_rec(clade):
             if clade.name in adjacencies:
                 clade.comment = [adjacencies[clade.name]]
@@ -102,14 +103,15 @@ def enumerate_trees(root):
 
 
 def max_likelihood_score(tree):
+    #print_tree(tree.clade)
     go_up(tree.clade)
     go_down(tree.clade)
-    print_tree(tree.clade)
+    #print_tree(tree.clade)
     max_score = float("-inf")
     for t in enumerate_trees(tree.clade):
-        print_tree(t)
+        #print_tree(t)
         likelihood = tree_likelihood(t)
-        print likelihood
+        #print likelihood
 
         max_score = max(max_score, likelihood)
     return max_score
