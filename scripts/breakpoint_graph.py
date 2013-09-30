@@ -81,9 +81,9 @@ class BreakpointGraph:
                                 .format(edge[0], edge[1], color))
 
         dot_file.write("graph {\n")
-        for node in self.graph.nodes(data=True):
-            color = "black" if node[1]["in_assembly"] else "grey"
-            dot_file.write("""{0} [color = "{1}"];\n""".format(node[0], color))
+        #for node in self.graph.nodes(data=True):
+        #    color = "black" if node[1]["in_assembly"] else "grey"
+        #    dot_file.write("""{0} [color = "{1}"];\n""".format(node[0], color))
 
         unresolved_nodes = map(lambda s: s.nodes(), self.unresolved_subgraphs)
         unresolved_nodes = sum(unresolved_nodes, [])

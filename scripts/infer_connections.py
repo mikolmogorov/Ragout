@@ -15,9 +15,8 @@ def all_equal(lst):
 Deeply magical part of the tool
 """
 class AdjacencyFinder:
-    def __init__(self, graph, sibelia_output):
+    def __init__(self, graph):
         self.graph = graph
-        self.sibelia_output = sibelia_output
 
 
     def in_assembly(self, block):

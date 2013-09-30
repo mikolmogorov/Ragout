@@ -7,18 +7,33 @@ from networkx import Graph
 Connection = namedtuple("Connection", ["start", "end", "distance"])
 
 
-def validate_set(bitset, graph):
-    used_vertex = set()
-    for i, edge in enumerate(graph.edges()):
-        if not bitset[i]:
-            continue
+class AdjacencyFinder:
+    def __init__(self, graph):
+        self.graph = graph
 
-        if edge[0] in used_vertex or edge[1] in used_vertex:
-            return False
-        else:
-            used_vertex.add(edge[0])
-            used_vertex.add(edge[1])
-    return True
+
+    def compress_graph(self, graph):
+        g = Graph()
+        for u, v, data in graph.edges_iter(data=True):
+            weight = -data["color"]
+            if g.has_edge(u, v):
+                g[u][v]["weight"] = max(weight, g[u][v]["weight"])
+            else:
+                distance = self.graph.vertex_distance(u, v)
+                g.add_edge(u, v, weight=weight, distance=distance)
+        return g
+
+
+    def find_adjacencies(self):
+        adjacencies = {}
+        for subgraph in self.graph.get_unresolved_subgraphs():
+            compressed = self.compress_graph(subgraph)
+            edges = split_graph(compressed)
+            for edge in edges:
+                adjacencies[-edge[0]] = Connection(-edge[0], edge[1], edge[2])
+                adjacencies[-edge[1]] = Connection(-edge[1], edge[0], edge[2])
+
+        return adjacencies
 
 
 def split_graph(graph):
@@ -48,31 +63,16 @@ def split_graph(graph):
     return ret_edges
 
 
-class AdjacencyFinder:
-    def __init__(self, graph, sibelia_output):
-        self.graph = graph
-        self.sibelia_output = sibelia_output
+def validate_set(bitset, graph):
+    used_vertex = set()
+    for i, edge in enumerate(graph.edges()):
+        if not bitset[i]:
+            continue
 
+        if edge[0] in used_vertex or edge[1] in used_vertex:
+            return False
+        else:
+            used_vertex.add(edge[0])
+            used_vertex.add(edge[1])
+    return True
 
-    def compress_graph(self, graph):
-        g = Graph()
-        for u, v, data in graph.edges_iter(data=True):
-            weight = -data["color"]
-            if g.has_edge(u, v):
-                g[u][v]["weight"] = max(weight, g[u][v]["weight"])
-            else:
-                distance = self.graph.vertex_distance(u, v)
-                g.add_edge(u, v, weight=weight, distance=distance)
-        return g
-
-
-    def find_adjacencies(self):
-        adjacencies = {}
-        for subgraph in self.graph.get_unresolved_subgraphs():
-            compressed = self.compress_graph(subgraph)
-            edges = split_graph(compressed)
-            for edge in edges:
-                adjacencies[-edge[0]] = Connection(-edge[0], edge[1], edge[2])
-                adjacencies[-edge[1]] = Connection(-edge[1], edge[0], edge[2])
-
-        return adjacencies
