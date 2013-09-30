@@ -3,6 +3,9 @@ import shutil
 import subprocess
 from collections import namedtuple, defaultdict
 from datatypes import *
+from Bio import SeqIO
+from Bio.Seq import Seq
+
 
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
@@ -24,11 +27,15 @@ def run_sibelia(references, contigs, block_size, out_dir):
     shutil.rmtree(os.path.join(out_dir, "circos"))
 
 
-class SibeliaOutput:
-    def __init__(self, sibelia_dir, contig_names):
-        self.parse_sibelia_output(sibelia_dir, contig_names)
+class SibeliaRunner:
+    def __init__(self, references, target_file, block_size, output_dir, contig_names, skip_run):
+        if not skip_run:
+            run_sibelia(references.values(), target_file, block_size, output_dir)
+        self.parse_references(references)
+        self.parse_sibelia_output(output_dir, contig_names, references)
 
-    def parse_sibelia_output(self, sibelia_dir, contig_names):
+
+    def parse_sibelia_output(self, sibelia_dir, contig_names, references):
         coords_file = os.path.join(sibelia_dir, "blocks_coords.txt")
         permutations_file = os.path.join(sibelia_dir, "genomes_permutations.txt")
 
@@ -39,7 +46,15 @@ class SibeliaOutput:
         permutations, contigs = self.parse_permutations_file(permutations_file, contig_names)
         self.permutations = permutations
         self.contigs = contigs
-        #return permutations, contigs, blocks_coords
+        self.references = references
+
+
+    def parse_references(self, references):
+        chr_id_to_ref_id = {}
+        for ref_id, filename in references.iteritems():
+            seq = SeqIO.parse(filename, "fasta")
+            chr_id_to_ref_id[seq.next().id] = ref_id
+        self.chr_id_to_ref_id = chr_id_to_ref_id
 
 
     def parse_permutations_file(self, filename, contig_names):

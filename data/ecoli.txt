@@ -1,0 +1,6 @@
+ref1="references/DH1.fasta"
+ref2="references/W.fasta"
+ref3="references/UMNK88.fasta"
+ref4="references/Xuzhou21.fasta"
+
+tree="(target:0.1,((ref2:0.1,(ref4:0.1,ref3:0.1):0.1):0.1,ref1:0.1):0.1);"

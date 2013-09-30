@@ -1,0 +1,6 @@
+ref1="../../data/saureus/COL.fasta"
+ref2="../../data/saureus/JKD6008.fasta"
+ref3="../../data/saureus/RF122.fasta"
+ref4="../../data/saureus/N315.fasta"
+
+tree="(ref4:0.1,(ref3:0.1,((ref1:0.1,target:0.1):0.1,ref2:0.1):0.1):0.1);"

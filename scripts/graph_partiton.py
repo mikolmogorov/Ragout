@@ -16,7 +16,18 @@ class AdjacencyFinder:
 
     def compress_graph(self, graph):
         g = Graph()
-        #print graph.nodes()
+
+        #trivial case
+        if len(graph) == 2:
+            node_1, node_2 = graph.nodes()
+            g.add_nodes_from(graph.nodes())
+            distance = self.graph.vertex_distance(node_1, node_2)
+            g.add_edge(node_1, node_2, distance=distance)
+            g.node[node_1]["pair"] = node_2
+            g.node[node_2]["pair"] = node_1
+            return g
+
+        #non-trivial
         for node in graph.nodes():
             adjacencies = {}
             for neighbor in graph.neighbors(node):
@@ -24,7 +35,7 @@ class AdjacencyFinder:
                 g.add_edge(node, neighbor, distance=distance)
                 #print graph[node][neighbor]
                 for edge in graph[node][neighbor].values():
-                    adjacencies["ref" + str(edge["color"])] = neighbor
+                    adjacencies[edge["ref_id"]] = neighbor
 
             max_likelihood = float("-inf")
             max_vertex = None
@@ -44,8 +55,10 @@ class AdjacencyFinder:
         adjacencies = {}
         for subgraph in self.graph.get_unresolved_subgraphs():
             compressed = self.compress_graph(subgraph)
+            #print "==="
             edges = split_graph(compressed)
             for edge in edges:
+                #print edge
                 adjacencies[-edge[0]] = Connection(-edge[0], edge[1], edge[2])
                 adjacencies[-edge[1]] = Connection(-edge[1], edge[0], edge[2])
 
@@ -61,22 +74,12 @@ def split_graph(graph):
             continue
 
         score = 0
-        #num_edges = 0
         for i, edge in enumerate(graph.edges()):
-            #print edge
             if bitset[i]:
-                #num_edges += 1
-                #print edge
-                #print graph.node[edge[1]]
                 if graph.node[edge[0]]["pair"] == edge[1]:
                     score += 1
-                    #print "aaa"
                 if graph.node[edge[1]]["pair"] == edge[0]:
                     score += 1
-                    #print "aaa"
-        #if num_edges > max_edges:
-        #    max_edges, max_score = num_edges, score
-        #    max_set = bitset
         if score > max_score:
             max_score = score
             max_set = bitset

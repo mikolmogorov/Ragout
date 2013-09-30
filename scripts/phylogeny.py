@@ -7,7 +7,6 @@ from itertools import product
 class Phylogeny:
     def __init__(self, newick_string):
         self.tree = Phylo.read(StringIO(newick_string), "newick")
-        #print self.tree
         self.validate_tree()
 
 
@@ -17,14 +16,30 @@ class Phylogeny:
 
 
     def estimate_tree(self, adjacencies):
-        def make_rec(clade):
-            if clade.name in adjacencies:
-                clade.comment = [adjacencies[clade.name]]
-            for subclade in clade.clades:
-                make_rec(subclade)
+        new_tree = reconstruct_tree(self.tree, adjacencies)
+        return max_likelihood_score(new_tree)
 
-        make_rec(self.tree.clade)
-        return max_likelihood_score(self.tree)
+
+def reconstruct_tree(tree, adjacencies):
+    def tree_helper(node):
+        if node.is_terminal():
+            if node.name in adjacencies:
+                new_clade = Phylo.Newick.Clade()
+                new_clade.comment = [adjacencies[node.name]]
+                return new_clade
+            else:
+                return None
+
+        subnodes = map(tree_helper, node.clades)
+        subnodes = filter(lambda n : n, subnodes)
+        if not subnodes:
+            return None
+        else:
+            new_clade = Phylo.Newick.Clade()
+            new_clade.clades = subnodes
+            return new_clade
+
+    return tree_helper(tree.clade)
 
 
 def print_tree(root, depth=0):
@@ -104,11 +119,11 @@ def enumerate_trees(root):
 
 def max_likelihood_score(tree):
     #print_tree(tree.clade)
-    go_up(tree.clade)
-    go_down(tree.clade)
+    go_up(tree)
+    go_down(tree)
     #print_tree(tree.clade)
     max_score = float("-inf")
-    for t in enumerate_trees(tree.clade):
+    for t in enumerate_trees(tree):
         #print_tree(t)
         likelihood = tree_likelihood(t)
         #print likelihood

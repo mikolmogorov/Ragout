@@ -64,10 +64,12 @@ class BreakpointGraph:
                 left_block = perm.blocks[prev]
                 right_block = perm.blocks[cur]
                 dist = sibelia_output.get_blocks_distance(abs(left_block), abs(right_block), perm.chr_num)
+                ref_id = sibelia_output.chr_id_to_ref_id[perm.chr_id]
 
                 self.graph.add_node(-left_block, in_assembly=(abs(left_block) in contig_index))
                 self.graph.add_node(right_block, in_assembly=(abs(right_block) in contig_index))
-                self.graph.add_edge(-left_block, right_block, color=perm.chr_num, distance=dist)
+                self.graph.add_edge(-left_block, right_block, color=perm.chr_num,
+                                    distance=dist, ref_id=ref_id)
 
                 prev = cur
                 cur += 1

@@ -8,7 +8,6 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
-#import scripts.infer_connections as ic
 import scripts.graph_partiton as gp
 import scripts.breakpoint_graph as bg
 import scripts.sibelia_parser as sp
@@ -54,10 +53,8 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name)
                 reverse = scf.contigs[-1].sign > 0
                 offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
-                #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                #scf.contigs.append(DummyContig(distance))
                 scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
@@ -70,7 +67,6 @@ def extend_scaffolds(connections, sibelia_output):
                 offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
                 distance = calc_distance(offset, block_distance)
 
-                #scf.contigs.append(DummyContig(distance))
                 scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.contigs[-1].sign = -1
@@ -94,10 +90,8 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
                 reverse = scf.contigs[0].sign < 0
                 offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                #scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.contigs[0].gap = distance
                 scf.left = contig.blocks[0]
@@ -108,10 +102,8 @@ def extend_scaffolds(connections, sibelia_output):
                 offset = sibelia_output.block_offset(abs(adjacent), contig.name)
                 reverse = scf.contigs[0].sign < 0
                 offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                #distance = max(0, block_distance - offset)
                 distance = calc_distance(offset, block_distance)
 
-                #scf.contigs.insert(0, DummyContig(distance))
                 scf.contigs.insert(0, contig)
                 scf.contigs[0].gap = distance
                 scf.contigs[0].sign = -1
@@ -154,12 +146,32 @@ def parse_contigs(contigs_file):
     return seqs, names
 
 
-def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
+def parse_config(filename):
+    references = {}
+    tree = None
+    prefix = os.path.dirname(filename)
+
+    for line in open(filename, "r"):
+        line = line.strip()
+        if not line:
+            continue
+
+        vals = line.split("=")
+        if vals[0] == "tree":
+            tree = vals[1].strip("\"")
+        else:
+            ref_id, filename = vals[0], vals[1].strip("\"")
+            references[ref_id] = os.path.join(prefix, filename)
+
+    return references, tree
+
+
+
+def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
-    #BLOCK_SIZE = 5000
     KMER = 55
 
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
@@ -169,18 +181,17 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
     out_graph = os.path.join(out_dir, "breakpoint_graph.dot")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
-    if not skip_sibelia:
-        sp.run_sibelia(references, contigs_file, block_size, out_dir)
-    contigs_seqs, contig_names = parse_contigs(contigs_file)
-    sibelia_output = sp.SibeliaOutput(out_dir, contig_names)
+    references, tree_string = parse_config(config_file)
+
+    contigs_seqs, contig_names = parse_contigs(target_file)
+    sibelia_output = sp.SibeliaRunner(references, target_file, block_size,
+                                        out_dir, contig_names, skip_sibelia)
 
     graph = bg.BreakpointGraph()
     graph.build_from(sibelia_output)
 
-    #print sibelia_output.permutations
-    phylogeny = Phylogeny("(target:0.1,((ref2:0.1,(ref4:0.1,ref3:0.1):0.1):0.1,ref1:0.1):0.1);")
+    phylogeny = Phylogeny(tree_string)
 
-    #adj_finder = ic.AdjacencyFinder(graph)
     adj_finder = gp.AdjacencyFinder(graph, phylogeny)
     connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
@@ -197,10 +208,10 @@ def do_job(references, contigs_file, out_dir, block_size, skip_sibelia):
 
 def main():
     parser = argparse.ArgumentParser(description="Tool for reference-assisted assembly")
-    parser.add_argument("-r", action="store", metavar="references", dest="references",
-                        required=True, nargs="+", help="References filenames")
-    parser.add_argument("-c", action="store", metavar="contigs_file", dest="contigs_file",
-                        required=True, help="File with contigs in fasta format")
+    parser.add_argument("-c", action="store", metavar="config", dest="config",
+                        required=True, help="Configuration file")
+    parser.add_argument("-t", action="store", metavar="target_assembly", dest="target_assembly",
+                        required=True, help="File with assembly in fasta format")
     parser.add_argument("-o", action="store", metavar="output_dir", dest="output_dir",
                         required=True, help="Output directory")
     parser.add_argument("-s", action="store_const", metavar="skip_sibelia", dest="skip_sibelia",
@@ -211,7 +222,7 @@ def main():
     #                    default=False, const=True, help="Refine with Debrujin graph")
 
     args = parser.parse_args()
-    do_job(args.references, args.contigs_file, args.output_dir, args.block_size, args.skip_sibelia)
+    do_job(args.config, args.target_assembly, args.output_dir, args.block_size, args.skip_sibelia)
 
 if __name__ == "__main__":
     main()

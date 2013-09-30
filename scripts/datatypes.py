@@ -3,7 +3,6 @@ from collections import namedtuple
 #Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 
 class Scaffold:
-    #def __init__(self, left, right, contigs):
     def __init__(self, name):
         self.left = 0
         self.right = 0
