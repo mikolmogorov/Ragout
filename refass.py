@@ -181,6 +181,10 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
     out_graph = os.path.join(out_dir, "breakpoint_graph.dot")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
+    debug_dir = os.path.join(out_dir, "debug")
+    if not os.path.isdir(debug_dir):
+        os.mkdir(debug_dir)
+
     references, tree_string = parse_config(config_file)
 
     contigs_seqs, contig_names = parse_contigs(target_file)
@@ -192,13 +196,13 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
 
     phylogeny = Phylogeny(tree_string)
 
-    adj_finder = gp.AdjacencyFinder(graph, phylogeny)
+    adj_finder = gp.AdjacencyFinder(graph, phylogeny, debug_dir)
     connections = adj_finder.find_adjacencies()
     scaffolds = get_scaffolds(connections, sibelia_output)
 
     contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
     output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order, KMER, False)
-    graph.write_dot(open(out_graph, "w"))
+    #graph.write_dot(open(out_graph, "w"))
 
     ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
     refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)

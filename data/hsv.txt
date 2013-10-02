@@ -1,0 +1,2 @@
+ref1="../../data/HSV/human_hsv.fasta"
+tree="(target:0.1,ref1:0.1);"
