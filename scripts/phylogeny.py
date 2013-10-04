@@ -15,9 +15,9 @@ class Phylogeny:
         pass
 
 
-    def estimate_tree(self, adjacencies, dot_out=None):
+    def estimate_tree(self, adjacencies):
         new_tree = reconstruct_tree(self.tree, adjacencies)
-        return max_likelihood_score(new_tree, dot_out)
+        return max_likelihood_score(new_tree)
 
 
 def reconstruct_tree(tree, adjacencies):
@@ -27,6 +27,7 @@ def reconstruct_tree(tree, adjacencies):
                 new_clade = Phylo.Newick.Clade()
                 new_clade.comment = [adjacencies[node.name]]
                 new_clade.name = node.name
+                new_clade.branch_length = node.branch_length
                 return new_clade
             else:
                 return None
@@ -35,9 +36,13 @@ def reconstruct_tree(tree, adjacencies):
         subnodes = filter(lambda n : n, subnodes)
         if not subnodes:
             return None
+        elif len(subnodes) == 1:
+            subnodes[0].branch_length += node.branch_length
+            return subnodes[0]
         else:
             new_clade = Phylo.Newick.Clade()
             new_clade.clades = subnodes
+            new_clade.branch_length = node.branch_length
             return new_clade
 
     return tree_helper(tree.clade)
@@ -58,7 +63,7 @@ def tree_to_dot(root, dot_file):
     def dot_rec(node, node_id):
         for clade in node.clades:
             last_vid[0] += 1
-            edges_buf.write("{0} -> {1};\n".format(node_id, last_vid[0]))
+            edges_buf.write("{0} -> {1} [label=\"{2}\"];\n".format(node_id, last_vid[0], clade.branch_length))
 
             label = str(clade.comment) + " " + (clade.name if clade.name else "")
             dot_file.write("{0} [label=\"{1}\"];\n".format(last_vid[0], label))
@@ -99,6 +104,7 @@ def go_down(root):
 
 def subs_cost(v1, v2, length):
     MU = 0.01
+    length = max(length, 0.0000001)
     if v1 == v2:
         return -MU * length
     else:
@@ -139,7 +145,7 @@ def enumerate_trees(root):
     return trees
 
 
-def max_likelihood_score(tree, dot_out):
+def max_likelihood_score(tree):
     #print_tree(tree.clade)
     go_up(tree)
     go_down(tree)
@@ -155,9 +161,7 @@ def max_likelihood_score(tree, dot_out):
             max_score = likelihood
             max_tree = t
 
-    if dot_out:
-        tree_to_dot(max_tree, dot_out)
-    return max_score
+    return max_score, max_tree
 
 
 def test():

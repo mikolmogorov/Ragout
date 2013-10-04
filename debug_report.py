@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-import Image
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
 import os
 import sys
 import subprocess
@@ -7,7 +9,11 @@ from collections import defaultdict
 
 working_dir = sys.argv[1]
 
-#run dot
+for filename in os.listdir(sys.argv[1]):
+    if filename.endswith(".png"):
+        os.remove(os.path.join(working_dir, filename))
+
+
 for filename in os.listdir(sys.argv[1]):
     if not filename.endswith(".dot"):
         continue
@@ -42,11 +48,16 @@ for component, files in compdict.iteritems():
     tree_height = max(map(lambda s: s.size[1], trees))
     height = max(bg.size[1] + prelinks.size[1], tree_height)
 
+    #font = ImageFont.truetype("sans.ttf", 16)
+
     out = Image.new("RGB", (width, height), (255, 255, 255))
     out.paste(bg, (0, 0))
     out.paste(prelinks, (0, bg.size[1]))
 
-    for tree in trees:
+    for tree, name in zip(trees, trees_names):
+        draw = ImageDraw.Draw(out)
+        name = os.path.basename(name)
+        draw.text((offset, tree.size[1]), name, (0, 0, 0))
         out.paste(tree, (offset, 0))
         offset += tree.size[0]
 

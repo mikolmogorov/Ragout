@@ -3,4 +3,4 @@ ref2="../../data/saureus/JKD6008.fasta"
 ref3="../../data/saureus/RF122.fasta"
 ref4="../../data/saureus/N315.fasta"
 
-tree="(ref4:0.1,(ref3:0.1,((ref1:0.1,target:0.1):0.1,ref2:0.1):0.1):0.1);"
+tree="(ref2:0.0359,(((ref1:0,target:0.00028)0.91:0.00153,ref4:0.00323)1:0.03131,ref3:0.0277):0.00135);

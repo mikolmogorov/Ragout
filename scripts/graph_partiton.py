@@ -1,7 +1,7 @@
 from collections import namedtuple
 from breakpoint_graph import *
 from itertools import product
-from phylogeny import Phylogeny
+import phylogeny as phylo
 import networkx as nx
 import os
 
@@ -29,7 +29,6 @@ class AdjacencyFinder:
 
         #non-trivial
         for node in graph.nodes():
-            debug_file = open(debug_pref + "node_{0}.dot".format(node), "w") if self.debug_dir else None
             adjacencies = {}
             for neighbor in graph.neighbors(node):
                 for edge in graph[node][neighbor].values():
@@ -37,15 +36,20 @@ class AdjacencyFinder:
 
             max_likelihood = float("-inf")
             max_vertex = None
+            max_tree = None
             for neighbor in graph.neighbors(node):
                 adjacencies["target"] = neighbor
-                likelihood = self.phylogeny.estimate_tree(adjacencies, debug_file)
+                likelihood, tree = self.phylogeny.estimate_tree(adjacencies)
 
                 if likelihood > max_likelihood:
                     max_likelihood = likelihood
                     max_vertex = neighbor
+                    max_tree = tree
 
             g.add_edge(node, max_vertex)
+            if self.debug_dir:
+                debug_file = open(debug_pref + "node_{0}.dot".format(node), "w")
+                phylo.tree_to_dot(max_tree, debug_file)
 
         return g
 
