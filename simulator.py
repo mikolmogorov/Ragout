@@ -104,7 +104,8 @@ def main():
     root2 = evolve(root, BRANCH_LEN)
     ref2 = evolve(root2, BRANCH_LEN)
     root3 = evolve(root2, BRANCH_LEN)
-    ref3 = evolve(root3, BRANCH_LEN)
+    #ref3 = evolve(root3, BRANCH_LEN)
+    ref3 = root3
     root4 = evolve(root3, BRANCH_LEN)
     ref4 = evolve(root4, BRANCH_LEN)
     ref5 = evolve(root4, BRANCH_LEN)

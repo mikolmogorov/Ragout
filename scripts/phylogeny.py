@@ -114,11 +114,15 @@ def subs_cost(v1, v2, length):
 
 def tree_likelihood(root):
     prob = 0.0
+    nbreaks = 0
     for clade in root.clades:
-        subtree_prob = (tree_likelihood(clade) +
+        subtree_likelihood, subtree_nbreaks = tree_likelihood(clade)
+        subtree_prob = (subtree_likelihood +
                         subs_cost(root.comment[0], clade.comment[0], clade.branch_length))
         prob += subtree_prob
-    return prob
+        if root.comment[0] != clade.comment[0]:
+            nbreaks += 1
+    return prob, nbreaks
 
 
 def enumerate_trees(root):
@@ -152,16 +156,18 @@ def max_likelihood_score(tree):
     #print_tree(tree.clade)
     max_score = float("-inf")
     max_tree = None
+    min_breaks = None
     for t in enumerate_trees(tree):
         #print_tree(t)
-        likelihood = tree_likelihood(t)
+        likelihood, nbreaks = tree_likelihood(t)
         #print likelihood
 
         if likelihood > max_score:
             max_score = likelihood
             max_tree = t
+            min_breaks = nbreaks
 
-    return max_score, max_tree
+    return max_score, min_breaks, max_tree
 
 
 def test():

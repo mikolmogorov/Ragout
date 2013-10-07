@@ -1,0 +1,6 @@
+ref1="references/simulated/synteinc_reference_1.fasta"
+ref2="references/simulated/synteinc_reference_2.fasta"
+ref3="references/simulated/synteinc_reference_4.fasta"
+ref4="references/simulated/synteinc_reference_5.fasta"
+
+tree="(ref1,(((ref3,ref4),target),ref2));"

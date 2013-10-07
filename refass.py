@@ -43,7 +43,11 @@ def extend_scaffolds(connections, sibelia_output):
         while scf.right in connections:
             adjacent = connections[scf.right].end
             block_distance = connections[scf.right].distance
-            assert len(contig_index[abs(adjacent)]) == 1
+
+            assert len(contig_index[abs(adjacent)]) > 0
+            if len(contig_index[abs(adjacent)]) > 1:
+                print "WARNING! one block belongs to many contigs"
+                break
 
             contig = contigs[contig_index[abs(adjacent)][0]]
             if contig in visited:
