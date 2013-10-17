@@ -6,6 +6,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from collections import namedtuple
 import sys
+import random
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 Permutation = namedtuple("Permutation", ["chr_id", "chr_num", "blocks"])
@@ -79,13 +80,43 @@ def translocation(permutation, mean_length):
     return rest[0:pos_to] + cutted + rest[pos_to:]
 
 
-def evolve(permutation, branch_length):
+def deletion(permutation):
+    pos = np.random.randint(0, len(permutation))
+    del permutation[pos]
+    return permutation
+
+
+def insertion(permutation, blocks_info):
+    pos = np.random.randint(0, len(permutation))
+    while True:
+        block_num = np.random.randint(0, 1000)
+        if block_num not in blocks_info:
+            break
+    permutation.insert(pos, block_num)
+    return permutation
+
+
+def indel(permutation, blocks_info):
+    if np.random.randint(0, 2):
+        return insertion(permutation, blocks_info)
+    else:
+        return deletion(permutation)
+
+
+def evolve(permutation, blocks_info, n_rearr, n_indels):
     REVERSAL_LEN = 3
     TRANSLOC_LEN = 2
-    for i in xrange(branch_length / 2):
+    for i in xrange(n_rearr):
         permutation = reversal(permutation, REVERSAL_LEN)
         permutation = translocation(permutation, TRANSLOC_LEN)
+
+    for i in xrange(n_indels):
+        permutation = indel(permutation, blocks_info)
     return permutation
+
+
+def rand_seq(length):
+    return "".join(random.choice(["A", "C", "G", "T"]) for x in xrange(length))
 
 
 def main():
@@ -99,23 +130,31 @@ def main():
     sequence = SeqIO.parse(sys.argv[3], "fasta").next().seq
     root = permutations[0].blocks
 
-    BRANCH_LEN = 6
-    ref1 = evolve(root, BRANCH_LEN)
-    root2 = evolve(root, BRANCH_LEN)
-    ref2 = evolve(root2, BRANCH_LEN)
-    root3 = evolve(root2, BRANCH_LEN)
+    N_REARR = 3
+    N_INDELS = 10
+    ref1 = evolve(root, blocks_info, N_REARR, N_INDELS)
+    root2 = evolve(root, blocks_info, N_REARR, N_INDELS)
+    ref2 = evolve(root2, blocks_info, N_REARR, N_INDELS)
+    root3 = evolve(root2, blocks_info, 0, N_INDELS)
     #ref3 = evolve(root3, BRANCH_LEN)
     ref3 = root3
-    root4 = evolve(root3, BRANCH_LEN)
-    ref4 = evolve(root4, BRANCH_LEN)
-    ref5 = evolve(root4, BRANCH_LEN)
+    root4 = evolve(root3, blocks_info, 0, N_INDELS)
+    ref4 = evolve(root4, blocks_info, N_REARR, N_INDELS)
+    ref5 = evolve(root4, blocks_info, N_REARR, N_INDELS)
+
+    new_blocks = {}
 
     for i, result in enumerate([ref1, ref2, ref3, ref4, ref5]):
         seq = Seq("")
         for block in result:
-            binfo = filter(lambda b: b.chr_num == 1, blocks_info[abs(block)])[0]
-            bseq = (sequence[binfo.start : binfo.end + 1] if binfo.strand == "+"
-                    else sequence[binfo.end : binfo.start + 1])
+            if abs(block) not in blocks_info:
+                if abs(block) not in new_blocks:
+                    new_blocks[abs(block)] = Seq(rand_seq(5000))
+                bseq = new_blocks[abs(block)]
+            else:
+                binfo = filter(lambda b: b.chr_num == 1, blocks_info[abs(block)])[0]
+                bseq = (sequence[binfo.start : binfo.end + 1] if binfo.strand == "+"
+                        else sequence[binfo.end : binfo.start + 1])
             if block < 0:
                 bseq = bseq.reverse_complement()
             seq += bseq

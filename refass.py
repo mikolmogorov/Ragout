@@ -26,8 +26,9 @@ def calc_distance(offset, block_distance):
 
 
 def extend_scaffolds(connections, sibelia_output):
-    contigs = sibelia_output.contigs
-    contig_index = sibelia_output.build_contig_index()
+    contigs = sibelia_output.get_filtered_contigs()
+    contig_index = sp.build_contig_index(contigs) #sibelia_output.build_contig_index()
+
     scaffolds = []
     visited = set()
     counter = [0]
@@ -44,10 +45,7 @@ def extend_scaffolds(connections, sibelia_output):
             adjacent = connections[scf.right].end
             block_distance = connections[scf.right].distance
 
-            assert len(contig_index[abs(adjacent)]) > 0
-            if len(contig_index[abs(adjacent)]) > 1:
-                print "WARNING! one block belongs to many contigs"
-                break
+            assert len(contig_index[abs(adjacent)]) == 1
 
             contig = contigs[contig_index[abs(adjacent)][0]]
             if contig in visited:
@@ -84,6 +82,7 @@ def extend_scaffolds(connections, sibelia_output):
         while -scf.left in connections:
             adjacent = -connections[-scf.left].end
             block_distance = connections[-scf.left].distance
+
             assert len(contig_index[abs(adjacent)]) == 1
 
             contig = contigs[contig_index[abs(adjacent)][0]]
@@ -124,21 +123,8 @@ def extend_scaffolds(connections, sibelia_output):
 
 
 def get_scaffolds(connections, sibelia_output):
-    contigs = sibelia_output.contigs
-    contig_index = sibelia_output.build_contig_index()
     scaffolds = extend_scaffolds(connections, sibelia_output)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
-
-    """
-    for scf in scaffolds:
-        #contigs = filter(lambda c : not isinstance(c, DummyContig), scf.contigs)
-        for contig in scf.contigs:
-            if contig.sign > 0:
-                print contig.blocks,
-            else:
-                print map(lambda b: -b, contig.blocks)[::-1],
-        print ""
-    """
     print "Done, {0} scaffolds".format(len(scaffolds))
     return scaffolds
 

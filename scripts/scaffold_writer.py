@@ -2,9 +2,9 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+
 def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, write_contigs=False):
     MIN_CONTIG_LEN = 0
-    #KMER = kmer_len
     OVERLAP_DIST = [kmer_len]
 
     out_fasta_stream = open(out_fasta, "w")
@@ -26,8 +26,9 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, w
             if contig.sign < 0:
                 cont_seq = cont_seq.reverse_complement()
 
-            if gaps > 0:
-                scf_seq += Seq("N" * max(11, gaps))
+            #if gaps > 0:
+            scf_seq += Seq("N" * max(11, gaps))
+            """
             elif i > 0:
                 #check for overlapping
                 overlap = False
@@ -40,13 +41,15 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, w
                     scf_seq += Seq("N" * 11)
                     #print "no overlap!"
                     nonoverlap += 1
+            """
 
             scf_seq += cont_seq
             used_contigs.add(contig.name)
             gaps = contig.gap
 
             if out_order:
-                out_order_stream.write(str(contig) + "\ngaps {0}\n".format(contig.gap))
+                #out_order_stream.write(str(contig) + "\ngaps {0}\n".format(contig.gap))
+                out_order_stream.write(str(contig) + "\n")
 
         SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_fasta_stream, "fasta")
 
@@ -62,4 +65,3 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, w
                 continue
             SeqIO.write(SeqRecord(contigs_fasta[hdr], id="contig{0}".format(i), description=""),
                                                                     out_fasta_stream, "fasta")
-

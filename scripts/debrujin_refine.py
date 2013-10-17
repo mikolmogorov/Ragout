@@ -20,16 +20,6 @@ def load_graph(filename):
         edge_id = str(edge[2]["label"])
         edges[edge_id] = Edge(edge[0], edge[1])
     return graph, edges
-    """
-    edges = {}
-    for line in open(filename, "r"):
-        edge_id, start, end = line.strip().split(" ")
-
-        graph.add_nodes_from([start, end])
-        graph.add_edge(start, end)
-        edges[edge_id] = Edge(start, end)
-    return graph, edges
-    """
 
 def parse_contigs_order(filename):
     scaffolds = []
@@ -42,7 +32,6 @@ def parse_contigs_order(filename):
                 gaplen = int(line.split(" ")[1])
                 scaffolds[-1].contigs[-1].gap = gaplen
             else:
-                #name = line.strip("\n").replace("=", "_") #fix for quast
                 scaffolds[-1].contigs.append(Contig.from_sting(line))
     return scaffolds
 
@@ -65,7 +54,7 @@ def insert_from_graph(graph_file, scaffolds_in):
                 continue
 
             if src == dst:
-                print "adjacent contigs {0} and {1}".format(prev_cont, new_cont)
+                #print "adjacent contigs {0} and {1}".format(prev_cont, new_cont)
                 new_scaffolds[-1].contigs[-1].gap = 0
                 continue
 
@@ -84,8 +73,8 @@ def insert_from_graph(graph_file, scaffolds_in):
                 continue
 
             #all is ok!
-            print ("found path between {0} and {1} of length {2}"
-                                    .format(prev_cont, new_cont, len(path)))
+            #print ("found path between {0} and {1} of length {2}"
+            #                        .format(prev_cont, new_cont, len(path)))
             for p_start, p_end in zip(path[:-1], path[1:]):
                 #corresponging edge in graph
                 found_edge = None
@@ -98,7 +87,7 @@ def insert_from_graph(graph_file, scaffolds_in):
                 new_scaffolds[-1].contigs[-1].gap = 0
                 new_scaffolds[-1].contigs.append(Contig.from_sting(found_edge))
                 new_scaffolds[-1].contigs[-1].gap = 0
-                print "\tinserting", found_edge
+                #print "\tinserting", found_edge
 
         new_scaffolds[-1].contigs.append(new_cont)
 

@@ -103,13 +103,16 @@ def go_down(root):
 
 
 def subs_cost(v1, v2, length):
-    MU = 0.01
+    #MU = 0.01
+    MU = 1
     length = max(length, 0.0000001)
     if v1 == v2:
-        return -MU * length
+        #return -MU * length
+        return 0
     else:
         #print math.log(1 - math.exp(-MU * length))
-        return math.log(1 - math.exp(-MU * length))
+        #return math.log(1 - math.exp(-MU * length))
+        return 1 - math.exp(-MU * length)
 
 
 def tree_likelihood(root):

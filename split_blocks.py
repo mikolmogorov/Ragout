@@ -3,7 +3,7 @@
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from collections import namedtuple
-import sys
+import sys, os
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 
@@ -36,19 +36,51 @@ def parse_coords_file(blocks_file):
     return (blocks_info, seq_info)
 
 
+def check_block(ngenomes, block_list):
+    MIN = 3000
+    MAX = 5000
+    #ids = map(lambda x: x.chr_id, block_list)
+    if check_unique(block_list) and len(block_list) == ngenomes:
+        length = abs(block_list[0].start - block_list[0].end)
+        if MIN <= length <= MAX:
+            return True
+    return False
+
+
+def check_unique(block_list):
+    ids = map(lambda x: x.chr_id, block_list)
+    return len(ids) == len(set(ids))
+
+
 def main(blocks_file, genomes):
     blocks, seq_info = parse_coords_file(blocks_file)
     seqs = {}
     out_files = {}
+    id_to_name = {}
     for genome in genomes:
         seq = SeqIO.parse(genome, "fasta").next()
         seqs[seq.id] = seq.seq
         filename = genome[0:genome.rfind(".")] + "_blocks.fasta"
         out_files[seq.id] = open(filename, "w")
+        id_to_name[seq.id] = os.path.basename(genome)
 
     for block_id, block_list in blocks.iteritems():
-        if len(block_list) != len(genomes):
+        #if len(block_list) != len(genomes):
+        #    continue
+        if not check_unique(block_list):
             continue
+
+        if check_block(len(genomes), block_list):
+            out_block = open("block_" + str(block_id) + ".fasta", "w")
+            for block in block_list:
+                if block.strand == "+":
+                    block_seq = seqs[block.chr_id][block.start : block.end + 1]
+                else:
+                    block_seq = seqs[block.chr_id][block.end : block.start + 1]
+
+                name = id_to_name[block.chr_id]
+                SeqIO.write(SeqRecord(seq=block_seq, id=name, description=""), out_block, "fasta")
+
 
         for block in block_list:
             name = ""
@@ -57,7 +89,6 @@ def main(blocks_file, genomes):
             else:
                 block_seq = seqs[block.chr_id][block.end : block.start + 1]
 
-            #print block_id, (block.end - block.start), len(block_seq)
             block_name = "{0}_block_{1}".format(block.chr_id, block_id)
             SeqIO.write(SeqRecord(seq=block_seq, id=block_name, description=""), out_files[block.chr_id], "fasta")
 

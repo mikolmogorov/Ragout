@@ -1,8 +1,9 @@
 from collections import namedtuple, defaultdict
 import sibelia_parser as sp
 import networkx as nx
+import copy
 
-
+MIN_DEGREE = 1
 
 class BreakpointGraph:
     def __init__(self):
@@ -22,23 +23,21 @@ class BreakpointGraph:
 
 
     def build_from(self, sibelia_output):
-        permutations = sibelia_output.permutations
         blocks_coords = sibelia_output.blocks_info
-        contig_index = sibelia_output.build_contig_index()
+        contig_index = sp.build_contig_index(sibelia_output.contigs)
 
-        #find duplications
-        duplications = set()
-        for perm in permutations:
-            current = set()
-            for block in perm.blocks:
-                if abs(block) in current:
-                    duplications.add(abs(block))
-                current.add(abs(block))
-        print "Duplications found: ", duplications
+        duplications = sibelia_output.get_duplications()
 
-        for perm in permutations:
+        circular_perm = copy.deepcopy(sibelia_output.permutations)
+        for perm in circular_perm:
+            perm = copy.copy(perm)
+            perm.blocks.append(perm.blocks[0])
+
+        for perm in circular_perm:
             prev = 0
-            while abs(perm.blocks[prev]) in duplications:
+            while (abs(perm.blocks[prev]) in duplications
+                    or not abs(perm.blocks[prev]) in contig_index):
+                #print prev
                 prev += 1
             cur = prev + 1
             while True:
@@ -50,6 +49,8 @@ class BreakpointGraph:
                         break
                     in_assembly = abs(perm.blocks[cur]) in contig_index
                     duplication = abs(perm.blocks[cur]) in duplications
+                    #degree = block_count[abs(perm.blocks[cur])]
+                    #if not duplication and in_assembly and degree >= MIN_DEGREE:
                     if not duplication and in_assembly:
                         break
                     cur += 1

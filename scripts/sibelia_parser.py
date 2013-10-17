@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import copy
 from collections import namedtuple, defaultdict
 from datatypes import *
 from Bio import SeqIO
@@ -25,6 +26,14 @@ def run_sibelia(references, contigs, block_size, out_dir):
     os.remove(os.path.join(out_dir, "coverage_report.txt"))
     os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
     shutil.rmtree(os.path.join(out_dir, "circos"))
+
+
+def build_contig_index(contigs):
+    index = defaultdict(list)
+    for i, c in enumerate(contigs):
+        for block in c.blocks:
+            index[abs(block)].append(i)
+    return index
 
 
 class SibeliaRunner:
@@ -55,6 +64,38 @@ class SibeliaRunner:
             seq = SeqIO.parse(filename, "fasta")
             chr_id_to_ref_id[seq.next().id] = ref_id
         self.chr_id_to_ref_id = chr_id_to_ref_id
+
+
+    def get_filtered_contigs(self):
+        dups = self.get_duplications()
+
+        new_contigs = []
+        for contig in self.contigs:
+            new_blocks = [b for b in contig.blocks if abs(b) not in dups]
+            if new_blocks:
+                new_contigs.append(copy.copy(contig))
+                new_contigs[-1].blocks = new_blocks
+
+        return new_contigs
+
+
+    def get_duplications(self):
+        duplications = set()
+        for perm in self.permutations:
+            current = set()
+            for block in perm.blocks:
+                if abs(block) in current:
+                    duplications.add(abs(block))
+                current.add(abs(block))
+
+        current = set()
+        for contig in self.contigs:
+            for block in contig.blocks:
+                if abs(block) in current:
+                    duplications.add(abs(block))
+                current.add(abs(block))
+
+        return duplications
 
 
     def parse_permutations_file(self, filename, contig_names):
@@ -121,14 +162,6 @@ class SibeliaRunner:
         return len(self.permutations)
 
 
-    def build_contig_index(self):
-        index = defaultdict(list)
-        for i, c in enumerate(self.contigs):
-            for block in c.blocks:
-                index[abs(block)].append(i)
-        return index
-
-
     def get_blocks_distance(self, left_block, right_block, ref_num):
         """
         Only non-duplicated blocks
@@ -148,8 +181,9 @@ class SibeliaRunner:
         else:
             right = right_instances[0].end
 
-        assert right >= left
-        return right - left - 1
+        #assert right >= left
+        #TODO: correct distance here
+        return abs(right - left) - 1
 
 
     def block_offset(self, block, contig_name, reverse=False):
