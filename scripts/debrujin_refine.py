@@ -28,11 +28,12 @@ def parse_contigs_order(filename):
         if line.startswith(">"):
             scaffolds.append(Scaffold(line[1:]))
         else:
-            if line.startswith("gaps"):
-                gaplen = int(line.split(" ")[1])
-                scaffolds[-1].contigs[-1].gap = gaplen
-            else:
-                scaffolds[-1].contigs.append(Contig.from_sting(line))
+            #if line.startswith("gaps"):
+            #    gaplen = int(line.split(" ")[1])
+            #    scaffolds[-1].contigs[-1].gap = gaplen
+            #else:
+            scaffolds[-1].contigs.append(Contig.from_sting(line))
+            #scaffolds[-1].contigs[-1].gap = gaplen
     return scaffolds
 
 
@@ -46,6 +47,7 @@ def insert_from_graph(graph_file, scaffolds_in):
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
             new_scaffolds[-1].contigs.append(prev_cont)
 
+            #print str(prev_cont)
             try:
                 src = edges[str(prev_cont)].end
                 dst = edges[str(new_cont)].start
@@ -97,6 +99,9 @@ def insert_from_graph(graph_file, scaffolds_in):
 def refine_contigs(graph_file, scaffolds):
     graph, edges = load_graph(graph_file)
     new_scaffolds = insert_from_graph(graph_file, scaffolds)
+    #print len(scaffolds[0].contigs)
+    #print len(new_scaffolds[0].contigs)
+    #print new_scaffolds[0].contigs
     return new_scaffolds
 
 
