@@ -27,7 +27,8 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order, kmer_len, w
                 cont_seq = cont_seq.reverse_complement()
 
             #if gaps > 0:
-            scf_seq += Seq("N" * max(11, gaps))
+            #scf_seq += Seq("N" * max(11, gaps))
+            scf_seq += Seq("N" * 11)
             """
             elif i > 0:
                 #check for overlapping
