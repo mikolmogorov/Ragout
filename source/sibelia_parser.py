@@ -158,18 +158,16 @@ class SibeliaRunner:
         return (blocks_info, seq_info)
 
 
-    def get_reference_count(self):
-        return len(self.permutations)
+    #def get_references_count(self):
+    #    return len(self.permutations)
 
-
+"""
     def get_blocks_distance(self, left_block, right_block, ref_num):
-        """
-        Only non-duplicated blocks
-        """
         blocks_coords = self.blocks_info
         left_instances = filter(lambda b: b.chr_num == ref_num, blocks_coords[left_block])
         right_instances = filter(lambda b: b.chr_num == ref_num, blocks_coords[right_block])
 
+        #Only non-duplicated blocks
         assert len(left_instances) == len(right_instances) == 1
         if left_instances[0].strand == "+":
             left = left_instances[0].end
@@ -187,15 +185,11 @@ class SibeliaRunner:
 
 
     def block_offset(self, block, contig_name, reverse=False):
-        """
-        distance from beginning of contig to block, or from end of contig to block,
-        if reverse is specified.
-        non-duplicated blocks
-        """
+        #distance from beginning of contig to block, or from end of contig to block,
+        #if reverse is specified.
+        #non-duplicated blocks
         blocks_coords = self.blocks_info
         instances = filter(lambda b: b.chr_id == contig_name, blocks_coords[block])
-        #print blocks_coords[block]
-        #print block, contig_name
         assert len(instances) == 1
 
         contig_len = self.seq_info[instances[0].chr_num].length
@@ -209,6 +203,5 @@ class SibeliaRunner:
                 offset = contig_len - instances[0].end
             else:
                 offset = contig_len - instances[0].start
-        #print "-", reverse, block, offset
         return offset
-
+"""

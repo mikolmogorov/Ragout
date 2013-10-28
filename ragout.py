@@ -8,26 +8,19 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
-import scripts.graph_partiton as gp
-import scripts.breakpoint_graph as bg
-import scripts.sibelia_parser as sp
-import scripts.overlap as ovlp
-import scripts.debrujin_refine as debrujin
-from scripts.datatypes import Contig, Scaffold
-from scripts.scaffold_writer import output_scaffolds
-from scripts.phylogeny import Phylogeny
-
-
-def calc_distance(offset, block_distance):
-    if block_distance:
-        return max(0, block_distance - offset)
-    else:
-        return 0
+import source.graph_partiton as gp
+import source.breakpoint_graph as bg
+import source.sibelia_parser as sp
+import source.overlap as ovlp
+import source.debrujin_refine as debrujin
+from source.datatypes import Contig, Scaffold
+from source.scaffold_writer import output_scaffolds
+from source.phylogeny import Phylogeny
 
 
 def extend_scaffolds(connections, sibelia_output):
     contigs = sibelia_output.get_filtered_contigs()
-    contig_index = sp.build_contig_index(contigs) #sibelia_output.build_contig_index()
+    contig_index = sp.build_contig_index(contigs)
 
     scaffolds = []
     visited = set()
@@ -43,7 +36,6 @@ def extend_scaffolds(connections, sibelia_output):
         #go right
         while scf.right in connections:
             adjacent = connections[scf.right].end
-            block_distance = connections[scf.right].distance
 
             assert len(contig_index[abs(adjacent)]) == 1
 
@@ -52,24 +44,12 @@ def extend_scaffolds(connections, sibelia_output):
                 break
 
             if contig.blocks[0] == adjacent:
-                offset = sibelia_output.block_offset(abs(adjacent), contig.name)
-                reverse = scf.contigs[-1].sign > 0
-                offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
-                distance = calc_distance(offset, block_distance)
-
-                scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.right = contig.blocks[-1]
                 visited.add(contig)
                 continue
 
             if -contig.blocks[-1] == adjacent:
-                offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
-                reverse = scf.contigs[-1].sign > 0
-                offset += sibelia_output.block_offset(abs(scf.right), scf.contigs[-1].name, reverse)
-                distance = calc_distance(offset, block_distance)
-
-                scf.contigs[-1].gap = distance
                 scf.contigs.append(contig)
                 scf.contigs[-1].sign = -1
                 scf.right = -contig.blocks[0]
@@ -81,7 +61,6 @@ def extend_scaffolds(connections, sibelia_output):
         #go left
         while -scf.left in connections:
             adjacent = -connections[-scf.left].end
-            block_distance = connections[-scf.left].distance
 
             assert len(contig_index[abs(adjacent)]) == 1
 
@@ -90,25 +69,13 @@ def extend_scaffolds(connections, sibelia_output):
                 break
 
             if contig.blocks[-1] == adjacent:
-                offset = sibelia_output.block_offset(abs(adjacent), contig.name, True)
-                reverse = scf.contigs[0].sign < 0
-                offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                distance = calc_distance(offset, block_distance)
-
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].gap = distance
                 scf.left = contig.blocks[0]
                 visited.add(contig)
                 continue
 
             if -contig.blocks[0] == adjacent:
-                offset = sibelia_output.block_offset(abs(adjacent), contig.name)
-                reverse = scf.contigs[0].sign < 0
-                offset += sibelia_output.block_offset(abs(scf.left), scf.contigs[0].name, reverse)
-                distance = calc_distance(offset, block_distance)
-
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].gap = distance
                 scf.contigs[0].sign = -1
                 scf.left = -contig.blocks[-1]
                 visited.add(contig)
@@ -162,8 +129,6 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
-    KMER = 55
-
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_order = os.path.join(out_dir, "order.txt")
     out_ref_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
@@ -171,9 +136,10 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
     out_graph = os.path.join(out_dir, "breakpoint_graph.dot")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
-    debug_dir = os.path.join(out_dir, "debug")
-    if not os.path.isdir(debug_dir):
-        os.mkdir(debug_dir)
+    #debug_dir = os.path.join(out_dir, "debug")
+    #if not os.path.isdir(debug_dir):
+    #    os.mkdir(debug_dir)
+    debug_dir = None
 
     references, tree_string = parse_config(config_file)
 
@@ -191,13 +157,12 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
     scaffolds = get_scaffolds(connections, sibelia_output)
 
     contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
-    output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order, KMER, False)
-    #graph.write_dot(open(out_graph, "w"))
+    output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
 
-    ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
-    refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
-    output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
-                                                out_ref_order, KMER, False)
+    #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
+    #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
+    #output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
+    #                                            out_ref_order)
 
 
 def main():
