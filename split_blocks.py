@@ -37,7 +37,7 @@ def parse_coords_file(blocks_file):
 
 
 def check_block(ngenomes, block_list):
-    MIN = 3000
+    MIN = 2000
     MAX = 5000
     #ids = map(lambda x: x.chr_id, block_list)
     if check_unique(block_list) and len(block_list) == ngenomes:
