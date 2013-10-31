@@ -9,12 +9,15 @@ class BreakpointGraph:
     def __init__(self):
         self.graph = nx.MultiGraph()
 
+    def build_from(self, config_file):
+        #parse_config_file
+
 
     def get_subgraphs(self):
          return nx.connected_component_subgraphs(self.graph)
 
 
-    def build_from(self, sibelia_output):
+    def _build_from(self, sibelia_output):
         blocks_coords = sibelia_output.blocks_info
         contig_index = sp.build_contig_index(sibelia_output.contigs)
 
