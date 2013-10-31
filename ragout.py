@@ -13,90 +13,12 @@ import source.breakpoint_graph as bg
 import source.sibelia_parser as sp
 import source.overlap as ovlp
 import source.debrujin_refine as debrujin
-from source.datatypes import Contig, Scaffold
-from source.scaffold_writer import output_scaffolds
+import source.scaffolder as scfldr
+#from source.datatypes import Contig, Scaffold
 from source.phylogeny import Phylogeny
 
 
-def extend_scaffolds(connections, sibelia_output):
-    contigs = sibelia_output.get_filtered_contigs()
-    contig_index = sp.build_contig_index(contigs)
-
-    scaffolds = []
-    visited = set()
-    counter = [0]
-
-    def extend_scaffold(contig):
-        visited.add(contig)
-        scf_name = "scaffold{0}".format(counter[0])
-        counter[0] += 1
-        scf = Scaffold.with_contigs(scf_name, contig.blocks[0], contig.blocks[-1], [contig])
-        scaffolds.append(scf)
-
-        #go right
-        while scf.right in connections:
-            adjacent = connections[scf.right].end
-
-            assert len(contig_index[abs(adjacent)]) == 1
-
-            contig = contigs[contig_index[abs(adjacent)][0]]
-            if contig in visited:
-                break
-
-            if contig.blocks[0] == adjacent:
-                scf.contigs.append(contig)
-                scf.right = contig.blocks[-1]
-                visited.add(contig)
-                continue
-
-            if -contig.blocks[-1] == adjacent:
-                scf.contigs.append(contig)
-                scf.contigs[-1].sign = -1
-                scf.right = -contig.blocks[0]
-                visited.add(contig)
-                continue
-
-            break
-
-        #go left
-        while -scf.left in connections:
-            adjacent = -connections[-scf.left].end
-
-            assert len(contig_index[abs(adjacent)]) == 1
-
-            contig = contigs[contig_index[abs(adjacent)][0]]
-            if contig in visited:
-                break
-
-            if contig.blocks[-1] == adjacent:
-                scf.contigs.insert(0, contig)
-                scf.left = contig.blocks[0]
-                visited.add(contig)
-                continue
-
-            if -contig.blocks[0] == adjacent:
-                scf.contigs.insert(0, contig)
-                scf.contigs[0].sign = -1
-                scf.left = -contig.blocks[-1]
-                visited.add(contig)
-                continue
-
-            break
-
-    for contig in contigs:
-        if contig not in visited:
-            extend_scaffold(contig)
-    return scaffolds
-
-
-def get_scaffolds(connections, sibelia_output):
-    scaffolds = extend_scaffolds(connections, sibelia_output)
-    scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
-    print "Done, {0} scaffolds".format(len(scaffolds))
-    return scaffolds
-
-
-def parse_contigs(contigs_file):
+def get_contigs(contigs_file):
     contigs = SeqIO.parse(contigs_file, "fasta")
     seqs = [seq for seq in contigs]
     names = [contig.id for contig in seqs]
@@ -143,7 +65,7 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
 
     references, tree_string = parse_config(config_file)
 
-    contigs_seqs, contig_names = parse_contigs(target_file)
+    contigs_seqs, contig_names = get_contigs(target_file)
     sibelia_output = sp.SibeliaRunner(references, target_file, block_size,
                                         out_dir, contig_names, skip_sibelia)
 
@@ -154,10 +76,10 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
 
     adj_finder = gp.AdjacencyFinder(graph, phylogeny, debug_dir)
     connections = adj_finder.find_adjacencies()
-    scaffolds = get_scaffolds(connections, sibelia_output)
+    scaffolds = scfldr.get_scaffolds(connections, sibelia_output)
 
     contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
-    output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
+    scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
 
     #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
     #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)

@@ -7,7 +7,6 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from datatypes import Contig, Scaffold
-from scaffold_writer import output_scaffolds
 
 
 Edge = namedtuple("Edge", ["start", "end"])
@@ -106,6 +105,8 @@ def refine_contigs(graph_file, scaffolds):
 
 
 def main():
+    from scaffolder import output_scaffolds
+
     if len(sys.argv) < 3:
         print "Usage: debrujin graph_file contig_oder contig_fasta"
         return
