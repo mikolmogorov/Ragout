@@ -8,7 +8,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 
-import source.graph_partiton as gp
+#import source.graph_partiton as gp
 import source.breakpoint_graph as bg
 import source.sibelia_parser as sp
 import source.overlap as ovlp
@@ -16,6 +16,7 @@ import source.debrujin_refine as debrujin
 import source.scaffolder as scfldr
 #from source.datatypes import Contig, Scaffold
 from source.phylogeny import Phylogeny
+from source.permutation import PermutationContainer, parse_config
 
 
 def get_contigs(contigs_file):
@@ -25,6 +26,7 @@ def get_contigs(contigs_file):
     return seqs, names
 
 
+"""
 def parse_config(filename):
     references = {}
     tree = None
@@ -43,7 +45,7 @@ def parse_config(filename):
             references[ref_id] = os.path.join(prefix, filename)
 
     return references, tree
-
+"""
 
 
 def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
@@ -61,25 +63,28 @@ def do_job(config_file, target_file, out_dir, block_size, skip_sibelia):
     #debug_dir = os.path.join(out_dir, "debug")
     #if not os.path.isdir(debug_dir):
     #    os.mkdir(debug_dir)
-    debug_dir = None
+    #debug_dir = None
 
-    references, tree_string = parse_config(config_file)
+    references, targets, tree_string = parse_config(config_file)
 
-    contigs_seqs, contig_names = get_contigs(target_file)
-    sibelia_output = sp.SibeliaRunner(references, target_file, block_size,
-                                        out_dir, contig_names, skip_sibelia)
+    #contigs_seqs, contig_names = get_contigs(target_file)
+    #sibelia_output = sp.SibeliaRunner(references, target_file, block_size,
+    #                                    out_dir, contig_names, skip_sibelia)
 
+    perm_container = PermutationContainer("test_datasets/newformat/500/blocks.cfg")
     graph = bg.BreakpointGraph()
-    graph.build_from(sibelia_output)
+    graph.build_from(perm_container, True)
 
     phylogeny = Phylogeny(tree_string)
 
-    adj_finder = gp.AdjacencyFinder(graph, phylogeny, debug_dir)
-    connections = adj_finder.find_adjacencies()
-    scaffolds = scfldr.get_scaffolds(connections, sibelia_output)
+    #adj_finder = gp.AdjacencyFinder(graph, phylogeny, debug_dir)
+    connections = graph.find_adjacencies(phylogeny)
+    scaffolds = scfldr.get_scaffolds(connections, perm_container)
+    scfldr.output_order(scaffolds, "order.txt")
+    #print scaffolds
 
-    contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
-    scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
+    #contigs_dict = {seq.id : seq.seq for seq in contigs_seqs}
+    #scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
 
     #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
     #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)

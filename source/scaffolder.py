@@ -1,14 +1,18 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from collections import defaultdict
+import copy
 
-import sibelia_parser as sp
+#import sibelia_parser as sp
+#from permutation import Permutation
 from datatypes import *
 
 
-def extend_scaffolds(connections, sibelia_output):
-    contigs = sibelia_output.get_filtered_contigs()
-    contig_index = sp.build_contig_index(contigs)
+def extend_scaffolds(connections, perm_container):
+    contigs, contig_index = make_contigs(perm_container)
+    #sibelia_output.get_filtered_contigs()
+    #contig_index = sp.build_contig_index(contigs)
 
     scaffolds = []
     visited = set()
@@ -25,9 +29,10 @@ def extend_scaffolds(connections, sibelia_output):
         while scf.right in connections:
             adjacent = connections[scf.right].end
 
+            #print adjacent, contig_index[abs(adjacent)]
             assert len(contig_index[abs(adjacent)]) == 1
 
-            contig = contigs[contig_index[abs(adjacent)][0]]
+            contig = contig_index[abs(adjacent)][0]
             if contig in visited:
                 break
 
@@ -52,7 +57,7 @@ def extend_scaffolds(connections, sibelia_output):
 
             assert len(contig_index[abs(adjacent)]) == 1
 
-            contig = contigs[contig_index[abs(adjacent)][0]]
+            contig = contig_index[abs(adjacent)][0]
             if contig in visited:
                 break
 
@@ -77,11 +82,39 @@ def extend_scaffolds(connections, sibelia_output):
     return scaffolds
 
 
-def get_scaffolds(connections, sibelia_output):
-    scaffolds = extend_scaffolds(connections, sibelia_output)
+def make_contigs(perm_container):
+    contigs = []
+    index = defaultdict(list)
+    for perm in perm_container.target_perms_filtered:
+        #print perm.chr_id
+        if len(perm.blocks) == 0:
+            continue
+
+        contigs.append(Contig(perm.chr_id))
+        contigs[-1].blocks = copy.copy(perm.blocks)
+
+        #print perm.blocks
+        for block in perm.blocks:
+            #if block == 56:
+            #    print "aa"
+            index[abs(block)].append(contigs[-1])
+
+    return contigs, index
+
+
+def get_scaffolds(connections, perm_container):
+    scaffolds = extend_scaffolds(connections, perm_container)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     print "Done, {0} scaffolds".format(len(scaffolds))
     return scaffolds
+
+
+def output_order(scaffolds, out_order):
+    out_order_stream = open(out_order, "w")
+    for scf in scaffolds:
+        out_order_stream.write(">" + scf.name + "\n")
+        for contig in scf.contigs:
+            out_order_stream.write(str(contig) + "\n")
 
 
 def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order):
