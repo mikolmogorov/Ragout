@@ -21,7 +21,7 @@ def find_duplications(ref_perms, target_perms):
     index = defaultdict(set)
     duplications = set()
     for perm in ref_perms + target_perms:
-        for block in perm.blocks:
+        for block in map(abs, perm.blocks):
             if perm.ref_id in index[block]:
                 duplications.add(block)
             else:
@@ -33,7 +33,7 @@ def find_duplications(ref_perms, target_perms):
 def filter_perm(perm, to_hold):
     new_perm = Permutation(perm.ref_id, perm.chr_id, perm.chr_num, [])
     for block in perm.blocks:
-        if block in to_hold:
+        if abs(block) in to_hold:
             new_perm.blocks.append(block)
     return new_perm
 
@@ -52,9 +52,13 @@ def parse_blocks_file(ref_id, filename):
     return permutations
 
 
+#TODO: place somewhere else
 def parse_config(filename):
     references = {}
     target = {}
+    tree_str = None
+    block_size = None
+
     for line in open(filename, "r").read().splitlines():
         if line.startswith("#"):
             continue
@@ -70,7 +74,11 @@ def parse_config(filename):
         if line.startswith("TREE"):
             tree_str = line.split("=")[1]
 
-    return references, target, tree_str
+        if line.startswith("BLOCK"):
+            sizes = line.split("=")[1].split(",")
+            block_size = map(int, sizes)
+
+    return references, target, tree_str, block_size
 
 
 class PermutationContainer:
@@ -78,7 +86,7 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
 
-        ref_files, target_files, _tree = parse_config(config_file)
+        ref_files, target_files, _tree, _blocks = parse_config(config_file)
         prefix = os.path.dirname(config_file)
         for ref_id, ref_file in ref_files.iteritems():
             filename = os.path.join(prefix, ref_file)
@@ -92,7 +100,7 @@ class PermutationContainer:
 
         self.target_blocks = set()
         for perm in self.target_perms:
-            self.target_blocks |= set(perm.blocks)
+            self.target_blocks |= set(map(abs, perm.blocks))
 
         to_hold = self.target_blocks - self.duplications
         self.ref_perms_filtered = [filter_perm(p, to_hold) for p in self.ref_perms]

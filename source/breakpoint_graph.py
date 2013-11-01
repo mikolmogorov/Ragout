@@ -29,9 +29,6 @@ class BreakpointGraph:
 
                 prev = block
 
-        nx.draw_graphviz(self.bp_graph)
-        #nx.write_dot(self.bp_graph, "g.dot")
-
 
     def find_adjacencies(self, phylogeny):
         adjacencies = {}

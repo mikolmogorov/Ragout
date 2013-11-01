@@ -4,15 +4,11 @@ from Bio.SeqRecord import SeqRecord
 from collections import defaultdict
 import copy
 
-#import sibelia_parser as sp
-#from permutation import Permutation
 from datatypes import *
 
 
 def extend_scaffolds(connections, perm_container):
     contigs, contig_index = make_contigs(perm_container)
-    #sibelia_output.get_filtered_contigs()
-    #contig_index = sp.build_contig_index(contigs)
 
     scaffolds = []
     visited = set()
@@ -86,17 +82,13 @@ def make_contigs(perm_container):
     contigs = []
     index = defaultdict(list)
     for perm in perm_container.target_perms_filtered:
-        #print perm.chr_id
         if len(perm.blocks) == 0:
             continue
 
         contigs.append(Contig(perm.chr_id))
         contigs[-1].blocks = copy.copy(perm.blocks)
 
-        #print perm.blocks
         for block in perm.blocks:
-            #if block == 56:
-            #    print "aa"
             index[abs(block)].append(contigs[-1])
 
     return contigs, index
@@ -117,18 +109,15 @@ def output_order(scaffolds, out_order):
             out_order_stream.write(str(contig) + "\n")
 
 
-def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order):
+def output_scaffolds(contigs_fasta, scaffolds, out_fasta):
     MIN_CONTIG_LEN = 0
 
     out_fasta_stream = open(out_fasta, "w")
-    if out_order:
-        out_order_stream = open(out_order, "w")
     used_contigs = set()
 
     for scf in scaffolds:
         scf_seq = Seq("")
         buffer = ""
-        out_order_stream.write(">" + scf.name + "\n")
 
         for i, contig in enumerate(scf.contigs):
             cont_seq = contigs_fasta[contig.name]
@@ -139,8 +128,6 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta, out_order):
 
             scf_seq += Seq("N" * 11)
             scf_seq += cont_seq
-
-            out_order_stream.write(str(contig) + "\n")
 
         SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_fasta_stream, "fasta")
 
