@@ -37,7 +37,6 @@ class BreakpointGraph:
         for subgraph in subgraphs:
             #TODO: check for trivial case here
             weighted_graph = make_weighted(subgraph, phylogeny)
-
             chosen_edges = split_graph(weighted_graph)
 
             for edge in chosen_edges:

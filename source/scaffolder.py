@@ -7,6 +7,13 @@ import copy
 from datatypes import *
 
 
+def get_scaffolds(connections, perm_container):
+    scaffolds = extend_scaffolds(connections, perm_container)
+    scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
+    print "Done, {0} scaffolds".format(len(scaffolds))
+    return scaffolds
+
+
 def extend_scaffolds(connections, perm_container):
     contigs, contig_index = make_contigs(perm_container)
 
@@ -92,13 +99,6 @@ def make_contigs(perm_container):
             index[abs(block)].append(contigs[-1])
 
     return contigs, index
-
-
-def get_scaffolds(connections, perm_container):
-    scaffolds = extend_scaffolds(connections, perm_container)
-    scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
-    print "Done, {0} scaffolds".format(len(scaffolds))
-    return scaffolds
 
 
 def output_order(scaffolds, out_order):

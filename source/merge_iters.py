@@ -1,28 +1,9 @@
-#!/usr/bin/env python
-
 from collections import namedtuple
 import sys
-import scripts.debrujin_refine as debrujin
-from scripts.datatypes import *
+from datatypes import *
 
 
-def parse_contigs_order(filename):
-    scaffolds = []
-    for line in open(filename, "r"):
-        if line.startswith(">"):
-            scaffolds.append(Scaffold(line.strip()[1:]))
-        else:
-            name = line.strip("\n").replace("=", "_") #fix for quast
-            without_sign = name[1:].strip()
-            sign = 1 if name[0] == "+" else -1
-            scaffolds[-1].contigs.append(Contig(without_sign, sign))
-    return scaffolds
-
-
-def merge(big_file, small_file):
-    big_scaffolds = parse_contigs_order(big_file)
-    small_scaffolds = parse_contigs_order(small_file)
-
+def merge(big_scaffolds, small_scaffolds):
     big_index = set()
     for scf in big_scaffolds:
         for c in scf.contigs:
@@ -80,29 +61,3 @@ def merge(big_file, small_file):
         new_scafflods.append(s)
 
     return new_scafflods
-
-def main():
-    if len(sys.argv) < 4:
-        print "Usage: merge_iters.py big small overlap"
-
-    scaffolds = merge(sys.argv[1], sys.argv[2])
-    refined_scaffolds = debrujin.refine_contigs(sys.argv[3], scaffolds)
-
-    scaf_out = open("merged.txt", "w")
-    ref_out = open("merged_refined.txt", "w")
-
-    for scf in scaffolds:
-        scaf_out.write(">" + scf.name + "\n")
-        for c in scf.contigs:
-            sign = "+" if c.sign > 0 else "-"
-            scaf_out.write(sign + c.name + "\n")
-
-    for scf in refined_scaffolds:
-        ref_out.write(">" + scf.name + "\n")
-        for c in scf.contigs:
-            sign = "+" if c.sign > 0 else "-"
-            ref_out.write(sign + c.name + "\n")
-
-
-if __name__ == "__main__":
-    main()

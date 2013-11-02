@@ -9,6 +9,7 @@ import source.sibelia_parser as sp
 import source.overlap as ovlp
 import source.debrujin_refine as debrujin
 import source.scaffolder as scfldr
+import source.merge_iters as merge
 from source.phylogeny import Phylogeny
 from source.permutation import PermutationContainer, parse_config
 
@@ -21,16 +22,14 @@ def do_job(config_file, out_dir, skip_sibelia):
     references, targets, tree_string, block_sizes = parse_config(config_file)
     phylogeny = Phylogeny(tree_string)
 
-    out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
-    out_ref_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
-    out_ref_order = os.path.join(out_dir, "order_refined.txt")
-    out_graph = os.path.join(out_dir, "breakpoint_graph.dot")
-    out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
+    #out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
     #debug_dir = os.path.join(out_dir, "debug")
     #if not os.path.isdir(debug_dir):
     #    os.mkdir(debug_dir)
     #debug_dir = None
+
+    last_scaffolds = None
 
     for block_size in block_sizes:
         block_dir = os.path.join(out_dir, str(block_size))
@@ -46,17 +45,24 @@ def do_job(config_file, out_dir, skip_sibelia):
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, True)
 
-
         connections = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(connections, perm_container)
         scfldr.output_order(scaffolds, block_order)
 
-        #scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
+        if last_scaffolds:
+            last_scaffolds = merge.merge(last_scaffolds, scaffolds)
+        else:
+            last_scaffolds = scaffolds
 
-        #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
-        #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
-        #output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
-        #                                            out_ref_order)
+    final_order = os.path.join(out_dir, "scaffolds.ord")
+    scfldr.output_order(last_scaffolds, final_order)
+
+    #scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
+
+    #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
+    #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
+    #output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
+    #                                            out_ref_order)
 
 
 def main():

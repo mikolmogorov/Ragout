@@ -1,6 +1,7 @@
 from collections import namedtuple, defaultdict
 import os
 
+
 class Permutation:
     def __init__(self, ref_id, chr_id, chr_num, blocks):
         self.ref_id = ref_id

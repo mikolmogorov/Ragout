@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import copy
 from collections import namedtuple, defaultdict
-from datatypes import *
 from Bio import SeqIO
 
 
