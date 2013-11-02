@@ -54,6 +54,7 @@ def parse_blocks_file(ref_id, filename):
 
 #TODO: place somewhere else
 def parse_config(filename):
+    prefix = os.path.dirname(filename)
     references = {}
     target = {}
     tree_str = None
@@ -65,11 +66,11 @@ def parse_config(filename):
 
         if line.startswith("REF"):
             ref_id, ref_file = line[4:].split("=")
-            references[ref_id] = ref_file
+            references[ref_id] = os.path.join(prefix, ref_file)
 
         if line.startswith("TARGET"):
             ref_id, ref_file = line[7:].split("=")
-            target[ref_id] = ref_file
+            target[ref_id] = os.path.join(prefix, ref_file)
 
         if line.startswith("TREE"):
             tree_str = line.split("=")[1]
@@ -87,14 +88,11 @@ class PermutationContainer:
         self.target_perms = []
 
         ref_files, target_files, _tree, _blocks = parse_config(config_file)
-        prefix = os.path.dirname(config_file)
         for ref_id, ref_file in ref_files.iteritems():
-            filename = os.path.join(prefix, ref_file)
-            self.ref_perms.extend(parse_blocks_file(ref_id, filename))
+            self.ref_perms.extend(parse_blocks_file(ref_id, ref_file))
 
         for t_id, t_file in target_files.iteritems():
-            filename = os.path.join(prefix, t_file)
-            self.target_perms.extend(parse_blocks_file(t_id, filename))
+            self.target_perms.extend(parse_blocks_file(t_id, t_file))
 
         self.duplications = find_duplications(self.ref_perms, self.target_perms)
 
