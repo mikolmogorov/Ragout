@@ -122,7 +122,8 @@ def output_scaffolds(target_dict, scaffolds, out_fasta):
 
     for scf in scaffolds:
         scf_seq = Seq("")
-        buffer = ""
+        #buffer = ""
+        first = True
 
         for contig in scf.contigs:
             cont_seq = contigs_fasta[contig.name]
@@ -131,7 +132,9 @@ def output_scaffolds(target_dict, scaffolds, out_fasta):
             if contig.sign < 0:
                 cont_seq = cont_seq.reverse_complement()
 
-            scf_seq += Seq("N" * 11)
+            if not first:
+                scf_seq += Seq("N" * 11)
+            first = False
             scf_seq += cont_seq
 
         SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
