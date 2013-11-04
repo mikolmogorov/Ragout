@@ -109,17 +109,22 @@ def output_order(scaffolds, out_order):
             out_order_stream.write(str(contig) + "\n")
 
 
-def output_scaffolds(contigs_fasta, scaffolds, out_fasta):
+def output_scaffolds(target_dict, scaffolds, out_fasta):
     MIN_CONTIG_LEN = 0
 
-    out_fasta_stream = open(out_fasta, "w")
+    contigs_fasta = {}
+    for target_file in target_dict.values():
+        for seq in SeqIO.parse(target_file, "fasta"):
+            contigs_fasta[seq.id] = seq.seq
+
+    out_stream = open(out_fasta, "w")
     used_contigs = set()
 
     for scf in scaffolds:
         scf_seq = Seq("")
         buffer = ""
 
-        for i, contig in enumerate(scf.contigs):
+        for contig in scf.contigs:
             cont_seq = contigs_fasta[contig.name]
             used_contigs.add(contig.name)
 
@@ -129,7 +134,7 @@ def output_scaffolds(contigs_fasta, scaffolds, out_fasta):
             scf_seq += Seq("N" * 11)
             scf_seq += cont_seq
 
-        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_fasta_stream, "fasta")
+        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
 
     count = 0
     for h, seq in contigs_fasta.iteritems():

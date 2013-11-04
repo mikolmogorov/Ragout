@@ -55,9 +55,9 @@ def do_job(config_file, out_dir, skip_sibelia):
             last_scaffolds = scaffolds
 
     final_order = os.path.join(out_dir, "scaffolds.ord")
+    final_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     scfldr.output_order(last_scaffolds, final_order)
-
-    #scfldr.output_scaffolds(contigs_dict, scaffolds, out_scaffolds, out_order)
+    scfldr.output_scaffolds(targets, scaffolds, final_scaffolds)
 
     #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
     #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
