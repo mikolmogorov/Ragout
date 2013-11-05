@@ -13,6 +13,9 @@ import source.merge_iters as merge
 from source.phylogeny import Phylogeny
 from source.permutation import PermutationContainer, parse_config
 
+SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/"
+os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
+print os.environ["PATH"]
 
 def do_job(config_file, out_dir, skip_sibelia):
     if not os.path.isdir(out_dir):
@@ -22,7 +25,6 @@ def do_job(config_file, out_dir, skip_sibelia):
     references, targets, tree_string, block_sizes = parse_config(config_file)
     phylogeny = Phylogeny(tree_string)
 
-    #out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
 
     #debug_dir = os.path.join(out_dir, "debug")
     #if not os.path.isdir(debug_dir):
@@ -59,7 +61,8 @@ def do_job(config_file, out_dir, skip_sibelia):
     scfldr.output_order(last_scaffolds, final_order)
     scfldr.output_scaffolds(targets, scaffolds, final_scaffolds)
 
-    #ovlp.build_graph(contigs_dict, KMER, open(out_overlap, "w"))
+    #out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
+    #ovlp.build_graph(targets, out_overlap)
     #refined_scaffolds = debrujin.refine_contigs(out_overlap, scaffolds)
     #output_scaffolds(contigs_dict, refined_scaffolds, out_ref_scaffolds,
     #                                            out_ref_order)

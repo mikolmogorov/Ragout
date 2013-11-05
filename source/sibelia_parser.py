@@ -6,12 +6,11 @@ from collections import namedtuple, defaultdict
 from Bio import SeqIO
 
 
-SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/Sibelia"
-
+SIBELIA_EXEC = "Sibelia"
 
 def run_sibelia(fasta_files, block_size, out_dir):
     print "Running Sibelia..."
-    cmdline = [SIBELIA_BIN, "-s", "loose", "-m", str(block_size), "-o", out_dir]
+    cmdline = [SIBELIA_EXEC, "-s", "loose", "-m", str(block_size), "-o", out_dir]
     cmdline.extend(fasta_files)
     process = subprocess.Popen(cmdline)
     process.wait()

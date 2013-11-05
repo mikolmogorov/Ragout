@@ -122,7 +122,6 @@ def output_scaffolds(target_dict, scaffolds, out_fasta):
 
     for scf in scaffolds:
         scf_seq = Seq("")
-        #buffer = ""
         first = True
 
         for contig in scf.contigs:
