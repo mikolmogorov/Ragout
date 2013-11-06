@@ -15,7 +15,6 @@ from source.permutation import PermutationContainer, parse_config
 
 SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/"
 os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
-print os.environ["PATH"]
 
 def do_job(config_file, out_dir, skip_sibelia):
     if not os.path.isdir(out_dir):
