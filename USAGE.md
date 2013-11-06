@@ -1,7 +1,7 @@
 Usage
 =====
 
-usage: ragout.py [-h] -c config -o output_dir [-s]
+    python ragout.py [-h] -c config -o output_dir [-s]
     
 Supported arguments:
 
