@@ -5,9 +5,19 @@ from collections import namedtuple, defaultdict
 from itertools import product
 
 
-Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry", "len_ref", "len_qry", "contig_id"])
+Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry",
+                            "len_ref", "len_qry", "ref_id", "contig_id"])
+
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign", "gap"])
+#Hit = namedtuple("Hit", ["pos", "chr"])
+class Hit:
+    def __init__(self, pos, chr):
+        self.pos = pos
+        self.chr = chr
+
+    def __str__(self):
+        return str(self.pos) + " : " + str(self.chr)
 
 
 def parse_quast_output(filename):
@@ -18,11 +28,12 @@ def parse_quast_output(filename):
             continue
 
         vals = line.split(" | ")
-        coord_ref = map(int, vals[0].split())
-        coord_qry = map(int, vals[1].split())
-        lengths = map(int, vals[2].split())
-        cname = vals[4].split("\t")[1]
-        entries.append(Entry( *(coord_ref + coord_qry + lengths + [cname]) ))
+        s_ref, e_ref = map(int, vals[0].split())
+        s_qry, e_qry = map(int, vals[1].split())
+        len_ref, len_qry = map(int, vals[2].split())
+        ref_id, contig_id = vals[4].split("\t")
+        entries.append(Entry(s_ref, e_ref, s_qry, e_qry,
+                            len_ref, len_qry, ref_id, contig_id))
 
     return entries
 
@@ -40,12 +51,10 @@ def parse_contigs_order(filename):
     return scaffolds
 
 
-def main():
-    if len(sys.argv) < 3:
-        print "Usage: test.py quast_out contigs_order"
-        return
+def get_order(entries):
+    MIN_HIT = 0.8
 
-    entries = parse_quast_output(sys.argv[1])
+    chr_len = {}
 
     by_name = defaultdict(list)
     for entry in entries:
@@ -53,39 +62,37 @@ def main():
 
     for name in by_name:
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
-        by_name[name] = filter(lambda e: e.len_qry > 0.8 * by_name[name][0].len_qry, by_name[name])
-        #print map(lambda e: e.len_qry, by_name[name])
+        by_name[name] = filter(lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry, by_name[name])
 
     filtered_entries = []
     for ent_lst in by_name.itervalues():
         filtered_entries.extend(ent_lst)
-    filtered_entries.sort(key=lambda e: e.s_ref)
+
+    by_chr = defaultdict(list)
+    for entry in filtered_entries:
+        by_chr[entry.ref_id].append(entry)
+    for chr_id in by_chr:
+        by_chr[chr_id].sort(key=lambda e: e.s_ref)
+        chr_len[chr_id] = len(by_chr[chr_id])
 
     entry_ord = defaultdict(list)
-    gen_len = 0
-    for i, e in enumerate(filtered_entries):
-        entry_ord[e.contig_id].append(i)
-        gen_len = max(gen_len, i)
-    #print entry_ord
+    for chr_id, entries in by_chr.iteritems():
+        for i, e in enumerate(entries):
+            entry_ord[e.contig_id].append(Hit(i, chr_id))
 
-    """
-    true_signs = {}
-    for e in by_name.itervalues():
-        if abs(e[0].e_qry - e[0].s_qry) < 1000000:
-            if e[0].e_qry > e[0].s_qry:
-                true_signs[e[0].contig_id] = 1
-            else:
-                true_signs[e[0].contig_id] = -1
-        else:
-            if e[0].e_qry > e[0].s_qry:
-                true_signs[e[0].contig_id] = -1
-            else:
-                true_signs[e[0].contig_id] = 1
-    #print true_signs
-    """
-    #TODO: check signs
+    return entry_ord, chr_len
+
+
+def main():
+    if len(sys.argv) < 3:
+        print "Usage: test.py quast_out contigs_order"
+        return
+
+    entries = parse_quast_output(sys.argv[1])
     scaffolds = parse_contigs_order(sys.argv[2])
-    zero_step = False
+    entry_ord, chr_len = get_order(entries)
+
+    #TODO: check signs
     total_breaks = 0
     for s in scaffolds:
         print ">" + s.name
@@ -95,31 +102,35 @@ def main():
         breaks = []
         for contig in s.contigs:
             if prev:
-                #print increasing
                 if increasing is not None:
-                    if not agreement(increasing, prev, entry_ord[contig.name], gen_len):
+                    if not agreement(increasing, prev, entry_ord[contig.name], chr_len):
                         increasing = None
-                        #prev = None
                         breaks.append(contig.name)
                         total_breaks += 1
                 else:
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
-                        increasing = entry_ord[contig.name][0] > prev[0]
+                        increasing = entry_ord[contig.name][0].pos > prev[0].pos
 
             prev = entry_ord[contig.name]
-            print contig.name, entry_ord[contig.name]
+            print contig.name, map(str, entry_ord[contig.name])
         print breaks
 
     print "Total breaks: ", total_breaks
 
 
-def agreement(increasing, lst_1, lst_2, gen_len):
+def agreement(increasing, lst_1, lst_2, chr_len_dict):
     if not lst_1 or not lst_2:
         return True
     for i, j in product(lst_1, lst_2):
-        over_oric = ((increasing and i > gen_len * 4 / 5 and j < gen_len / 5) or
-                    (not increasing and i < gen_len / 5 and j > gen_len * 4 / 5))
-        if ((j > i) == increasing and abs(i - j) < gen_len / 3) or over_oric:
+        same_chr = i.chr == j.chr
+        if not same_chr:
+            return False
+
+        chr_len = chr_len_dict[i.chr]
+        over_oric = ((increasing and i.pos > chr_len * 4 / 5 and j.pos < chr_len / 5) or
+                    (not increasing and i.pos < chr_len / 5 and j.pos > chr_len * 4 / 5))
+
+        if ((j.pos > i.pos) == increasing and abs(i.pos - j.pos) < chr_len / 3) or over_oric:
             return True
     return False
 
