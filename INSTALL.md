@@ -19,3 +19,8 @@ $ pip install biopython networkx
 Ragout can use Sibelia for genomes decomposition on synteny blocks.
 "Sibelia" executable should be in your "PATH" environment variable,
 otherwise you can edit "SIBELIA_BIN" variable in "ragout.py" file. 
+
+If you use Python 2.5 or 2.6, you need to install additional Python
+packages:
+
+* argparse [https://pypi.python.org/pypi/argparse]
