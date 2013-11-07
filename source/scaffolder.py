@@ -10,7 +10,7 @@ from datatypes import *
 def get_scaffolds(connections, perm_container):
     scaffolds = extend_scaffolds(connections, perm_container)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
-    print "Done, {0} scaffolds".format(len(scaffolds))
+    #print "Done, {0} scaffolds".format(len(scaffolds))
     return scaffolds
 
 
@@ -142,4 +142,4 @@ def output_scaffolds(target_dict, scaffolds, out_fasta):
     for h, seq in contigs_fasta.iteritems():
         if len(seq) > MIN_CONTIG_LEN and h not in used_contigs:
             count += 1
-    print "Done,", count, "of", len(contigs_fasta), "contigs left,"
+    #print "Done,", count, "of", len(contigs_fasta), "contigs left,"

@@ -10,6 +10,7 @@ from datatypes import Contig, Scaffold
 Edge = namedtuple("Edge", ["start", "end"])
 
 
+#TODO: loading without graphviz
 def load_graph(filename):
     graph = nx.DiGraph(nx.read_dot(filename))
     edges = {}
@@ -17,21 +18,6 @@ def load_graph(filename):
         edge_id = str(edge[2]["label"])
         edges[edge_id] = Edge(edge[0], edge[1])
     return graph, edges
-
-def parse_contigs_order(filename):
-    scaffolds = []
-    for line in open(filename, "r"):
-        line = line.strip()
-        if line.startswith(">"):
-            scaffolds.append(Scaffold(line[1:]))
-        else:
-            #if line.startswith("gaps"):
-            #    gaplen = int(line.split(" ")[1])
-            #    scaffolds[-1].contigs[-1].gap = gaplen
-            #else:
-            scaffolds[-1].contigs.append(Contig.from_sting(line))
-            #scaffolds[-1].contigs[-1].gap = gaplen
-    return scaffolds
 
 
 def insert_from_graph(graph_file, scaffolds_in):
@@ -96,26 +82,4 @@ def insert_from_graph(graph_file, scaffolds_in):
 def refine_contigs(graph_file, scaffolds):
     graph, edges = load_graph(graph_file)
     new_scaffolds = insert_from_graph(graph_file, scaffolds)
-    #print len(scaffolds[0].contigs)
-    #print len(new_scaffolds[0].contigs)
-    #print new_scaffolds[0].contigs
     return new_scaffolds
-
-
-def main():
-    from scaffolder import output_scaffolds
-
-    if len(sys.argv) < 3:
-        print "Usage: debrujin graph_file contig_oder contig_fasta"
-        return
-
-    KMER = 55
-    graph_filename, order_filename, contigs_filename = sys.argv[1], sys.argv[2], sys.argv[3]
-    scaffolds = parse_contigs_order(order_filename)
-    contigs_dict = {seq.id : seq.seq for seq in SeqIO.parse(contigs_in, "fasta")}
-    new_scaffolds = refine_contigs(graph_filename, scaffolds, contigs_filename, )
-    output_scaffolds(contigs_dict, new_scaffolds, "new_scf.fasta", "new_order.txt", KMER, False)
-
-
-if __name__ == "__main__":
-    main()
