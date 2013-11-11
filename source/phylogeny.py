@@ -107,12 +107,9 @@ def subs_cost(v1, v2, length):
     MU = 1
     length = max(length, 0.0000001)
     if v1 == v2:
-        #return -MU * length
         return 0
     else:
-        #print math.log(1 - math.exp(-MU * length))
-        #return math.log(1 - math.exp(-MU * length))
-        return 1 - math.exp(-MU * length)
+        return math.exp(-MU * length)
 
 
 def tree_likelihood(root):
@@ -123,6 +120,7 @@ def tree_likelihood(root):
         subtree_prob = (subtree_likelihood +
                         subs_cost(root.comment[0], clade.comment[0], clade.branch_length))
         prob += subtree_prob
+        nbreaks += subtree_nbreaks
         if root.comment[0] != clade.comment[0]:
             nbreaks += 1
     return prob, nbreaks
@@ -171,13 +169,3 @@ def max_likelihood_score(tree):
             min_breaks = nbreaks
 
     return max_score, min_breaks, max_tree
-
-
-def test():
-    p = Phylogeny("((A:0.1,B:0.1):0.1,(C:0.1,D:0.1):0.1);")
-    adjacencies = {"A" : "1", "B" : "1", "C" : "2", "D" : "2"}
-    p.estimate_adjacency(adjacencies)
-
-
-if __name__ == "__main__":
-    test()

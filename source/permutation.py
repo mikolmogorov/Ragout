@@ -8,6 +8,10 @@ class Permutation:
         self.chr_id = chr_id
         self.chr_num = chr_num
         self.blocks = blocks
+        self.target_perms = []
+        self.ref_perms = []
+        self.ref_perms_filtered = []
+        self.target_perms_filtered = []
 
     def iter_blocks(self, circular=False):
         assert len(self.blocks) > 0

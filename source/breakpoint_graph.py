@@ -10,6 +10,7 @@ Connection = namedtuple("Connection", ["start", "end"])
 class BreakpointGraph:
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
+        self.targets = []
 
 
     def build_from(self, perm_container, circular):
@@ -29,6 +30,9 @@ class BreakpointGraph:
                 self.bp_graph.add_edge(-left_block, right_block, ref_id=perm.ref_id)
 
                 prev = block
+        for perm in perm_container.target_perms_filtered:
+            if perm.ref_id not in self.targets:
+                self.targets.append(perm.ref_id)
 
 
     def find_adjacencies(self, phylogeny):
@@ -36,7 +40,8 @@ class BreakpointGraph:
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
         for comp_id, subgraph in enumerate(subgraphs):
             #TODO: check for trivial case here
-            weighted_graph = make_weighted(subgraph, phylogeny)
+            target_id = self.targets[0]
+            weighted_graph = make_weighted(subgraph, phylogeny, target_id)
             chosen_edges = split_graph(weighted_graph)
 
             for edge in chosen_edges:
@@ -80,7 +85,7 @@ def split_graph(graph):
     return unique_edges
 
 
-def make_weighted(graph, phylogeny):
+def make_weighted(graph, phylogeny, target_id):
     g = nx.Graph()
     g.add_nodes_from(graph.nodes())
 
@@ -101,7 +106,7 @@ def make_weighted(graph, phylogeny):
         #max_tree = None
 
         for neighbor in graph.neighbors(node):
-            adjacencies["target"] = neighbor
+            adjacencies[target_id] = neighbor
             breaks_weight, nbreaks, tree = phylogeny.estimate_tree(adjacencies)
 
             update_edge(g, node, neighbor, breaks_weight)
