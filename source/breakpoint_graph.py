@@ -1,5 +1,6 @@
 import networkx as nx
 from permutation import *
+from debug import DebugConfig, write_dot
 import phylogeny as phylo
 
 
@@ -32,9 +33,8 @@ class BreakpointGraph:
 
     def find_adjacencies(self, phylogeny):
         adjacencies = {}
-        #component_counter = 0
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
-        for subgraph in subgraphs:
+        for comp_id, subgraph in enumerate(subgraphs):
             #TODO: check for trivial case here
             weighted_graph = make_weighted(subgraph, phylogeny)
             chosen_edges = split_graph(weighted_graph)
@@ -43,18 +43,25 @@ class BreakpointGraph:
                 adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
                 adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
 
-            #if self.debug_dir and len(subgraph) > 2:
-            #    for e in graph.edges_iter():
-            #        weighted_graph[e[0]][e[1]]["label"] = "{0:5.2f}".format(weighted_graph[e[0]][e[1]]["weight"])
-            #    bg_out = open(os.path.join(self.debug_dir, "comp{0}-bg.dot".format(component_counter)), "w")
-            #    prelinks_out = os.path.join(self.debug_dir, "comp{0}-prelinks.dot".format(component_counter))
-            #    write_colored_dot(subgraph, bg_out)
-            #    nx.draw_graphviz(weighted_graph)
-            #    nx.write_dot(weighted_graph, prelinks_out)
-
-            #component_counter += 1
+            if DebugConfig.get_writer().debugging:
+                debug_dir = DebugConfig.get_writer().debug_dir
+                debug_draw_component(comp_id, weighted_graph, subgraph, debug_dir)
 
         return adjacencies
+
+
+def debug_draw_component(comp_id, weighted_graph, breakpoint_graph, debug_dir):
+    if len(breakpoint_graph) == 2:
+        return
+
+    for e in weighted_graph.edges_iter():
+        weighted_graph[e[0]][e[1]]["label"] = ("{0:7.4f}"
+                                    .format(weighted_graph[e[0]][e[1]]["weight"]))
+    bg_out = os.path.join(debug_dir, "comp{0}-bg.dot".format(comp_id))
+    weighted_out = os.path.join(debug_dir, "comp{0}-weighted.dot".format(comp_id))
+    write_dot(breakpoint_graph, open(bg_out, "w"))
+    write_dot(weighted_graph, open(weighted_out, "w"))
+
 
 
 def split_graph(graph):
@@ -81,7 +88,6 @@ def make_weighted(graph, phylogeny):
     if len(graph) == 2:
         node_1, node_2 = graph.nodes()
         g.add_edge(node_1, node_2, weight=1)
-        #g.add_edge(node_2, node_1, weight=1)
         return g
 
     #non-trivial
@@ -100,6 +106,8 @@ def make_weighted(graph, phylogeny):
 
             update_edge(g, node, neighbor, breaks_weight)
 
+    return g
+
             #if likelihood > max_likelihood:
             #    max_likelihood = likelihood
             #    max_tree = tree
@@ -109,7 +117,7 @@ def make_weighted(graph, phylogeny):
         #    debug_file = open(debug_pref + "node_{0}.dot".format(node), "w")
         #    phylo.tree_to_dot(max_tree, debug_file)
 
-    return g
+
 
 def update_edge(graph, v1, v2, weight):
     if not graph.has_edge(v1, v2):
@@ -117,15 +125,3 @@ def update_edge(graph, v1, v2, weight):
     else:
         graph[v1][v2]["weight"] += weight
 
-    #TODO: graph output
-    #def write_colored_dot(self, dot_file):
-    #    Colors = ["red", "green", "blue", "yellow", "black"]
-    #    def output_subgraph(subgraph):
-    #        for edge in subgraph.edges(data=True):
-    #            color = Colors[edge[2]["color"] - 1]
-    #            dot_file.write("""{0} -- {1} [color = "{2}"];\n"""
-    #                            .format(edge[0], edge[1], color))
-
-    #    dot_file.write("graph {\n")
-    #    output_subgraph(graph)
-    #    dot_file.write("}\n")

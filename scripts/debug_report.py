@@ -33,7 +33,7 @@ for filename in os.listdir(sys.argv[1]):
 
 for component, files in compdict.iteritems():
     bg_name = component + "-bg.dot.png"
-    prelinks_name = component + "-prelinks.dot.png"
+    prelinks_name = component + "-weighted.dot.png"
     trees_names = filter(lambda x: x not in [bg_name, prelinks_name], files)
     trees_names = map(lambda t: os.path.join(working_dir, t), trees_names)
 

@@ -107,6 +107,7 @@ def main():
                         increasing = None
                         breaks.append(contig.name)
                         total_breaks += 1
+                        print "$$",
                 else:
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
                         increasing = entry_ord[contig.name][0].pos > prev[0].pos

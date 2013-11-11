@@ -11,6 +11,7 @@ import source.scaffolder as scfldr
 import source.merge_iters as merge
 from source.phylogeny import Phylogeny
 from source.permutation import PermutationContainer, parse_config
+from source.debug import DebugConfig
 
 SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/"
 os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
@@ -20,6 +21,7 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
+
     references, targets, tree_string, block_sizes = parse_config(config_file)
     phylogeny = Phylogeny(tree_string)
 
@@ -28,6 +30,7 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
+    oout_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     MIN_OVLP = 33
 
     last_scaffolds = None
@@ -38,6 +41,9 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
             os.mkdir(block_dir)
         block_config = os.path.join(block_dir, "blocks.cfg")
         block_order = os.path.join(block_dir, "scaffolds.ord")
+
+        debug_dir = os.path.join(block_dir, "debug")
+        DebugConfig.get_writer().set_debug_dir(debug_dir)
 
         if not skip_sibelia:
             sp.make_permutations(references, targets, block_size, block_dir)
