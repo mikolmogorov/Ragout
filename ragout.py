@@ -21,7 +21,6 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
-
     references, targets, tree_string, block_sizes = parse_config(config_file)
     phylogeny = Phylogeny(tree_string)
 
@@ -31,7 +30,6 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     oout_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
-    MIN_OVLP = 33
 
     last_scaffolds = None
 
@@ -65,7 +63,7 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
     scfldr.output_scaffolds(targets, last_scaffolds, out_scaffolds)
 
     if debrujin_refine:
-        ovlp.make_overlap_graph(targets, out_overlap, MIN_OVLP)
+        ovlp.make_overlap_graph(targets, out_overlap)
         refined_scaffolds = debrujin.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(targets, refined_scaffolds, out_refined_scaffolds)
