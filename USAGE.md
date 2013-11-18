@@ -5,55 +5,82 @@ Usage
     
 Supported arguments:
 
-    -h, --help     show the help message and exit
-    -c config      Configuration file
-    -o output_dir  Output directory
-    -s             Skip Sibelia running step
+    -h, --help      show the help message and exit
+    -c config       Configuration file
+    -o output_dir   Output directory
+    -s              Skip Sibelia running step
+    -g              Refine with assembly graph
 
-You can try Ragout on provided ready-to-use examples:
+
+Examples:
+=========
+
+You can try Ragout on the provided ready-to-use examples:
 
     python ragout.py -c examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/
     python ragout.py -c examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/
     python ragout.py -c examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/
+    python ragout.py -c examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/
+
+
+Input:
+======
+
+"Ragout" takes as input:
+
+- Reference sequences in "fasta" format
+- Target assembly in "fasta" format
+- Phylogenetic tree for both references and target assembly in "newick" format
+- Set of minimum synteny block sizes (one for each iteration)
+
+All these settings should be described in a single config file.
+See the example of such file below.
+
 
 Configuration file
 ==================
 
-Unless you want to use only our examples, Ragout should be provided with meaningful config file. Here is an example of such file:
+Here is an example of "Ragout" configuration file:
 
     REF col=references/COL.fasta
     REF jkd=references/JKD6008.fasta
     REF rf122=references/RF122.fasta
     REF n315=references/N315.fasta
-    
+
     TARGET usa=usa300_contigs.fasta
-    
-    TREE=(jkd:0.0359,(((col:0,target:0.00028)0.91:0.00153,n315:0.00323)1:0.03131,rf122:0.0277):0.00135);
-    
+
+    TREE=(rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
+
     BLOCK=5000,500,100
 
-Supported keywords:
+Keywords explanation:
 
-- REF indicates reference sequence (in fasta format).
-- TARGET refers to file containing contig sequences (in fasta format).
-- TREE represents phylogenetic tree of references and target (in Newick format).
-- BLOCK corrseponds to set of minimum synteny block sizes for each iteration.
+- REF: label of reference sequence and it`s relative path
+- TARGET: label of target assembly and it`s relative path
+- TREE: phylogenetic tree for both references and target assembly
+- BLOCK: set of minimum synteny block sizes (one for each iteration)
+
 
 Output files
 ============
 
 After running Ragout, an output directory will contain:
 
-- scaffolds.fasta with resulting assembly.
-- ...
+* "scaffolds.ord" with the resulting contigs order
+* "scaffolds.fasta" with the scaffold sequences (contigs are separated by 11 Ns)
+* "scaffolds_refined.ord" with the refined contigs order (if you used -g option)
+* "scaffolds_refined.fasta" with the refined scaffold sequences (if you used -g option)
+
 
 Useful scripts
 ==============
 
 Scripts are located in "scripts" directory
 
-    test.py nucmer_coords ord_file 
+test.py:
 
-Tests correctness of inferred contigs order, if closely related reference
-sequence available. It takes nucmer`s coords file as the first argument,
-and ord file, which was produced by Ragout.
+    python test.py nucmer_coords ord_file
+
+Tests the correctness of the infered contigs order, if a closely related reference
+is available. Script takes "nucmer" "coords" file as the first argument,
+and "ord" file as second (see above).

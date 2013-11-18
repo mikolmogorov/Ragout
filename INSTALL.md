@@ -10,13 +10,13 @@ Also, there are third-party dependencies:
 You can install them with your OS-specific package manager,
 e.g. in Ubuntu:
 
-$ sudo apt-get install python-biopython python-networkx
+	$ sudo apt-get install python-biopython python-networkx
 
 or using pip package manager:
 
-$ pip install biopython networkx
+	$ pip install biopython networkx
 
-Ragout can use Sibelia for genomes decomposition on synteny blocks.
+Ragout can use Sibelia for the genomes decomposition on synteny blocks.
 "Sibelia" executable should be in your "PATH" environment variable,
 otherwise you can edit "SIBELIA_BIN" variable in "ragout.py" file. 
 
