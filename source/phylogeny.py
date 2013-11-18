@@ -14,8 +14,7 @@ class Phylogeny:
         pass
 
     def estimate_tree(self, adjacencies):
-        dp = tree_score(self.tree, adjacencies)
-        return dp, None, None
+        return tree_score(self.tree, adjacencies)
 
 
 def tree_score(tree, leaf_states):

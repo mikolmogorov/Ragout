@@ -14,7 +14,9 @@ class Permutation:
         self.target_perms_filtered = []
 
     def iter_blocks(self, circular=False):
-        assert len(self.blocks) > 0
+        if not len(self.blocks):
+            return
+
         for block in self.blocks:
             yield block
 

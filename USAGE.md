@@ -1,7 +1,7 @@
 Usage
 =====
 
-    python ragout.py [-h] -c config -o output_dir [-s]
+    python ragout.py [-h] -c config -o output_dir [-s] [-g]
     
 Supported arguments:
 
@@ -26,7 +26,7 @@ You can try Ragout on the provided ready-to-use examples:
 Input:
 ======
 
-"Ragout" takes as input:
+Ragout takes as input:
 
 - Reference sequences in "fasta" format
 - Target assembly in "fasta" format
@@ -40,7 +40,7 @@ See the example of such file below.
 Configuration file
 ==================
 
-Here is an example of "Ragout" configuration file:
+Here is an example of Ragout configuration file:
 
     REF col=references/COL.fasta
     REF jkd=references/JKD6008.fasta

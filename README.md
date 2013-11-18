@@ -15,9 +15,9 @@ A tool for reference-assisted assmbly, using multiple references.
 Install
 =======
 
-For installation instructions see "INSTALL" file.
+For installation instructions see "INSTALL.md" file.
 
 Usage
 =====
 
-See "USAGE" file.
+See "USAGE.md" file.
