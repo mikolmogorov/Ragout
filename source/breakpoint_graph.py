@@ -11,6 +11,7 @@ class BreakpointGraph:
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
         self.targets = []
+        self.references = []
 
 
     def build_from(self, perm_container, circular):
@@ -30,9 +31,13 @@ class BreakpointGraph:
                 self.bp_graph.add_edge(-left_block, right_block, ref_id=perm.ref_id)
 
                 prev = block
+
         for perm in perm_container.target_perms_filtered:
             if perm.ref_id not in self.targets:
                 self.targets.append(perm.ref_id)
+        for perm in perm_container.ref_perms_filtered:
+            if perm.ref_id not in self.references:
+                self.references.append(perm.ref_id)
 
 
     def find_adjacencies(self, phylogeny):
@@ -40,8 +45,7 @@ class BreakpointGraph:
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
         for comp_id, subgraph in enumerate(subgraphs):
             #TODO: check for trivial case here
-            target_id = self.targets[0]
-            weighted_graph = make_weighted(subgraph, phylogeny, target_id)
+            weighted_graph = make_weighted(subgraph, phylogeny, self.targets, self.references)
             chosen_edges = split_graph(weighted_graph)
 
             for edge in chosen_edges:
@@ -68,7 +72,6 @@ def debug_draw_component(comp_id, weighted_graph, breakpoint_graph, debug_dir):
     write_dot(weighted_graph, open(weighted_out, "w"))
 
 
-
 def split_graph(graph):
     #since we want minimum weight matching
     for e in graph.edges_iter():
@@ -85,7 +88,7 @@ def split_graph(graph):
     return unique_edges
 
 
-def make_weighted(graph, phylogeny, target_id):
+def make_weighted(graph, phylogeny, target_ids, ref_ids):
     g = nx.Graph()
     g.add_nodes_from(graph.nodes())
 
@@ -102,9 +105,11 @@ def make_weighted(graph, phylogeny, target_id):
             for edge in graph[node][neighbor].values():
                 adjacencies[edge["ref_id"]] = neighbor
 
-        #max_likelihood = float("-inf")
-        #max_tree = None
+        for ref_id in ref_ids:
+            if ref_id not in adjacencies:
+                adjacencies[ref_id] = None  #"void" state in paper
 
+        target_id = target_ids[0]
         for neighbor in graph.neighbors(node):
             adjacencies[target_id] = neighbor
             breaks_weight, nbreaks, tree = phylogeny.estimate_tree(adjacencies)
@@ -112,16 +117,6 @@ def make_weighted(graph, phylogeny, target_id):
             update_edge(g, node, neighbor, breaks_weight)
 
     return g
-
-            #if likelihood > max_likelihood:
-            #    max_likelihood = likelihood
-            #    max_tree = tree
-
-        #if self.debug_dir:
-        #    debug_pref = os.path.join(self.debug_dir, "comp{0}-".format(component_counter))
-        #    debug_file = open(debug_pref + "node_{0}.dot".format(node), "w")
-        #    phylo.tree_to_dot(max_tree, debug_file)
-
 
 
 def update_edge(graph, v1, v2, weight):

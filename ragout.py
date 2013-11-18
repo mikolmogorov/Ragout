@@ -6,7 +6,7 @@ import argparse
 import source.breakpoint_graph as bg
 import source.sibelia_parser as sp
 import source.overlap as ovlp
-import source.debrujin_refine as debrujin
+import source.assembly_refine as asref
 import source.scaffolder as scfldr
 import source.merge_iters as merge
 from source.phylogeny import Phylogeny
@@ -16,7 +16,7 @@ from source.debug import DebugConfig
 SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/"
 os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
 
-def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
+def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
@@ -62,9 +62,9 @@ def do_job(config_file, out_dir, skip_sibelia, debrujin_refine):
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_scaffolds(targets, last_scaffolds, out_scaffolds)
 
-    if debrujin_refine:
+    if assembly_refine:
         ovlp.make_overlap_graph(targets, out_overlap)
-        refined_scaffolds = debrujin.refine_contigs(out_overlap, last_scaffolds)
+        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(targets, refined_scaffolds, out_refined_scaffolds)
 
@@ -77,11 +77,11 @@ def main():
                         required=True, help="Output directory")
     parser.add_argument("-s", action="store_const", metavar="skip_sibelia", dest="skip_sibelia",
                         default=False, const=True, help="Skip Sibelia running step")
-    parser.add_argument("-g", action="store_const", metavar="debrujin_refine", dest="debrujin_refine",
-                        default=False, const=True, help="Refine with Debrujin graph")
+    parser.add_argument("-g", action="store_const", metavar="assembly_refine", dest="assembly_refine",
+                        default=False, const=True, help="Refine with assembly graph")
 
     args = parser.parse_args()
-    do_job(args.config, args.output_dir, args.skip_sibelia, args.debrujin_refine)
+    do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)
 
 if __name__ == "__main__":
     main()
