@@ -1,5 +1,6 @@
 import networkx as nx
 import sys
+import re
 from collections import namedtuple
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -10,19 +11,27 @@ from datatypes import Contig, Scaffold
 Edge = namedtuple("Edge", ["start", "end"])
 
 
-#TODO: loading without graphviz
-def load_graph(filename):
-    graph = nx.DiGraph(nx.read_dot(filename))
+#in order not to depend on heavy graphviz
+def load_dot(filename):
+    graph = nx.DiGraph()
     edges = {}
-    for edge in graph.edges_iter(data=True):
-        edge_id = str(edge[2]["label"])
-        edges[edge_id] = Edge(edge[0], edge[1])
+    pattern = re.compile("([0-9]+)\s*\->\s*([0-9]+)\s*\[.*=.*\"(.*)\".*\]")
+    for line in open(filename, "r").read().splitlines():
+        m = pattern.match(line)
+        if not m:
+            continue
+
+        v1, v2 = int(m.group(1)), int(m.group(2))
+        graph.add_node(v1)
+        graph.add_node(v2)
+        graph.add_edge(v1, v2, label=m.group(3))
+        edges[m.group(3)] = Edge(v1, v2)
     return graph, edges
 
 
 def insert_from_graph(graph_file, scaffolds_in):
     new_scaffolds = []
-    graph, edges = load_graph(graph_file)
+    graph, edges = load_dot(graph_file)
 
     for scf in scaffolds_in:
         new_scaffolds.append(Scaffold(scf.name))
@@ -80,6 +89,6 @@ def insert_from_graph(graph_file, scaffolds_in):
 
 
 def refine_contigs(graph_file, scaffolds):
-    graph, edges = load_graph(graph_file)
+    graph, edges = load_dot(graph_file)
     new_scaffolds = insert_from_graph(graph_file, scaffolds)
     return new_scaffolds

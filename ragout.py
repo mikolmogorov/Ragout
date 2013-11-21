@@ -13,7 +13,7 @@ from source.phylogeny import Phylogeny
 from source.permutation import PermutationContainer, parse_config
 from source.debug import DebugConfig
 
-SIBELIA_BIN = "/home/volrath/Bioinf/Sibelia/distr/bin/"
+SIBELIA_BIN = "../Sibelia/distr/bin/"
 os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
 
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):

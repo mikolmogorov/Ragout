@@ -10,7 +10,6 @@ Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry",
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign", "gap"])
-#Hit = namedtuple("Hit", ["pos", "chr"])
 class Hit:
     def __init__(self, pos, chr):
         self.pos = pos
@@ -20,11 +19,11 @@ class Hit:
         return str(self.pos) + " : " + str(self.chr)
 
 
-def parse_quast_output(filename):
+def parse_nucmer_output(filename):
     entries = []
     for line in open(filename, "r"):
         line = line.strip()
-        if line.startswith("[") or line.startswith("="):
+        if not len(line) or not line[0].isdigit():
             continue
 
         vals = line.split(" | ")
@@ -88,7 +87,7 @@ def main():
         print "Usage: test.py quast_out contigs_order"
         return
 
-    entries = parse_quast_output(sys.argv[1])
+    entries = parse_nucmer_output(sys.argv[1])
     scaffolds = parse_contigs_order(sys.argv[2])
     entry_ord, chr_len = get_order(entries)
 
