@@ -1,9 +1,12 @@
 from collections import namedtuple
 import sys
+import logging
 from datatypes import *
 
+logger = logging.getLogger()
 
 def merge(big_scaffolds, small_scaffolds):
+    logger.info("Merging two iterations")
     big_index = set()
     for scf in big_scaffolds:
         for c in scf.contigs:

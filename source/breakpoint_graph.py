@@ -1,6 +1,7 @@
 import networkx as nx
 from collections import namedtuple
 import os
+import logging
 
 from permutation import *
 from debug import DebugConfig, write_dot
@@ -8,7 +9,7 @@ import phylogeny as phylo
 
 
 Connection = namedtuple("Connection", ["start", "end"])
-
+logger = logging.getLogger()
 
 class BreakpointGraph:
     def __init__(self):
@@ -19,6 +20,8 @@ class BreakpointGraph:
 
 
     def build_from(self, perm_container, circular):
+        logger.info("Building breakpoint graph")
+
         for perm in perm_container.ref_perms_filtered:
             if perm.ref_id not in self.references:
                 self.references.append(perm.ref_id)
@@ -53,6 +56,7 @@ class BreakpointGraph:
 
 
     def find_adjacencies(self, phylogeny):
+        logger.info("Resolving breakpoint graph")
         adjacencies = {}
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
         for comp_id, subgraph in enumerate(subgraphs):

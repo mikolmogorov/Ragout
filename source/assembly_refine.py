@@ -5,11 +5,12 @@ from collections import namedtuple
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import logging
 from datatypes import Contig, Scaffold
 
 
 Edge = namedtuple("Edge", ["start", "end"])
-
+logger = logging.getLogger()
 
 #in order not to depend on heavy graphviz
 def load_dot(filename):
@@ -73,8 +74,8 @@ def insert_from_graph(graph_file, scaffolds_in):
                 continue
 
             #all is ok!
-            print ("found path between {0} and {1} of length {2}"
-                                    .format(prev_cont, new_cont, len(path)))
+            #print ("found path between {0} and {1} of length {2}"
+            #                        .format(prev_cont, new_cont, len(path)))
             for p_start, p_end in zip(path[:-1], path[1:]):
                 #corresponging edge in graph
                 found_edge = None
@@ -85,7 +86,8 @@ def insert_from_graph(graph_file, scaffolds_in):
                 assert found_edge
 
                 if found_edge[1:] in ordered_contigs:
-                    print "Alarm! path inconsistency:", found_edge
+                    pass
+                    #print "Alarm! path inconsistency:", found_edge
 
                 new_scaffolds[-1].contigs[-1].gap = 0
                 new_scaffolds[-1].contigs.append(Contig.from_sting(found_edge))
@@ -97,5 +99,6 @@ def insert_from_graph(graph_file, scaffolds_in):
 
 
 def refine_contigs(graph_file, scaffolds):
+    logger.info("Refining with assembly graph")
     new_scaffolds = insert_from_graph(graph_file, scaffolds)
     return new_scaffolds

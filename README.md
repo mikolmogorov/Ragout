@@ -1,7 +1,7 @@
 Ragout - Reference-Assisted Genome Ordering UTility
 ===================================================
 
-A tool for reference-assisted assmbly, using multiple references.
+A tool for assisted assmbly using multiple references.
 
 			        (
 			     )    )

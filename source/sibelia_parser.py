@@ -1,23 +1,31 @@
 import os
+import sys
 import shutil
 import subprocess
 import copy
+import logging
 from collections import namedtuple, defaultdict
 from Bio import SeqIO
 
-
-SIBELIA_EXEC = "Sibelia"
+logger = logging.getLogger()
 
 def run_sibelia(fasta_files, block_size, out_dir):
-    print "Running Sibelia..."
+    SIBELIA_EXEC = "Sibelia"
+
+    logger.info("Running Sibelia...")
+    if not which(SIBELIA_EXEC):
+        raise Exception("Sibelia is not installed")
+
+    devnull = open(os.devnull, "w")
     cmdline = [SIBELIA_EXEC, "-s", "loose", "-m", str(block_size), "-o", out_dir]
     cmdline.extend(fasta_files)
-    process = subprocess.Popen(cmdline)
-    process.wait()
+    subprocess.check_call(cmdline, stdout=devnull)
+
     os.remove(os.path.join(out_dir, "coverage_report.txt"))
     os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
     os.remove(os.path.join(out_dir, "blocks_coords.txt"))
     shutil.rmtree(os.path.join(out_dir, "circos"))
+
     return os.path.join(out_dir, "genomes_permutations.txt")
 
 
@@ -55,11 +63,26 @@ def split_permutations(chr_to_gen, references, targets, perm_file, out_dir):
             handle.write(">{0}\n{1}\n".format(name, line))
 
 
-
 def make_permutations(references, targets, block_size, output_dir):
     genomes = dict(references.items() + targets.items())
     perm_file = run_sibelia(genomes.values(), block_size, output_dir)
-    #perm_file = os.path.join(output_dir, "genomes_permutations.txt")
     chr_to_gen = get_chr_names(genomes)
     split_permutations(chr_to_gen, references, targets, perm_file, output_dir)
 
+
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None

@@ -1,6 +1,8 @@
 from collections import defaultdict
 import config_parser as parser
+import logging
 
+logger = logging.getLogger()
 
 class Permutation:
     def __init__(self, ref_id, chr_id, chr_num, blocks):
@@ -50,6 +52,10 @@ def parse_blocks_file(ref_id, filename):
     permutations = []
     chr_count = 0
     for line in open(filename, "r").read().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
         if line.startswith(">"):
             name = line[1:]
         else:
@@ -64,6 +70,7 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
 
+        logging.info("Reading permutation file")
         config = parser.parse_ragout_config(config_file)
         for ref_id, ref_file in config.references.iteritems():
             self.ref_perms.extend(parse_blocks_file(ref_id, ref_file))

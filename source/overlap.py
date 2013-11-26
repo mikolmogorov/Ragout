@@ -4,7 +4,9 @@ from Bio.SeqRecord import SeqRecord
 from collections import defaultdict, namedtuple
 from itertools import product
 import sys
+import logging
 
+logger = logging.getLogger()
 
 Edge = namedtuple("Edge", ["begin", "end", "label"])
 
@@ -77,6 +79,7 @@ def build_graph(files, min_ovlp):
 
 
 def make_overlap_graph(targets, dot_file):
+    logger.info("Building overlap graph...")
     MIN_OVLP = 33
     edges = build_graph(targets.values(), MIN_OVLP)
     out_edges(edges, dot_file)

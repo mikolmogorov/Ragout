@@ -3,11 +3,15 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from collections import defaultdict
 import copy
+import logging
 
 from datatypes import *
 
+logger = logging.getLogger()
+
 
 def get_scaffolds(connections, perm_container):
+    logger.info("Building scaffolds")
     scaffolds = extend_scaffolds(connections, perm_container)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     #print "Done, {0} scaffolds".format(len(scaffolds))

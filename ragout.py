@@ -1,23 +1,38 @@
 #!/usr/bin/env python
 
 import os
+import logging
 import argparse
 
-import source.breakpoint_graph as bg
-import source.sibelia_parser as sp
 import source.overlap as ovlp
-import source.assembly_refine as asref
 import source.scaffolder as scfldr
+import source.sibelia_parser as sp
 import source.merge_iters as merge
+import source.breakpoint_graph as bg
 import source.config_parser as cparser
+import source.assembly_refine as asref
 from source.phylogeny import Phylogeny
-from source.permutation import PermutationContainer
 from source.debug import DebugConfig
+from source.permutation import PermutationContainer
 
 SIBELIA_BIN = "../Sibelia/distr/bin/"
 os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
 
+logger = logging.getLogger()
+
+def enable_logging():
+    #log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
+    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
+    console_log = logging.StreamHandler()
+    console_log.setLevel(logging.INFO)
+    console_log.setFormatter(console_formatter)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(console_log)
+
+
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
+    enable_logging()
+
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
@@ -33,7 +48,10 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
 
     last_scaffolds = None
 
+    logger.info("Cooking Ragout...")
     for block_size in config.blocks:
+        logger.info("Running with block size {0}...".format(block_size))
+
         block_dir = os.path.join(out_dir, str(block_size))
         if not os.path.isdir(block_dir):
             os.mkdir(block_dir)
@@ -68,6 +86,8 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
         refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
+
+    logger.info("Your Ragout is ready!")
 
 
 def main():
