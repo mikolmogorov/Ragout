@@ -15,7 +15,7 @@ Edge = namedtuple("Edge", ["start", "end"])
 def load_dot(filename):
     graph = nx.DiGraph()
     edges = {}
-    pattern = re.compile("([0-9]+)\s*\->\s*([0-9]+)\s*\[.*=.*\"(.*)\".*\]")
+    pattern = re.compile("([0-9]+)\s*\->\s*([0-9]+)\s*\[.*=.*\"(.+)\".*\];")
     for line in open(filename, "r").read().splitlines():
         m = pattern.match(line)
         if not m:
@@ -30,8 +30,13 @@ def load_dot(filename):
 
 
 def insert_from_graph(graph_file, scaffolds_in):
+    MAX_LEN = 6
     new_scaffolds = []
     graph, edges = load_dot(graph_file)
+
+    ordered_contigs = set()
+    for scf in scaffolds_in:
+        ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
 
     for scf in scaffolds_in:
         new_scaffolds.append(Scaffold(scf.name))
@@ -62,13 +67,14 @@ def insert_from_graph(graph_file, scaffolds_in):
                 continue
 
             path = paths[0]
-            if len(path) > 2:
+            #print len(path)
+            if len(path) > MAX_LEN:
                 #print "too long path between {0} and {1}".format(prev_cont, new_cont)
                 continue
 
             #all is ok!
-            #print ("found path between {0} and {1} of length {2}"
-            #                        .format(prev_cont, new_cont, len(path)))
+            print ("found path between {0} and {1} of length {2}"
+                                    .format(prev_cont, new_cont, len(path)))
             for p_start, p_end in zip(path[:-1], path[1:]):
                 #corresponging edge in graph
                 found_edge = None
@@ -78,10 +84,12 @@ def insert_from_graph(graph_file, scaffolds_in):
                         break
                 assert found_edge
 
+                if found_edge[1:] in ordered_contigs:
+                    print "Alarm! path inconsistency:", found_edge
+
                 new_scaffolds[-1].contigs[-1].gap = 0
                 new_scaffolds[-1].contigs.append(Contig.from_sting(found_edge))
                 new_scaffolds[-1].contigs[-1].gap = 0
-                #print "\tinserting", found_edge
 
         new_scaffolds[-1].contigs.append(new_cont)
 
@@ -89,6 +97,5 @@ def insert_from_graph(graph_file, scaffolds_in):
 
 
 def refine_contigs(graph_file, scaffolds):
-    graph, edges = load_dot(graph_file)
     new_scaffolds = insert_from_graph(graph_file, scaffolds)
     return new_scaffolds

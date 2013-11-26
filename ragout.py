@@ -9,8 +9,9 @@ import source.overlap as ovlp
 import source.assembly_refine as asref
 import source.scaffolder as scfldr
 import source.merge_iters as merge
+import source.config_parser as cparser
 from source.phylogeny import Phylogeny
-from source.permutation import PermutationContainer, parse_config
+from source.permutation import PermutationContainer
 from source.debug import DebugConfig
 
 SIBELIA_BIN = "../Sibelia/distr/bin/"
@@ -21,19 +22,18 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
 
-    references, targets, tree_string, block_sizes = parse_config(config_file)
-    phylogeny = Phylogeny(tree_string)
+    config = cparser.parse_ragout_config(config_file)
+    phylogeny = Phylogeny(config.tree)
 
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
-    oout_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
 
     last_scaffolds = None
 
-    for block_size in block_sizes:
+    for block_size in config.blocks:
         block_dir = os.path.join(out_dir, str(block_size))
         if not os.path.isdir(block_dir):
             os.mkdir(block_dir)
@@ -44,7 +44,8 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
         DebugConfig.get_writer().set_debug_dir(debug_dir)
 
         if not skip_sibelia:
-            sp.make_permutations(references, targets, block_size, block_dir)
+            sp.make_permutations(config.references, config.targets,
+                                             block_size, block_dir)
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()
@@ -60,25 +61,30 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
             last_scaffolds = scaffolds
 
     scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_scaffolds(targets, last_scaffolds, out_scaffolds)
+    scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        ovlp.make_overlap_graph(targets, out_overlap)
+        ovlp.make_overlap_graph(config.targets, out_overlap)
         refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_scaffolds(targets, refined_scaffolds, out_refined_scaffolds)
+        scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Tool for reference-assisted assembly")
+    parser = argparse.ArgumentParser(description="A tool for reference-assisted assembly")
     parser.add_argument("-c", action="store", metavar="config", dest="config",
-                        required=True, help="Configuration file")
-    parser.add_argument("-o", action="store", metavar="output_dir", dest="output_dir",
-                        required=True, help="Output directory")
-    parser.add_argument("-s", action="store_const", metavar="skip_sibelia", dest="skip_sibelia",
-                        default=False, const=True, help="Skip Sibelia running step")
-    parser.add_argument("-g", action="store_const", metavar="assembly_refine", dest="assembly_refine",
-                        default=False, const=True, help="Refine with assembly graph")
+                        required=True, help="configuration file")
+
+    parser.add_argument("-o", action="store", metavar="output_dir",
+                        dest="output_dir", required=True, help="output directory")
+
+    parser.add_argument("-s", action="store_const", metavar="skip_sibelia",
+                        dest="skip_sibelia", default=False, const=True,
+                        help="skip Sibelia running step")
+
+    parser.add_argument("-g", action="store_const", metavar="assembly_refine",
+                        dest="assembly_refine", default=False, const=True,
+                        help="refine with the assembly graph")
 
     args = parser.parse_args()
     do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)

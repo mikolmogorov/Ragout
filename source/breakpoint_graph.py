@@ -1,4 +1,7 @@
 import networkx as nx
+from collections import namedtuple
+import os
+
 from permutation import *
 from debug import DebugConfig, write_dot
 import phylogeny as phylo

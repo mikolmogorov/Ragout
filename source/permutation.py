@@ -1,5 +1,5 @@
-from collections import namedtuple, defaultdict
-import os
+from collections import defaultdict
+import config_parser as parser
 
 
 class Permutation:
@@ -59,46 +59,16 @@ def parse_blocks_file(ref_id, filename):
     return permutations
 
 
-#TODO: place somewhere else
-def parse_config(filename):
-    prefix = os.path.dirname(filename)
-    references = {}
-    target = {}
-    tree_str = None
-    block_size = None
-
-    for line in open(filename, "r").read().splitlines():
-        if line.startswith("#"):
-            continue
-
-        if line.startswith("REF"):
-            ref_id, ref_file = line[4:].split("=")
-            references[ref_id] = os.path.join(prefix, ref_file)
-
-        if line.startswith("TARGET"):
-            ref_id, ref_file = line[7:].split("=")
-            target[ref_id] = os.path.join(prefix, ref_file)
-
-        if line.startswith("TREE"):
-            tree_str = line.split("=")[1]
-
-        if line.startswith("BLOCK"):
-            sizes = line.split("=")[1].split(",")
-            block_size = map(int, sizes)
-
-    return references, target, tree_str, block_size
-
-
 class PermutationContainer:
     def __init__(self, config_file):
         self.ref_perms = []
         self.target_perms = []
 
-        ref_files, target_files, _tree, _blocks = parse_config(config_file)
-        for ref_id, ref_file in ref_files.iteritems():
+        config = parser.parse_ragout_config(config_file)
+        for ref_id, ref_file in config.references.iteritems():
             self.ref_perms.extend(parse_blocks_file(ref_id, ref_file))
 
-        for t_id, t_file in target_files.iteritems():
+        for t_id, t_file in config.targets.iteritems():
             self.target_perms.extend(parse_blocks_file(t_id, t_file))
 
         self.duplications = find_duplications(self.ref_perms, self.target_perms)
