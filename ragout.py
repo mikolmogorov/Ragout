@@ -20,19 +20,23 @@ os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
 
 logger = logging.getLogger()
 
-def enable_logging():
-    #log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
+def enable_logging(log_file):
+    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
     console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
+
     console_log = logging.StreamHandler()
     console_log.setLevel(logging.INFO)
     console_log.setFormatter(console_formatter)
+
+    file_handler = logging.FileHandler(log_file, mode="w")
+    file_handler.setFormatter(log_formatter)
+
     logger.setLevel(logging.DEBUG)
     logger.addHandler(console_log)
+    logger.addHandler(file_handler)
 
 
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
-    enable_logging()
-
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")
         return
@@ -40,12 +44,14 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     config = cparser.parse_ragout_config(config_file)
     phylogeny = Phylogeny(config.tree)
 
+    out_log = os.path.join(out_dir, "log.txt")
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
 
+    enable_logging(out_log)
     last_scaffolds = None
 
     logger.info("Cooking Ragout...")
@@ -82,8 +88,10 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        ovlp.make_overlap_graph(config.targets, out_overlap)
-        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
+        MIN_OVERLAP = 33
+        MAX_PATH_LEN = 6
+        ovlp.make_overlap_graph(config.targets, out_overlap, MIN_OVERLAP)
+        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds, MAX_PATH_LEN)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
 

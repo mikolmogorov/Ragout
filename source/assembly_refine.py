@@ -30,8 +30,7 @@ def load_dot(filename):
     return graph, edges
 
 
-def insert_from_graph(graph_file, scaffolds_in):
-    MAX_LEN = 6
+def insert_from_graph(graph_file, scaffolds_in, max_path_len):
     new_scaffolds = []
     graph, edges = load_dot(graph_file)
 
@@ -45,39 +44,35 @@ def insert_from_graph(graph_file, scaffolds_in):
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
             new_scaffolds[-1].contigs.append(prev_cont)
 
-            #print str(prev_cont)
             try:
                 src = edges[str(prev_cont)].end
                 dst = edges[str(new_cont)].start
             except KeyError:
-                #print "contig is not in graph"
+                logger.debug("contigs are not in the graph")
                 continue
 
             if src == dst:
-                #print "adjacent contigs {0} and {1}".format(prev_cont, new_cont)
-                new_scaffolds[-1].contigs[-1].gap = 0
+                logger.debug("adjacent contigs {0} a-- {1}".format(prev_cont, new_cont))
                 continue
 
             if not nx.has_path(graph, src, dst):
-                #print "no path between {0} and {1}".format(prev_cont, new_cont)
+                logger.debug("no path {0} -- {1}".format(prev_cont, new_cont))
                 continue
 
             paths = [p for p in nx.all_shortest_paths(graph, src, dst)]
             if len(paths) != 1:
-                #print "ambigious paths between {0} and {1}".format(prev_cont, new_cont)
+                logger.debug("multiple paths {0} -- {1}".format(prev_cont, new_cont))
                 continue
 
             path = paths[0]
-            #print len(path)
-            if len(path) > MAX_LEN:
-                #print "too long path between {0} and {1}".format(prev_cont, new_cont)
+            if len(path) > max_path_len:
+                logger.debug("too long path {0} -- {1} of length {2}"
+                                                    .format(prev_cont, new_cont, len(path)))
                 continue
 
-            #all is ok!
-            #print ("found path between {0} and {1} of length {2}"
-            #                        .format(prev_cont, new_cont, len(path)))
+            logger.debug("unique path {0} -- {1} of length {2}"
+                                                    .format(prev_cont, new_cont, len(path)))
             for p_start, p_end in zip(path[:-1], path[1:]):
-                #corresponging edge in graph
                 found_edge = None
                 for edge_id, edge in edges.iteritems():
                     if edge == Edge(p_start, p_end):
@@ -86,8 +81,7 @@ def insert_from_graph(graph_file, scaffolds_in):
                 assert found_edge
 
                 if found_edge[1:] in ordered_contigs:
-                    pass
-                    #print "Alarm! path inconsistency:", found_edge
+                    logger.debug("Alarm! path inconsistency: {0}".format(found_edge))
 
                 new_scaffolds[-1].contigs[-1].gap = 0
                 new_scaffolds[-1].contigs.append(Contig.from_sting(found_edge))
@@ -98,7 +92,8 @@ def insert_from_graph(graph_file, scaffolds_in):
     return new_scaffolds
 
 
-def refine_contigs(graph_file, scaffolds):
+def refine_contigs(graph_file, scaffolds, max_path_len):
     logger.info("Refining with assembly graph")
-    new_scaffolds = insert_from_graph(graph_file, scaffolds)
+    logger.debug("Max path len = {0}".format(max_path_len))
+    new_scaffolds = insert_from_graph(graph_file, scaffolds, max_path_len)
     return new_scaffolds

@@ -78,10 +78,9 @@ def build_graph(files, min_ovlp):
     return edges
 
 
-def make_overlap_graph(targets, dot_file):
+def make_overlap_graph(targets, dot_file, min_overlap):
     logger.info("Building overlap graph...")
-    MIN_OVLP = 33
-    edges = build_graph(targets.values(), MIN_OVLP)
+    edges = build_graph(targets.values(), min_overlap)
     out_edges(edges, dot_file)
 
 
