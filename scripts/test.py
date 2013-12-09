@@ -20,6 +20,9 @@ class Hit:
 
 
 def parse_nucmer_output(filename):
+    chr_alias = {}
+    chr_num = 1
+
     entries = []
     for line in open(filename, "r"):
         line = line.strip()
@@ -31,8 +34,12 @@ def parse_nucmer_output(filename):
         s_qry, e_qry = map(int, vals[1].split())
         len_ref, len_qry = map(int, vals[2].split())
         ref_id, contig_id = vals[4].split("\t")
+
+        if ref_id not in chr_alias:
+            chr_alias[ref_id] = "chr{0}".format(chr_num)
+            chr_num += 1
         entries.append(Entry(s_ref, e_ref, s_qry, e_qry,
-                            len_ref, len_qry, ref_id, contig_id))
+                            len_ref, len_qry, chr_alias[ref_id], contig_id))
 
     return entries
 
@@ -54,6 +61,7 @@ def get_order(entries):
     MIN_HIT = 0.8
 
     chr_len = {}
+    contig_len = defaultdict(int)
 
     by_name = defaultdict(list)
     for entry in entries:
@@ -67,6 +75,9 @@ def get_order(entries):
     for ent_lst in by_name.itervalues():
         filtered_entries.extend(ent_lst)
 
+    for entry in filtered_entries:
+        contig_len[entry.contig_id] = entry.len_qry
+
     by_chr = defaultdict(list)
     for entry in filtered_entries:
         by_chr[entry.ref_id].append(entry)
@@ -79,7 +90,7 @@ def get_order(entries):
         for i, e in enumerate(entries):
             entry_ord[e.contig_id].append(Hit(i, chr_id))
 
-    return entry_ord, chr_len
+    return entry_ord, chr_len, contig_len
 
 
 def main():
@@ -89,7 +100,7 @@ def main():
 
     entries = parse_nucmer_output(sys.argv[1])
     scaffolds = parse_contigs_order(sys.argv[2])
-    entry_ord, chr_len = get_order(entries)
+    entry_ord, chr_len, contig_len = get_order(entries)
 
     #TODO: check signs
     total_breaks = 0
@@ -106,16 +117,16 @@ def main():
                         increasing = None
                         breaks.append(contig.name)
                         total_breaks += 1
-                        print "$$",
+                        sys.stdout.write("$")
                 else:
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
                         increasing = entry_ord[contig.name][0].pos > prev[0].pos
 
             prev = entry_ord[contig.name]
-            print contig.name, map(str, entry_ord[contig.name])
-        print breaks
-
-    print "Total breaks: ", total_breaks
+            print "{0}\t{1}\t{2}".format(contig.name, contig_len[contig.name],
+                                        map(str, entry_ord[contig.name]))
+        print "miss-ordered: ", breaks
+    print "Total miss-ordered: ", total_breaks
 
 
 def agreement(increasing, lst_1, lst_2, chr_len_dict):
