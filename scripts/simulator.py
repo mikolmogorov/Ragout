@@ -130,14 +130,14 @@ def main():
     sequence = SeqIO.parse(sys.argv[3], "fasta").next().seq
     root = permutations[0].blocks
 
-    N_REARR = 3
+    N_REARR = 5
     N_INDELS = 10
     ref1 = evolve(root, blocks_info, N_REARR, N_INDELS)
     root2 = evolve(root, blocks_info, N_REARR, N_INDELS)
     ref2 = evolve(root2, blocks_info, N_REARR, N_INDELS)
     root3 = evolve(root2, blocks_info, 0, N_INDELS)
-    #ref3 = evolve(root3, BRANCH_LEN)
-    ref3 = root3
+    ref3 = evolve(root3, blocks_info, 0, N_INDELS)
+    #ref3 = root3
     root4 = evolve(root3, blocks_info, 0, N_INDELS)
     ref4 = evolve(root4, blocks_info, N_REARR, N_INDELS)
     ref5 = evolve(root4, blocks_info, N_REARR, N_INDELS)

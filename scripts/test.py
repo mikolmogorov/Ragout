@@ -58,7 +58,7 @@ def parse_contigs_order(filename):
 
 
 def get_order(entries):
-    MIN_HIT = 0.8
+    MIN_HIT = 0.45
 
     chr_len = {}
     contig_len = defaultdict(int)
@@ -76,7 +76,7 @@ def get_order(entries):
         filtered_entries.extend(ent_lst)
 
     for entry in filtered_entries:
-        contig_len[entry.contig_id] = entry.len_qry
+        contig_len[entry.contig_id] = max(entry.len_qry, contig_len[entry.contig_id])
 
     by_chr = defaultdict(list)
     for entry in filtered_entries:
@@ -95,7 +95,7 @@ def get_order(entries):
 
 def main():
     if len(sys.argv) < 3:
-        print "Usage: test.py quast_out contigs_order"
+        print "Usage: test.py nucmer_coords scaffolds_ord"
         return
 
     entries = parse_nucmer_output(sys.argv[1])
@@ -122,9 +122,13 @@ def main():
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
                         increasing = entry_ord[contig.name][0].pos > prev[0].pos
 
-            prev = entry_ord[contig.name]
             print "{0}\t{1}\t{2}".format(contig.name, contig_len[contig.name],
                                         map(str, entry_ord[contig.name]))
+
+            #only if this contig has alignments
+            if entry_ord[contig.name]:
+                prev = entry_ord[contig.name]
+
         print "miss-ordered: ", breaks
     print "Total miss-ordered: ", total_breaks
 

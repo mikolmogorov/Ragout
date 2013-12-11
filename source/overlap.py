@@ -14,6 +14,8 @@ def get_contigs(files):
     contigs = {}
     for file in files:
         for seq in SeqIO.parse(file, "fasta"):
+            #if len(seq.seq) < 50:
+            #    continue
             contigs["+" + seq.id] = seq.seq
             contigs["-" + seq.id] = seq.seq.reverse_complement()
     return contigs
@@ -59,8 +61,12 @@ def build_graph(files, min_ovlp):
             sample_ctg = overlaps[0]
             if sample_ctg in heads:
                 cur_node = heads[sample_ctg]
+                #for ovlp in overlaps:
+                #    assert heads[ovlp] == cur_node
             else:
                 cur_node = new_node_id()
+                for ovlp in overlaps:
+                    heads[ovlp] = cur_node
                 assert sample_ctg not in visited
 
             for ovlp in overlaps:
