@@ -70,6 +70,7 @@ def main(blocks_file, genomes):
         if not check_unique(block_list):
             continue
 
+        """
         if check_block(len(genomes), block_list):
             out_block = open("block_" + str(block_id) + ".fasta", "w")
             for block in block_list:
@@ -80,7 +81,7 @@ def main(blocks_file, genomes):
 
                 name = id_to_name[block.chr_id]
                 SeqIO.write(SeqRecord(seq=block_seq, id=name, description=""), out_block, "fasta")
-
+        """
 
         for block in block_list:
             name = ""

@@ -84,3 +84,7 @@ test.py:
 Tests the correctness of the infered contigs order, if a closely related reference
 is available. Script takes "nucmer" "coords" file as the first argument,
 and "ord" file as second (see above).
+
+To obtain nucmer "coords" file you can run nucmer lie this:
+
+	nucmer --maxmatch --coords reference contigs

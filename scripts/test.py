@@ -93,6 +93,16 @@ def get_order(entries):
     return entry_ord, chr_len, contig_len
 
 
+def gap_count(lst_1, lst_2):
+    if not lst_1 or not lst_2:
+        return 0
+
+    gaps = 99999
+    for i, j in product(lst_1, lst_2):
+        gaps = min(gaps, abs(i.pos - j.pos) - 1)
+    return gaps
+
+
 def main():
     if len(sys.argv) < 3:
         print "Usage: test.py nucmer_coords scaffolds_ord"
@@ -104,6 +114,8 @@ def main():
 
     #TODO: check signs
     total_breaks = 0
+    total_gaps = 0
+    total_contigs = 0
     for s in scaffolds:
         print ">" + s.name
 
@@ -118,28 +130,40 @@ def main():
                         breaks.append(contig.name)
                         total_breaks += 1
                         sys.stdout.write("$")
+                        #print map(lambda p: p.pos, prev)
                 else:
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
                         increasing = entry_ord[contig.name][0].pos > prev[0].pos
 
             print "{0}\t{1}\t{2}".format(contig.name, contig_len[contig.name],
                                         map(str, entry_ord[contig.name]))
+            #print increasing
+
+            total_contigs += 1
+
+            if gap_count(prev, entry_ord[contig.name]) > 0:
+                total_gaps += 1
 
             #only if this contig has alignments
             if entry_ord[contig.name]:
                 prev = entry_ord[contig.name]
+            #else:
+            #    prev = None
 
         print "miss-ordered: ", breaks
-    print "Total miss-ordered: ", total_breaks
+    print "Total miss-ordered:", total_breaks
+    print "Total gaps:", total_gaps
+    print "Total contigs:", total_contigs
 
 
 def agreement(increasing, lst_1, lst_2, chr_len_dict):
     if not lst_1 or not lst_2:
         return True
+
     for i, j in product(lst_1, lst_2):
         same_chr = i.chr == j.chr
         if not same_chr:
-            return False
+            continue
 
         chr_len = chr_len_dict[i.chr]
         over_oric = ((increasing and i.pos > chr_len * 4 / 5 and j.pos < chr_len / 5) or

@@ -7,6 +7,8 @@ from Bio.Seq import Seq
 from collections import namedtuple
 import sys
 import random
+
+
 SyntenyBlock = namedtuple("SyntenyBlock", ["seq", "chr_id", "strand", "id", "start", "end", "chr_num"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 Permutation = namedtuple("Permutation", ["chr_id", "chr_num", "blocks"])
@@ -74,10 +76,10 @@ def translocation(permutation, mean_length):
     pos_from = np.random.randint(0, len(permutation) - length)
     pos_to = np.random.randint(0, len(permutation) - length)
 
-    cutted = permutation[pos_from:pos_from+length]
+    cut = permutation[pos_from:pos_from+length]
     rest = permutation[0:pos_from] + permutation[pos_from+length:]
 
-    return rest[0:pos_to] + cutted + rest[pos_to:]
+    return rest[0:pos_to] + cut + rest[pos_to:]
 
 
 def deletion(permutation):
@@ -132,15 +134,29 @@ def main():
 
     N_REARR = 5
     N_INDELS = 10
-    ref1 = evolve(root, blocks_info, N_REARR, N_INDELS)
-    root2 = evolve(root, blocks_info, N_REARR, N_INDELS)
-    ref2 = evolve(root2, blocks_info, N_REARR, N_INDELS)
-    root3 = evolve(root2, blocks_info, 0, N_INDELS)
-    ref3 = evolve(root3, blocks_info, 0, N_INDELS)
-    #ref3 = root3
-    root4 = evolve(root3, blocks_info, 0, N_INDELS)
-    ref4 = evolve(root4, blocks_info, N_REARR, N_INDELS)
-    ref5 = evolve(root4, blocks_info, N_REARR, N_INDELS)
+
+    ref3 = root
+
+    root1 = evolve(root, blocks_info, 0, N_INDELS)
+    root2 = evolve(root, blocks_info, 0, N_INDELS)
+
+    ref1 = evolve(root1, blocks_info, N_REARR, N_INDELS)
+    ref2 = evolve(root1, blocks_info, N_REARR, N_INDELS)
+    ref4 = evolve(root2, blocks_info, N_REARR, N_INDELS)
+    ref5 = evolve(root2, blocks_info, N_REARR, N_INDELS)
+
+    #ref3 = root
+    #ref1 = evolve(root)
+    #root2 = evolve(root, blocks_info, N_REARR, 0)
+    #ref1 = evolve(root2, blocks_info, N_REARR, 0)
+    #ref2 = evolve(root2, blocks_info, N_REARR, 0)
+
+    #root3 = evolve(root, blocks_info, 0, 0)
+    #ref3 = evolve(root3, blocks_info, 0, 0)
+
+    #root4 = evolve(root3, blocks_info, 0, 0)
+    #ref4 = evolve(root4, blocks_info, N_REARR, 0)
+    #ref5 = evolve(root4, blocks_info, N_REARR, 0)
 
     new_blocks = {}
 
