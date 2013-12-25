@@ -143,17 +143,17 @@ def main():
 
             if gap_count(prev, entry_ord[contig.name]) > 0:
                 total_gaps += 1
+            #total_gaps += gap_count(prev, entry_ord[contig.name])
 
             #only if this contig has alignments
             if entry_ord[contig.name]:
                 prev = entry_ord[contig.name]
-            #else:
-            #    prev = None
 
         print "miss-ordered: ", breaks
     print "Total miss-ordered:", total_breaks
     print "Total gaps:", total_gaps
     print "Total contigs:", total_contigs
+    print "Total scaffolds:", len(scaffolds)
 
 
 def agreement(increasing, lst_1, lst_2, chr_len_dict):

@@ -29,4 +29,7 @@ def main(ord_file, contigs_file):
     SeqIO.write(SeqRecord(scf, id=scf_name, description=""), sys.stdout, "fasta")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) < 3:
+        print "USAGE: ord2fasta.py ord_file contigs_file"
+    else:
+        main(sys.argv[1], sys.argv[2])
