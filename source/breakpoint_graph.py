@@ -57,30 +57,51 @@ class BreakpointGraph:
 
     def find_adjacencies(self, phylogeny):
         logger.info("Resolving breakpoint graph")
-        adjacencies = {}
+        chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+
+
         for comp_id, subgraph in enumerate(subgraphs):
-            if len(subgraph) < 2:
+            known_adjacencies, trimmed_graph = self.trim_known_edges(subgraph)
+            chosen_edges.extend(known_adjacencies)
+
+            if len(trimmed_graph) < 2:
                 continue
 
-            if len(subgraph) == 2:
-                node_1, node_2 = subgraph.nodes()
-                adjacencies[-node_1] = Connection(-node_1, node_2)
-                adjacencies[-node_2] = Connection(-node_2, node_1)
+            if len(trimmed_graph) == 2:
+                node_1, node_2 = trimmed_graph.nodes()
+                chosen_edges.append((node_1, node_2))
                 continue
 
-            weighted_graph = self.make_weighted(subgraph, phylogeny)
-            chosen_edges = split_graph(weighted_graph)
-
-            for edge in chosen_edges:
-                adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
-                adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
+            weighted_graph = self.make_weighted(trimmed_graph, phylogeny)
+            matching_edges = split_graph(weighted_graph)
+            chosen_edges.extend(matching_edges)
 
             if DebugConfig.get_writer().debugging:
                 debug_dir = DebugConfig.get_writer().debug_dir
                 debug_draw_component(comp_id, weighted_graph, subgraph, debug_dir)
 
+        adjacencies = {}
+        for edge in chosen_edges:
+            adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
+            adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
+
         return adjacencies
+
+
+    def trim_known_edges(self, graph):
+        known_edges = []
+        trimmed_graph = graph.copy()
+        for v1, v2, data in graph.edges_iter(data=True):
+            if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
+                continue
+
+            if self.known_adjacencies.get(v1, None) == v2:
+                trimmed_graph.remove_node(v1)
+                trimmed_graph.remove_node(v2)
+                known_edges.append((v1, v2))
+
+        return known_edges, trimmed_graph
 
 
     def make_weighted(self, graph, phylogeny):
