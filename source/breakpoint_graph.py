@@ -60,10 +60,8 @@ class BreakpointGraph:
         chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
 
-
         for comp_id, subgraph in enumerate(subgraphs):
-            known_adjacencies, trimmed_graph = self.trim_known_edges(subgraph)
-            chosen_edges.extend(known_adjacencies)
+            trimmed_graph = self.trim_known_edges(subgraph)
 
             if len(trimmed_graph) < 2:
                 continue
@@ -90,7 +88,6 @@ class BreakpointGraph:
 
 
     def trim_known_edges(self, graph):
-        known_edges = []
         trimmed_graph = graph.copy()
         for v1, v2, data in graph.edges_iter(data=True):
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
@@ -99,9 +96,8 @@ class BreakpointGraph:
             if self.known_adjacencies.get(v1, None) == v2:
                 trimmed_graph.remove_node(v1)
                 trimmed_graph.remove_node(v2)
-                known_edges.append((v1, v2))
 
-        return known_edges, trimmed_graph
+        return trimmed_graph
 
 
     def make_weighted(self, graph, phylogeny):
