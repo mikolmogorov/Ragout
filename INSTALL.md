@@ -1,6 +1,17 @@
 Installation instructions for Ragout
 ====================================
 
+Quick dependencies
+------------------
+
+* python 2.7
+* biopython [http://biopython.org]
+* networkx [http://networkx.github.io]
+* Sibelia [https://github.com/bioinf/Sibelia]
+
+Python
+------
+
 Ragout is written in python and requires version 2.7 to run.
 Also, there are third-party dependencies:
 
@@ -16,11 +27,21 @@ or using pip package manager:
 
 	$ pip install biopython networkx
 
-Ragout can use Sibelia for the genomes decomposition on synteny blocks.
-"Sibelia" executable should be in your "PATH" environment variable,
-otherwise you can edit "SIBELIA_BIN" variable in "ragout.py" file. 
-
 If you use Python 2.5 or 2.6, you need to install additional Python
 packages:
 
 * argparse [https://pypi.python.org/pypi/argparse]
+
+Sibelia
+-------
+
+Ragout uses *Sibelia* for the decomposition of genomes into synteny blocks.
+Download and install it into your system (binary packages are available
+for all popular platforms).
+
+If you prefer local installation, the main executable file should be in 
+your system executable path ("PATH" environment variable in UNIX).
+Also, you can edit "SIBELIA_BIN" variable in "ragout.py" file.
+
+When ready, you can test your installation on provided ready-to-use
+examples (see "USAGE.md")
