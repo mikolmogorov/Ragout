@@ -16,10 +16,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    python ragout.py -c examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/
-    python ragout.py -c examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/
-    python ragout.py -c examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/
-    python ragout.py -c examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/
+    python ragout.py -c examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/ -g
+    python ragout.py -c examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/ -g
+    python ragout.py -c examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/ -g
+    python ragout.py -c examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/ -g
 
 Algorithm overview
 ------------------
