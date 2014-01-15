@@ -17,7 +17,8 @@ from source.debug import DebugConfig
 from source.permutation import PermutationContainer
 
 SIBELIA_BIN = "../Sibelia/distr/bin/"
-os.environ["PATH"] += os.pathsep + os.path.abspath(SIBELIA_BIN)
+running_dir = os.path.dirname(os.path.realpath(__file__))
+os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_BIN)
 
 logger = logging.getLogger()
 
@@ -57,7 +58,7 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
 
     logger.info("Cooking Ragout...")
     for block_size in config.blocks:
-        logger.info("Running with block size {0}...".format(block_size))
+        logger.info("Running with the block size {0}...".format(block_size))
 
         block_dir = os.path.join(out_dir, str(block_size))
         if not os.path.isdir(block_dir):
@@ -100,7 +101,7 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for reference-assisted assembly")
+    parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references")
     parser.add_argument("-c", action="store", metavar="config", dest="config",
                         required=True, help="configuration file")
 
