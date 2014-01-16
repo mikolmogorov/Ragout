@@ -5,6 +5,13 @@ Version: 0.1 beta
 
 Release date: 14 Jan 2014
 
+ISMB 2014
+---------
+
+Supplementary materials for ISMB submission could be found at:
+https://drive.google.com/file/d/0B1pUguR1yn7TVmJXWnNyS2RBek0/edit?usp=sharing
+
+
        	         (
 		     )    )
 		  _.(--"("""--.._
