@@ -1,9 +1,17 @@
+#This module solves "Half-breakpoint state parsimony"
+#problem
+#####################################################
+
 import math
 from Bio import Phylo
 from cStringIO import StringIO
 from collections import defaultdict
 
+#PUBLIC:
+####################################################
 
+#Represents phylogenetic tree and scores it with 
+#given half-breakpoint states
 class Phylogeny:
     def __init__(self, newick_string):
         self.tree = Phylo.read(StringIO(newick_string), "newick")
@@ -17,9 +25,14 @@ class Phylogeny:
         return tree_score(self.tree, adjacencies)
 
 
+#PRIVATE:
+####################################################
+
+#scoring with DP (see algorithm description in the paper)
 def tree_score(tree, leaf_states):
     all_states = set(leaf_states.values())
 
+    #score of a tree branch
     def branch_score(root, child, branch):
         MU = 1
         if root == child:
@@ -28,6 +41,7 @@ def tree_score(tree, leaf_states):
             length = max(branch, 0.0000001)
             return math.exp(-MU * length)
 
+    #recursive
     def rec_helper(root):
         if root.is_terminal():
             leaf_score = lambda s: 0.0 if s == leaf_states[root.name] else float("inf")

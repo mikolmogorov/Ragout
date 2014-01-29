@@ -1,3 +1,8 @@
+#This module implements a breakpoint graph
+#as well as the main algorithm that recovers missing 
+#adjacencies
+################################################
+
 import networkx as nx
 from collections import namedtuple
 import os
@@ -11,6 +16,10 @@ import phylogeny as phylo
 Connection = namedtuple("Connection", ["start", "end"])
 logger = logging.getLogger()
 
+#PUBLIC:
+################################################
+
+
 class BreakpointGraph:
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
@@ -19,6 +28,7 @@ class BreakpointGraph:
         self.known_adjacencies = {}
 
 
+    #builds breakpoint graph from permutations
     def build_from(self, perm_container, circular):
         logger.info("Building breakpoint graph")
 
@@ -55,6 +65,7 @@ class BreakpointGraph:
                 prev = block
 
 
+    #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
         logger.info("Resolving breakpoint graph")
         chosen_edges = []
@@ -87,6 +98,7 @@ class BreakpointGraph:
         return adjacencies
 
 
+    #removes edges with known target's adjacencies
     def trim_known_edges(self, graph):
         trimmed_graph = graph.copy()
         for v1, v2, data in graph.edges_iter(data=True):
@@ -100,6 +112,7 @@ class BreakpointGraph:
         return trimmed_graph
 
 
+    #converts breakpoint graph into weighted graph
     def make_weighted(self, graph, phylogeny):
         assert len(graph) > 2
         g = nx.Graph()
@@ -125,6 +138,10 @@ class BreakpointGraph:
                 update_edge(g, node, neighbor, break_weight)
 
         return g
+
+
+#PRIVATE:
+###########################################################################
 
 
 def split_graph(graph):

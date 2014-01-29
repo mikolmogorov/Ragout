@@ -1,3 +1,7 @@
+#This module merges scaffolds from two consecutive
+#iterations
+#########################################################
+
 from collections import namedtuple
 import sys
 import logging
@@ -5,6 +9,10 @@ from datatypes import *
 
 logger = logging.getLogger()
 
+#PUBLIC:
+########################################################
+
+#The only function here
 def merge(big_scaffolds, small_scaffolds):
     logger.info("Merging two iterations")
     big_index = set()

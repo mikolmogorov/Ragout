@@ -35,7 +35,7 @@ packages:
 Sibelia
 -------
 
-Ragout uses *Sibelia* for the decomposition of genomes into synteny blocks.
+Ragout uses *Sibelia* for decomposing genomes into synteny blocks.
 Download and install it into your system (binary packages are available
 for all popular platforms).
 

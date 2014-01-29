@@ -1,3 +1,7 @@
+#This module recovers an assembly graph
+#by overlapping contigs
+################################################
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -7,20 +11,32 @@ import sys
 import logging
 
 logger = logging.getLogger()
-
 Edge = namedtuple("Edge", ["begin", "end", "label"])
 
+#PUBLIC:
+#################################################
+
+#builds assembly graph and outputs it in "dot" format
+def make_overlap_graph(targets, dot_file, min_overlap):
+    logger.info("Building overlap graph...")
+    edges = build_graph(targets.values(), min_overlap)
+    out_edges(edges, dot_file)
+
+
+#PRIVATE:
+#################################################
+
+#reads contigs from given files
 def get_contigs(files):
     contigs = {}
     for file in files:
         for seq in SeqIO.parse(file, "fasta"):
-            #if len(seq.seq) < 50:
-            #    continue
             contigs["+" + seq.id] = seq.seq
             contigs["-" + seq.id] = seq.seq.reverse_complement()
     return contigs
 
 
+#finds overlap between two strings
 #TODO: moar efficency!
 def find_overlap(str1, str2, min_k):
     MAX_OVLP = 100
@@ -32,6 +48,7 @@ def find_overlap(str1, str2, min_k):
     return max_ovlp
 
 
+#helper function to track next unused id
 def new_node_id():
     tmp = new_node_id.node_id
     new_node_id.node_id += 1
@@ -61,8 +78,6 @@ def build_graph(files, min_ovlp):
             sample_ctg = overlaps[0]
             if sample_ctg in heads:
                 cur_node = heads[sample_ctg]
-                #for ovlp in overlaps:
-                #    assert heads[ovlp] == cur_node
             else:
                 cur_node = new_node_id()
                 for ovlp in overlaps:
@@ -84,19 +99,10 @@ def build_graph(files, min_ovlp):
     return edges
 
 
-def make_overlap_graph(targets, dot_file, min_overlap):
-    logger.info("Building overlap graph...")
-    edges = build_graph(targets.values(), min_overlap)
-    out_edges(edges, dot_file)
-
-
+#outputs edges to file
 def out_edges(edges, dot_file):
     fout = open(dot_file, "w")
     fout.write("digraph {\n")
     for edge in edges:
         fout.write("{0} -> {1} [label=\"{2}\"];\n".format(*edge))
     fout.write("}")
-
-
-if __name__ == "__main__":
-    make_overlap_graph({"" : sys.argv[1]}, "overlap.dot", 21)

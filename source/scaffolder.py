@@ -1,3 +1,8 @@
+#This module assembles contigs into scaffolds with respect
+#to given adjacencies. Also, it outputs scaffolds in different
+#formats
+#################################################################
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -9,15 +14,66 @@ from datatypes import *
 
 logger = logging.getLogger()
 
+#PUBLIC:
+################################################################
 
+#Assembles scaffolds
 def get_scaffolds(connections, perm_container):
     logger.info("Building scaffolds")
     scaffolds = extend_scaffolds(connections, perm_container)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
-    #print "Done, {0} scaffolds".format(len(scaffolds))
     return scaffolds
 
 
+#Outputs scaffolds to file in "ord" format
+def output_order(scaffolds, out_order):
+    out_order_stream = open(out_order, "w")
+    for scf in scaffolds:
+        out_order_stream.write(">" + scf.name + "\n")
+        for contig in scf.contigs:
+            out_order_stream.write(str(contig) + "\n")
+
+
+#Outputs scaffodls to file in "fasta" format
+def output_scaffolds(target_dict, scaffolds, out_fasta):
+    MIN_CONTIG_LEN = 0
+
+    contigs_fasta = {}
+    for target_file in target_dict.values():
+        for seq in SeqIO.parse(target_file, "fasta"):
+            contigs_fasta[seq.id] = seq.seq
+
+    out_stream = open(out_fasta, "w")
+    used_contigs = set()
+
+    for scf in scaffolds:
+        scf_seq = Seq("")
+        first = True
+
+        for contig in scf.contigs:
+            cont_seq = contigs_fasta[contig.name]
+            used_contigs.add(contig.name)
+
+            if contig.sign < 0:
+                cont_seq = cont_seq.reverse_complement()
+
+            if not first:
+                scf_seq += Seq("N" * 11)
+            first = False
+            scf_seq += cont_seq
+
+        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
+
+    count = 0
+    for h, seq in contigs_fasta.iteritems():
+        if len(seq) > MIN_CONTIG_LEN and h not in used_contigs:
+            count += 1
+
+
+#PRIVATE:
+################################################################
+
+#Assembles contigs into scaffolds
 def extend_scaffolds(connections, perm_container):
     contigs, contig_index = make_contigs(perm_container)
 
@@ -89,6 +145,7 @@ def extend_scaffolds(connections, perm_container):
     return scaffolds
 
 
+#Converts permutations into contigs
 def make_contigs(perm_container):
     contigs = []
     index = defaultdict(list)
@@ -103,47 +160,3 @@ def make_contigs(perm_container):
             index[abs(block)].append(contigs[-1])
 
     return contigs, index
-
-
-def output_order(scaffolds, out_order):
-    out_order_stream = open(out_order, "w")
-    for scf in scaffolds:
-        out_order_stream.write(">" + scf.name + "\n")
-        for contig in scf.contigs:
-            out_order_stream.write(str(contig) + "\n")
-
-
-def output_scaffolds(target_dict, scaffolds, out_fasta):
-    MIN_CONTIG_LEN = 0
-
-    contigs_fasta = {}
-    for target_file in target_dict.values():
-        for seq in SeqIO.parse(target_file, "fasta"):
-            contigs_fasta[seq.id] = seq.seq
-
-    out_stream = open(out_fasta, "w")
-    used_contigs = set()
-
-    for scf in scaffolds:
-        scf_seq = Seq("")
-        first = True
-
-        for contig in scf.contigs:
-            cont_seq = contigs_fasta[contig.name]
-            used_contigs.add(contig.name)
-
-            if contig.sign < 0:
-                cont_seq = cont_seq.reverse_complement()
-
-            if not first:
-                scf_seq += Seq("N" * 11)
-            first = False
-            scf_seq += cont_seq
-
-        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
-
-    count = 0
-    for h, seq in contigs_fasta.iteritems():
-        if len(seq) > MIN_CONTIG_LEN and h not in used_contigs:
-            count += 1
-    #print "Done,", count, "of", len(contigs_fasta), "contigs left,"

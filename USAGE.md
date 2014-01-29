@@ -115,8 +115,8 @@ Scripts are located in "scripts" directory
 
 **test.py:**
 
-Tests the correctness of the infered contigs order if a closely related reference
-is available. First, contigs should be mapped on this reference using *nucmer*:
+Tests the correctness of the infered order of contigs if a closely related reference
+is available. First, contigs should be mapped on this reference using *nucmer* software:
 
     nucmer --maxmatch --coords reference contigs
 

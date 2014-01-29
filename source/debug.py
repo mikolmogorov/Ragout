@@ -1,6 +1,14 @@
+#This module provedes some functions 
+#for debug output
+#############################################
+
 import os
 import shutil
 
+#PUBLIC:
+#############################################
+
+#singleton providing global debug configuration
 class DebugConfig():
     instance = None
 
@@ -22,6 +30,7 @@ class DebugConfig():
         return DebugConfig.instance
 
 
+#outputs colored breakpoint graph in "dot" format
 def write_dot(graph, dot_file):
     colors = ["red", "green", "blue", "yellow", "black"]
     ref_to_color = {}

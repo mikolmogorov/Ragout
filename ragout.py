@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+##################################
+#The main Ragout module
+##################################
+
 import os
 import sys
 import logging
@@ -16,7 +20,7 @@ from source.phylogeny import Phylogeny
 from source.debug import DebugConfig
 from source.permutation import PermutationContainer
 
-SIBELIA_BIN = "../Sibelia/distr/bin/"
+SIBELIA_BIN = "../Sibelia/build/"
 running_dir = os.path.dirname(os.path.realpath(__file__))
 os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_BIN)
 
@@ -38,6 +42,7 @@ def enable_logging(log_file):
     logger.addHandler(file_handler)
 
 
+#top-level logic of program
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     if not os.path.isdir(out_dir):
         sys.stderr.write("Output directory doesn`t exists\n")

@@ -1,3 +1,6 @@
+#This module performs refinement with the assembly graph
+#########################################################
+
 import networkx as nx
 import re
 import logging
@@ -10,6 +13,21 @@ from datatypes import Contig, Scaffold
 
 Edge = namedtuple("Edge", ["start", "end"])
 logger = logging.getLogger()
+
+#PUBLIC:
+########################################################
+
+
+#does the job
+def refine_contigs(graph_file, scaffolds, max_path_len):
+    logger.info("Refining with assembly graph")
+    logger.debug("Max path len = {0}".format(max_path_len))
+    new_scaffolds = insert_from_graph(graph_file, scaffolds, max_path_len)
+    return new_scaffolds
+
+
+#PRIVATE:
+#########################################################
 
 #ignore heavy python-graphviz
 def load_dot(filename):
@@ -29,6 +47,7 @@ def load_dot(filename):
     return graph, edges
 
 
+#check if there is no multiedges along the path
 def check_unique(graph, path):
     for v1, v2 in izip(path[:-1], path[1:]):
         assert graph.has_edge(v1, v2)
@@ -37,6 +56,7 @@ def check_unique(graph, path):
     return True
 
 
+#finds a unique path between two nodes in graph
 def get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
     try:
         src = edges[str(prev_cont)].end
@@ -80,6 +100,7 @@ def get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
     return path_edges
 
 
+#inserts contigs from the assembly graph into scaffolds
 def insert_from_graph(graph_file, scaffolds_in, max_path_len):
     new_scaffolds = []
     graph, edges = load_dot(graph_file)
@@ -117,11 +138,4 @@ def insert_from_graph(graph_file, scaffolds_in, max_path_len):
                 new_scaffolds[-1].contigs[-1].gap = 0
 
         new_scaffolds[-1].contigs.append(new_cont)
-    return new_scaffolds
-
-
-def refine_contigs(graph_file, scaffolds, max_path_len):
-    logger.info("Refining with assembly graph")
-    logger.debug("Max path len = {0}".format(max_path_len))
-    new_scaffolds = insert_from_graph(graph_file, scaffolds, max_path_len)
     return new_scaffolds

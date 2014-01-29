@@ -1,4 +1,10 @@
+#This module provides some common data structures
+#################################################
+
 from collections import namedtuple
+
+#PUBLIC:
+#################################################
 
 class Scaffold:
     def __init__(self, name):

@@ -1,8 +1,14 @@
+#This module parses Ragout configuration file
+#############################################
+
 from collections import namedtuple
 import re
 import os
 
 ConfigParams = namedtuple("ConfigParams", ["references", "targets", "tree", "blocks"])
+
+#PUBLIC:
+#############################################
 
 def parse_ragout_config(filename):
     prefix = os.path.dirname(filename)
@@ -48,5 +54,3 @@ def parse_ragout_config(filename):
             raise Exception("Error parsing {0} on line {1}".format(filename, lineno + 1))
 
     return ConfigParams(references, target, tree_str, block_size)
-
-
