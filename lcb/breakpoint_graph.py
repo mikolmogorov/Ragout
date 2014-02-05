@@ -4,24 +4,17 @@ from collections import defaultdict
 from itertools import izip
 from Queue import Queue
 
-from maf import Block
+from permutations import Block
 
-def get_lcb(permutations):
+def get_lcb(permutations, block_size):
     graph = build_graph(permutations)
-    #graph.get_permutations()
     compress_graph(graph)
-    perms = graph.get_permutations()
-
-    #print "================================"
-    #graph2 = build_graph(perms)
-    #compress_graph(graph2)
     return graph.get_permutations()
 
 
 class Edge:
-    def __init__(self, left_node, right_node, genome=None, length=0):
+    def __init__(self, left_node, right_node, genome):
         self.genome = genome
-        self.length = length
         self.left_node = left_node
         self.right_node = right_node
         self.prev_edge = None
@@ -33,12 +26,15 @@ class Edge:
 
 
     def __str__(self):
-        return "({0},{1},{2})".format(self.left_node, self.right_node, self.genome)
+        left = str(self.left_node) if self.left_node != sys.maxint else "inf"
+        right = str(self.right_node) if self.right_node != sys.maxint else "inf"
+        return "({0}, {1}, {2})".format(left, right, self.genome)
 
 
 class Node:
     def __init__(self):
         self.edges = set()
+        self.coordinates = {}
 
 
 class BreakpointGraph:
@@ -48,11 +44,16 @@ class BreakpointGraph:
         self.infinum = sys.maxint
 
 
-    def add_edge(self, node1, node2, genome, length):
-        edge = Edge(node1, node2, genome, length)
+    def add_edge(self, node1, node2, genome):
+        edge = Edge(node1, node2, genome)
         self.nodes[node1].edges.add(edge)
         self.nodes[node2].edges.add(edge)
         return edge
+
+    def has_black_edge(self, node1, node2):
+        edges = self.get_edges(node1, node2)
+        edges = filter(lambda e: e.genome == None, edges)
+        return len(edges) > 0
 
 
     def get_edges(self, node1, node2):
@@ -88,7 +89,6 @@ class BreakpointGraph:
             cur_node, prev_node = other_node, cur_node
             path.append(cur_node)
 
-        #print path
         return path
 
 
@@ -105,12 +105,12 @@ class BreakpointGraph:
         if len(path) == 2:
             return
 
-        print map(str, path)
+        #print map(str, path)
 
         #updating graph
         self.remove_edges(path[0], path[1])
         self.remove_edges(path[-2], path[-1])
-        self.add_edge(path[0], path[-1], None, 0)
+        self.add_edge(path[0], path[-1], None)
 
         #updating links
         adjacencies = self.get_edges(path[1], path[2])
@@ -123,6 +123,7 @@ class BreakpointGraph:
             while not tail_adj.has_node(path[0]) and not tail_adj.has_node(path[-1]):
                 tail_adj = tail_adj.prev_edge
 
+            assert head_adj.genome == tail_adj.genome
             head_adj.prev_edge = tail_adj
             tail_adj.next_edge = head_adj
 
@@ -138,57 +139,60 @@ class BreakpointGraph:
 
         permutations = {}
         for genome, edge in self.origins.iteritems():
-            path = []
+            blocks = []
             prev = edge
             edge = edge.next_edge
 
             while edge is not None:
-                black_edges = self.get_edges(prev.right_node, edge.left_node)
-                #print prev, edge, map(str, black_edges)
-                black_edges = filter(lambda e: e.genome is None, black_edges)
-                assert len(black_edges) == 1
+                all_edges = self.get_edges(prev.right_node, edge.left_node)
+                black_edge = filter(lambda e: e.genome is None, all_edges)[0]
+                assert len(filter(lambda e: e.genome is None, all_edges)) == 1
 
-                block_id = get_id(black_edges[0])
-                sign = "+" if black_edges[0].right_node == edge.left_node else "-"
-                path.append(sign + str(block_id))
+                block_id = get_id(black_edge)
+                sign = 1 if black_edge.right_node == edge.left_node else -1
+                start = self.nodes[black_edge.left_node].coordinates[genome]
+                end = self.nodes[black_edge.right_node].coordinates[genome]
+                if start > end:
+                    start, end = end, start
+                length = end - start
 
+                blocks.append(Block(sign * block_id, start, length))
                 prev, edge = edge, edge.next_edge
 
-            permutations[genome] = map(lambda b: Block(int(b), 0, 0), path)
+            permutations[genome] = blocks
 
         return permutations
 
 
 def build_graph(permutations):
     graph = BreakpointGraph()
-    all_blocks = set()
     for genome, blocks in permutations.iteritems():
+        #black edges
         for block in blocks:
-            all_blocks.add(abs(block.id))
+            abs_block = abs(block.id)
+            if not graph.has_black_edge(abs_block, -abs_block):
+                graph.add_edge(abs_block, -abs_block, None)
+            graph.nodes[abs_block].coordinates[genome] = block.start
+            graph.nodes[-abs_block].coordinates[genome] = block.start + block.length
+            #print block.start, block.length
 
         #chromosome ends
-        head_edge = graph.add_edge(graph.infinum, blocks[0].id, genome, 0)
-        tail_edge = graph.add_edge(-blocks[-1].id, graph.infinum, genome, 0)
+        head_edge = graph.add_edge(graph.infinum, blocks[0].id, genome)
+        tail_edge = graph.add_edge(-blocks[-1].id, graph.infinum, genome)
         graph.origins[genome] = head_edge
 
         prev_edge = head_edge
+        edge = head_edge
+
+        #adjacencies
         for block1, block2 in izip(blocks[:-1], blocks[1:]):
-            length = 0
-            #if abs(block2.id) == 236 or abs(block1.id) == 236:
-            #    print genome, -block1.id, block2.id
-            edge = graph.add_edge(-block1.id, block2.id, genome, length)
-            if prev_edge:
-                prev_edge.next_edge = edge
-                edge.prev_edge = prev_edge
+            edge = graph.add_edge(-block1.id, block2.id, genome)
+            prev_edge.next_edge = edge
+            edge.prev_edge = prev_edge
             prev_edge = edge
 
         edge.next_edge = tail_edge
         tail_edge.prev_edge = edge
-
-
-    #black_edges
-    for block_id in all_blocks:
-        graph.add_edge(block_id, -block_id, None, 0)
 
     return graph
 
