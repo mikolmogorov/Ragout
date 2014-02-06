@@ -1,6 +1,10 @@
 Installation instructions for Ragout
 ====================================
 
+Ragout is written in Python and does not require any preparations.
+However, there are some third-party dependencies described below
+which need to be installed.
+
 Quick dependencies
 ------------------
 
