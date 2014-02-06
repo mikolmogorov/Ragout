@@ -68,24 +68,39 @@ class BreakpointGraph:
             self.nodes[node2].edges.remove(e)
 
 
-    def neighbours(self, node):
-        neighbours = set()
+    def neighbors(self, node):
+        neighbors = set()
         for edge in self.nodes[node].edges:
             other_node = edge.left_node if edge.left_node != node else edge.right_node
-            neighbours.add(other_node)
+            neighbors.add(other_node)
 
-        return list(neighbours)
+        return list(neighbors)
+
+
+    def is_bifurcation(self, node):
+        neighbors = self.neighbors(node)
+        if len(neighbors) > 2:
+            return True
+
+        #all edges should be either colored or black
+        for neighbor in neighbors:
+            edges = self.get_edges(node, neighbor)
+            genomes = map(lambda e: e.genome, edges)
+            if None in genomes and len(genomes) > 1:
+                return True
+
+        return False
 
 
     #extend non-branching paths
     def extend_path(self, prev_node, cur_node):
         path = [prev_node, cur_node]
         while True:
-            neighbours = self.neighbours(cur_node)
-            if len(neighbours) != 2 or cur_node == self.infinum:
+            if self.is_bifurcation(cur_node) or cur_node == self.infinum:
                 break
 
-            other_node = neighbours[0] if neighbours[0] != prev_node else neighbours[1]
+            neighbors = self.neighbors(cur_node)
+            other_node = neighbors[0] if neighbors[0] != prev_node else neighbors[1]
             cur_node, prev_node = other_node, cur_node
             path.append(cur_node)
 
@@ -97,20 +112,19 @@ class BreakpointGraph:
             return
 
         #ensure we start and end with black edge
-        if self.get_edges(path[0], path[1])[0].genome != None:
+        if not self.has_black_edge(path[0], path[1]):
             del path[0]
-        if self.get_edges(path[-2], path[-1])[0].genome != None:
+        if not self.has_black_edge(path[-2], path[-1]):
             del path[-1]
 
         if len(path) == 2:
             return
 
-        #print map(str, path)
-
         #updating graph
         self.remove_edges(path[0], path[1])
         self.remove_edges(path[-2], path[-1])
         self.add_edge(path[0], path[-1], None)
+
 
         #updating links
         adjacencies = self.get_edges(path[1], path[2])
@@ -145,8 +159,8 @@ class BreakpointGraph:
 
             while edge is not None:
                 all_edges = self.get_edges(prev.right_node, edge.left_node)
-                black_edge = filter(lambda e: e.genome is None, all_edges)[0]
                 assert len(filter(lambda e: e.genome is None, all_edges)) == 1
+                black_edge = filter(lambda e: e.genome is None, all_edges)[0]
 
                 block_id = get_id(black_edge)
                 sign = 1 if black_edge.right_node == edge.left_node else -1
@@ -174,7 +188,6 @@ def build_graph(permutations):
                 graph.add_edge(abs_block, -abs_block, None)
             graph.nodes[abs_block].coordinates[genome] = block.start
             graph.nodes[-abs_block].coordinates[genome] = block.start + block.length
-            #print block.start, block.length
 
         #chromosome ends
         head_edge = graph.add_edge(graph.infinum, blocks[0].id, genome)
@@ -206,9 +219,9 @@ def compress_graph(graph):
 
     while not queue.empty():
         node = queue.get()
-        neighbours = graph.neighbours(node)
+        neighbors = graph.neighbors(node)
 
-        for next_node in neighbours:
+        for next_node in neighbors:
             path = graph.extend_path(node, next_node)
             path_end = path[-1]
             if not path_end in closed_nodes:
