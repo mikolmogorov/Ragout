@@ -18,7 +18,7 @@ def main():
 
     MIN_ALIGNMENT = 100
     MIN_BLOCK = 500
-    MAX_GAP = 15000
+    MAX_GAP = 5000
 
     permutations = maf.maf_to_permutations(maf_file, MIN_ALIGNMENT)
     lcb = bg.get_lcb(permutations, MAX_GAP)

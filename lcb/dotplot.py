@@ -39,24 +39,28 @@ def draw_dot_plot(blocks, seq_files, out_dir):
 
         s1 = seqs[block1.chr_id]
         s2 = seqs[block2.chr_id]
-        if block1.id < 0:
-            s1 = s1.reverse_complement()
-        if block2.id < 0:
-            s2 = s2.reverse_complement()
 
         seq1 = s1[block1.start : block1.start + block1.length]
         seq2 = s2[block2.start : block2.start + block2.length]
+        if block1.id < 0:
+            seq1 = seq1.reverse_complement()
+            #print "aaa"
+        if block2.id < 0:
+            seq2 = seq2.reverse_complement()
+            #print "bbb"
 
-        file1 = os.path.join(out_dir, "block1.fasta")
-        file2 = os.path.join(out_dir, "block2.fasta")
+
+        file1 = os.path.join(out_dir, "block{0}.{1}-1.fasta".format(block_id, block1.chr_id))
+        file2 = os.path.join(out_dir, "block{0}.{1}-2.fasta".format(block_id, block2.chr_id))
 
         SeqIO.write(SeqRecord(seq1), file1, "fasta")
         SeqIO.write(SeqRecord(seq2), file2, "fasta")
 
-        out_dot = os.path.join(out_dir, "block{0}-{1}-{2}.png".
-                                                    format(block_id, block1.chr_id, block2.chr_id))
+        out_dot = os.path.join(out_dir, "block{0}-{1}-{2}.png"
+                                            .format(block_id, block1.chr_id, block2.chr_id))
 
-        cmdline = [EXEC, "-seq1", file1, "-seq2", file2, "-outfile", out_dot, "-matrix", MATRIX, "-word", "20"]
+        cmdline = [EXEC, "-seq1", file1, "-seq2", file2, "-outfile",
+                    out_dot, "-matrix", MATRIX, "-word", "15"]
         subprocess.check_call(cmdline)
 
         os.remove(file1)

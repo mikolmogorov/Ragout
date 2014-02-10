@@ -17,6 +17,8 @@ class Edge:
         self.seq_id = seq_id
         self.left_node = left_node
         self.right_node = right_node
+        self.left_pos = 0
+        self.right_pos = 0
         self.prev_edge = None
         self.next_edge = None
 
@@ -31,14 +33,9 @@ class Edge:
         return "({0}, {1}, {2})".format(left, right, self.seq_id)
 
 
-    def length(self):
-        return abs(self.left_node - self.right_node)
-
-
 class Node:
     def __init__(self):
         self.edges = set()
-        self.coordinates = {}
 
 
 class BreakpointGraph:
@@ -111,10 +108,10 @@ class BreakpointGraph:
 
             #check distance
             edges = self.get_colored_edges(prev_node, cur_node)
-            sum_gap = sum(map(lambda e: e.length(), edges))
-            if edges and sum_gap / len(edges) > max_gap:
-                print "oioioi"
-                #print sum_gap / len(edges)
+            get_len = lambda e: abs(e.right_pos - e.left_pos)
+            gaps = sorted(map(get_len, edges))
+            if gaps and gaps[-1] > max_gap:
+                print "oioioi", gaps[-1]
                 break
 
             neighbors = self.neighbors(cur_node)
@@ -177,18 +174,14 @@ class BreakpointGraph:
 
             while edge is not None:
                 black_edges = self.get_black_edges(prev.right_node, edge.left_node)
-                assert len(black_edges)
                 black_edge = black_edges[0]
 
                 block_id = get_id(black_edge)
                 sign = 1 if black_edge.right_node == edge.left_node else -1
-                start = self.nodes[black_edge.left_node].coordinates[seq_id]
-                end = self.nodes[black_edge.right_node].coordinates[seq_id]
-                if start > end:
-                    start, end = end, start
+                start = prev.right_pos
+                end = edge.left_pos
                 length = end - start
-                if length == 0:
-                    print black_edge, end, start
+                assert length > 0
 
                 blocks.append(Block(sign * block_id, start, length))
                 prev, edge = edge, edge.next_edge
@@ -230,12 +223,12 @@ def build_graph(permutations):
             abs_block = abs(block.id)
             if not graph.get_black_edges(abs_block, -abs_block):
                 graph.add_edge(abs_block, -abs_block, None)
-            graph.nodes[abs_block].coordinates[seq_id] = block.start
-            graph.nodes[-abs_block].coordinates[seq_id] = block.start + block.length
 
         #chromosome ends
         head_edge = graph.add_edge(graph.infinum, blocks[0].id, seq_id)
+        head_edge.right_pos = blocks[0].start
         tail_edge = graph.add_edge(-blocks[-1].id, graph.infinum, seq_id)
+        tail_edge.left_pos = blocks[-1].start + blocks[-1].length
         graph.origins[seq_id] = head_edge
 
         prev_edge = head_edge
@@ -244,6 +237,10 @@ def build_graph(permutations):
         #adjacencies
         for block1, block2 in izip(blocks[:-1], blocks[1:]):
             edge = graph.add_edge(-block1.id, block2.id, seq_id)
+            edge.left_pos = block1.start + block1.length
+            edge.right_pos = block2.start
+            assert edge.right_pos >= edge.left_pos
+
             prev_edge.next_edge = edge
             edge.prev_edge = prev_edge
             prev_edge = edge
