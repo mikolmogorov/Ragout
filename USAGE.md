@@ -33,7 +33,7 @@ Next, Ragout assembles contigs into scaffolds using a breakpoint graph.
 
 This procedure is repeated multiple times with the different size
 of synteny block decomposition. Afterwards, an optional refinement
-step is performed (is -g is specified).
+step is performed (if -g was specified).
 
 Input
 ------
@@ -45,7 +45,7 @@ Ragout takes as input:
 - Phylogenetic tree for both reference and target genomes in "newick" format
 - Minimum synteny block size (in multiple scales)
 
-All these settings should be described in a single config file.
+All these parameters should be described in a single configuration file.
 See the example of such file below.
 
 Configuration file
@@ -64,7 +64,7 @@ Here is an example of Ragout configuration file:
 
     BLOCK=5000,500,100
 
-Keywords explanation:
+Keywords description:
 
 - REF: label of the reference sequence and its relative path
 - TARGET: label of the target assembly and its relative path
@@ -79,16 +79,15 @@ After running Ragout, an output directory will contain:
 
 * "scaffolds.ord" with a resulting order of contigs
 * "scaffolds.fasta" with scaffold sequences (contigs are separated by 11 Ns)
-* "scaffolds_refined.ord" with a refined order contigs (if you used -g option)
-* "scaffolds_refined.fasta" with refined scaffold sequences (if you used -g option)
+* "scaffolds_refined.ord" with a refined order contigs (if -g was specified)
+* "scaffolds_refined.fasta" with refined scaffold sequences (if -g was specified)
 
 The parameters choice
 ---------------------
 
 ### Minimum synteny block size
 
-Because the decomposition procedure is parameter-dependent 
-(it requires a certain minimum synteny block size), the assembly
+Because the decomposition procedure is parameter-dependent, the assembly
 is performed in multiple iterations with different synteny block
 scale. Intuitively, the algorithm firstly considers only contigs
 that are long enough and then puts shorter ones into the analysis.
@@ -100,10 +99,10 @@ describes your dataset.
 
 ### Phylogenetic tree
 
-With multiple references, the algorithm's output may be highly 
-dependent of the phylogenetic tree structure and an incorrect
-choice of it can bias the result. We recommend to carefully assess the
-tree before doing any significant studies.
+Running with multiple references, the output of Ragout may highly
+depend of the given phylogenetic tree and can be biased if
+the tree is incorrect. We recommend to carefully assess the
+tree before performing any significant studies.
 
 In our future work we are planning to implement some assessment/correction
 procedures for the phylogenetic tree.
@@ -122,4 +121,4 @@ is available. First, contigs should be mapped on this reference using *nucmer* s
 
 Then run the script with the obtained "coords" file:
 
-	python test.py nucmer_coords ord_file
+    python test.py nucmer_coords ord_file

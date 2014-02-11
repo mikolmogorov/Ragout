@@ -1,6 +1,10 @@
 Installation instructions for Ragout
 ====================================
 
+Ragout is written in Python and does not require any preparations.
+However, there are some third-party dependencies described below
+which need to be installed.
+
 Quick dependencies
 ------------------
 
@@ -36,12 +40,9 @@ Sibelia
 -------
 
 Ragout uses *Sibelia* for decomposing genomes into synteny blocks.
-Download and install it into your system (binary packages are available
-for all popular platforms).
+You may install it by running:
 
-If you prefer local installation, the main executable file should be in 
-your system executable path ("PATH" environment variable in UNIX).
-Also, you can edit "SIBELIA_BIN" variable in "ragout.py" file.
+	$ python ragout.py --install-deps
 
-When ready, you can test your installation on provided ready-to-use
-examples (see "USAGE.md")
+Building process requires *Cmake* as well as some standard UNIX
+executables like *wget* or *tar*.

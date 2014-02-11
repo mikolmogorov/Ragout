@@ -16,15 +16,22 @@ import source.merge_iters as merge
 import source.breakpoint_graph as bg
 import source.config_parser as cparser
 import source.assembly_refine as asref
+import source.installer as installer
+import source.utils as utils
 from source.phylogeny import Phylogeny
 from source.debug import DebugConfig
 from source.permutation import PermutationContainer
 
-SIBELIA_BIN = "../Sibelia/build/"
+
+LIB_DIR = "lib"
+SIBELIA_DIR = os.path.join(LIB_DIR, "Sibelia")
+SIBELIA_EXEC = "Sibelia"
+
 running_dir = os.path.dirname(os.path.realpath(__file__))
-os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_BIN)
+os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_DIR)
 
 logger = logging.getLogger()
+
 
 def enable_logging(log_file):
     log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
@@ -45,7 +52,7 @@ def enable_logging(log_file):
 #top-level logic of program
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     if not os.path.isdir(out_dir):
-        sys.stderr.write("Output directory doesn`t exists\n")
+        sys.stderr.write("Error: output directory doesn`t exists\n")
         return
 
     config = cparser.parse_ragout_config(config_file)
@@ -105,23 +112,57 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     logger.info("Your Ragout is ready!")
 
 
+def install_deps():
+    installer.install_deps(LIB_DIR)
+
+
+def check_dependencies():
+    if not utils.which(SIBELIA_EXEC):
+        sys.stderr.write("Sibelia is not installed. Use option \"--install-deps\" to install it.\n")
+        return False
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references")
-    parser.add_argument("-c", action="store", metavar="config", dest="config",
-                        required=True, help="configuration file")
 
-    parser.add_argument("-o", action="store", metavar="output_dir",
-                        dest="output_dir", required=True, help="output directory")
+    params = parser.add_argument_group()
+    params.add_argument("-c", action="store", metavar="config", dest="config",
+                        help="configuration file")
 
-    parser.add_argument("-s", action="store_const", metavar="skip_sibelia",
+    params.add_argument("-o", action="store", metavar="output_dir", dest="output_dir",
+                        help="output directory")
+
+    params.add_argument("-s", action="store_const", metavar="skip_sibelia",
                         dest="skip_sibelia", default=False, const=True,
                         help="skip Sibelia running step")
 
-    parser.add_argument("-g", action="store_const", metavar="assembly_refine",
+    params.add_argument("-g", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
 
+    parser.add_argument("--install-deps", action="store_const", metavar="install_deps",
+                        dest="install_deps", default=False, const=True,
+                        help="install Ragout dependencies")
+
     args = parser.parse_args()
+
+    if args.install_deps:
+        install_deps()
+        return
+
+    if not check_dependencies():
+        return
+
+    if not args.config:
+        parser.print_usage()
+        sys.stderr.write("error: argument -c is required\n")
+        return
+    if not args.output_dir:
+        parser.print_usage()
+        sys.stderr.write("error: argument -o is required\n")
+        return
+
     do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import copy
 import logging
 from collections import namedtuple, defaultdict
 from Bio import SeqIO
+import utils
 
 logger = logging.getLogger()
 
@@ -30,7 +31,7 @@ def run_sibelia(fasta_files, block_size, out_dir):
     SIBELIA_EXEC = "Sibelia"
 
     logger.info("Running Sibelia...")
-    if not which(SIBELIA_EXEC):
+    if not utils.which(SIBELIA_EXEC):
         raise Exception("Sibelia is not installed")
 
     devnull = open(os.devnull, "w")
@@ -81,22 +82,3 @@ def split_permutations(chr_to_gen, references, targets, perm_file, out_dir):
         else:
             handle = out_files[chr_to_gen[name]]
             handle.write(">{0}\n{1}\n".format(name, line))
-
-
-#Mimics UNIX "which" command
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
