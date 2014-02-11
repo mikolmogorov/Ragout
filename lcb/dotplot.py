@@ -11,10 +11,13 @@ SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 
 
 def main():
+    if len(sys.argv) < 4:
+        print "Usage: dotplot.py <coords_file> <output_dir> <fasta_references>"
+        return
     coords_file = sys.argv[1]
-    fasta = sys.argv[2:]
+    fasta = sys.argv[3:]
     blocks = parse_coords_file(coords_file)
-    draw_dot_plot(blocks, fasta, "dot")
+    draw_dot_plot(blocks, fasta, sys.argv[2])
 
 
 def draw_dot_plot(blocks, seq_files, out_dir):
@@ -23,10 +26,6 @@ def draw_dot_plot(blocks, seq_files, out_dir):
         seq = SeqIO.parse(file, "fasta").next()
         seqs[seq.id] = seq.seq
 
-    #for seq_id, blocks in permutations.iteritems():
-    #    for block in blocks:
-    #        by_block[abs(block.id)].append((block, seq_id))
-
     out_dir = os.path.abspath(out_dir)
     DIR = "/home/volrath/Bioinf/Tools/gepard-1.30/"
     os.chdir(DIR)
@@ -34,7 +33,6 @@ def draw_dot_plot(blocks, seq_files, out_dir):
     MATRIX = "matrices/blosum62.mat"
 
     for block_id, blocklist in blocks.iteritems():
-        #print blocklist[1:3]
         block1, block2 = blocklist[0:2]
 
         s1 = seqs[block1.chr_id]
@@ -44,10 +42,8 @@ def draw_dot_plot(blocks, seq_files, out_dir):
         seq2 = s2[block2.start : block2.start + block2.length]
         if block1.id < 0:
             seq1 = seq1.reverse_complement()
-            #print "aaa"
         if block2.id < 0:
             seq2 = seq2.reverse_complement()
-            #print "bbb"
 
 
         file1 = os.path.join(out_dir, "block{0}.{1}-1.fasta".format(block_id, block1.chr_id))

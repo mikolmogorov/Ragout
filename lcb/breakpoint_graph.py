@@ -102,7 +102,7 @@ class BreakpointGraph:
     def extend_path(self, prev_node, cur_node, max_gap):
         path = [prev_node, cur_node]
         while True:
-            #check if it's bufurcation point
+            #check if it's a bufurcation point
             if self.is_bifurcation(cur_node) or self.infinum in [prev_node, cur_node]:
                 break
 
@@ -138,8 +138,7 @@ class BreakpointGraph:
         #updating graph
         self.remove_edges(path[0], path[1])
         self.remove_edges(path[-2], path[-1])
-        self.add_edge(path[0], path[-1], None)
-
+        new_edge = self.add_edge(path[0], path[-1], None)
 
         #updating links
         adjacencies = self.get_colored_edges(path[1], path[2])
