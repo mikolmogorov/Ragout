@@ -138,7 +138,7 @@ class BreakpointGraph:
         #updating graph
         self.remove_edges(path[0], path[1])
         self.remove_edges(path[-2], path[-1])
-        new_edge = self.add_edge(path[0], path[-1], None)
+        self.add_edge(path[0], path[-1], None)
 
         #updating links
         adjacencies = self.get_colored_edges(path[1], path[2])
