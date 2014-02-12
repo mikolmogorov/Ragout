@@ -1,16 +1,21 @@
+#!/usr/bin/env python
+
 #####################################
-#A module for installing dependencies
+#A script which installs dependencies
 #####################################
 
 import sys, os
 import subprocess
 import shutil
 
-import utils
+parent_dir = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, parent_dir)
+import src.utils as utils
 
-SIBELIA_DIR="Sibelia"
-SIBELIA_EXEC="Sibelia"
-SIBELIA_LINK="https://github.com/bioinf/Sibelia/archive/master.tar.gz"
+LIB_DIR = os.path.join(parent_dir, "lib")
+SIBELIA_DIR = "Sibelia"
+SIBELIA_EXEC = "Sibelia"
+SIBELIA_LINK = "https://github.com/bioinf/Sibelia/archive/master.tar.gz"
 
 def install_deps(lib_dir):
     if os.path.isfile(os.path.join(lib_dir, SIBELIA_DIR, SIBELIA_EXEC)):
@@ -19,17 +24,16 @@ def install_deps(lib_dir):
     else:
         sys.stdout.write("Installing Sibelia\n")
         try:
-            install_sibelia(lib_dir)
-        except OSError:
+            return install_sibelia(lib_dir)
+        except OSError as e:
             sys.stdout.write("Error while installing - exiting\n")
+            sys.stderr.write(str(e) + "\n")
             return False
-
-        return True
 
 
 def install_sibelia(lib_dir):
     if not test_tools():
-        raise OSError
+        return False
 
     initial_dir = os.getcwd()
 
@@ -64,22 +68,28 @@ def install_sibelia(lib_dir):
     os.chdir(initial_dir)
     shutil.rmtree(tmp_dir)
 
+    return True
+
 
 def test_tools():
     if not utils.which("cmake"):
-        sys.stdout.write("ERROR: Building Sibelia requires Cmake")
+        sys.stdout.write("ERROR: Building Sibelia requires Cmake\n")
         return False
 
     if not utils.which("wget"):
-        sys.stdout.write("ERROR: Building Sibelia requires wget")
+        sys.stdout.write("ERROR: Building Sibelia requires wget\n")
         return False
 
     if not utils.which("make"):
-        sys.stdout.write("ERROR: Building Sibelia requires make")
+        sys.stdout.write("ERROR: Building Sibelia requires make\n")
         return False
 
     if not utils.which("tar"):
-        sys.stdout.write("ERROR: Building Sibelia requires tar")
+        sys.stdout.write("ERROR: Building Sibelia requires tar\n")
         return False
 
     return True
+
+
+if __name__ == "__main__":
+    install_deps(LIB_DIR)

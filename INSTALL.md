@@ -42,7 +42,7 @@ Sibelia
 Ragout uses *Sibelia* for decomposing genomes into synteny blocks.
 You may install it by running:
 
-	$ python ragout.py --install-deps
+	$ python bin/install-deps.py
 
 Building process requires *Cmake* as well as some standard UNIX
 executables like *wget* or *tar*.

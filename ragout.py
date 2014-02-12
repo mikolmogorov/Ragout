@@ -9,18 +9,17 @@ import sys
 import logging
 import argparse
 
-import source.overlap as ovlp
-import source.scaffolder as scfldr
-import source.sibelia_parser as sp
-import source.merge_iters as merge
-import source.breakpoint_graph as bg
-import source.config_parser as cparser
-import source.assembly_refine as asref
-import source.installer as installer
-import source.utils as utils
-from source.phylogeny import Phylogeny
-from source.debug import DebugConfig
-from source.permutation import PermutationContainer
+import src.overlap as ovlp
+import src.scaffolder as scfldr
+import src.sibelia_parser as sp
+import src.merge_iters as merge
+import src.breakpoint_graph as bg
+import src.config_parser as cparser
+import src.assembly_refine as asref
+import src.utils as utils
+from src.phylogeny import Phylogeny
+from src.debug import DebugConfig
+from src.permutation import PermutationContainer
 
 
 LIB_DIR = "lib"
@@ -52,8 +51,7 @@ def enable_logging(log_file):
 #top-level logic of program
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     if not os.path.isdir(out_dir):
-        sys.stderr.write("Error: output directory doesn`t exists\n")
-        return
+        os.mkdir(out_dir)
 
     config = cparser.parse_ragout_config(config_file)
     phylogeny = Phylogeny(config.tree)
@@ -112,13 +110,8 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     logger.info("Your Ragout is ready!")
 
 
-def install_deps():
-    installer.install_deps(LIB_DIR)
-
-
 def check_dependencies():
     if not utils.which(SIBELIA_EXEC):
-        sys.stderr.write("Sibelia is not installed. Use option \"--install-deps\" to install it.\n")
         return False
     return True
 
@@ -126,41 +119,26 @@ def check_dependencies():
 def main():
     parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references")
 
-    params = parser.add_argument_group()
-    params.add_argument("-c", action="store", metavar="config", dest="config",
-                        help="configuration file")
+    parser.add_argument("config", metavar="config_file",
+                        help="path to the configuration file")
 
-    params.add_argument("-o", action="store", metavar="output_dir", dest="output_dir",
-                        help="output directory")
+    parser.add_argument("-o", "--outdir", dest="output_dir",
+                        help="path to the working directory [default = ragout-out]", default="ragout-out")
 
-    params.add_argument("-s", action="store_const", metavar="skip_sibelia",
-                        dest="skip_sibelia", default=False, const=True,
-                        help="skip Sibelia running step")
+    #for debugging
+    parser.add_argument("-s", "--skip-sibelia", action="store_true", dest="skip_sibelia",
+                        help=argparse.SUPPRESS)
 
-    params.add_argument("-g", action="store_const", metavar="assembly_refine",
+    parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
 
-    parser.add_argument("--install-deps", action="store_const", metavar="install_deps",
-                        dest="install_deps", default=False, const=True,
-                        help="install Ragout dependencies")
+    parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
 
     args = parser.parse_args()
 
-    if args.install_deps:
-        install_deps()
-        return
-
     if not check_dependencies():
-        return
-
-    if not args.config:
-        parser.print_usage()
-        sys.stderr.write("error: argument -c is required\n")
-        return
-    if not args.output_dir:
-        parser.print_usage()
-        sys.stderr.write("error: argument -o is required\n")
+        sys.stderr.write("Sibelia is not installed. Use \"bin/install-deps.py\" to install it.\n")
         return
 
     do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)

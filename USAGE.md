@@ -1,25 +1,29 @@
 Usage instructions for Ragout
 =============================
 
-    python ragout.py [-h] -c config -o output_dir [-s] [-g]
+    python ragout.py [-h] [-o OUTPUT_DIR] [-r] [-v] config_file
     
 Supported arguments:
 
-    -h, --help      show the help message and exit
-    -c config       Configuration file
-    -o output_dir   Output directory
-    -s              Skip Sibelia running step
-    -g              Refine with assembly graph
+  config_file           path to the configuration file
+
+  -h, --help            show this help message and exit
+  -o OUTPUT_DIR, 
+  --outdir OUTPUT_DIR
+                        path to the working directory [default = ragout-out]
+  -r, --refine          refine with the assembly graph
+  -v, --version         show program's version number and exit
+
 
 Examples
 ---------
 
 You can try Ragout on the provided ready-to-use examples:
 
-    python ragout.py -c examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/ -g
-    python ragout.py -c examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/ -g
-    python ragout.py -c examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/ -g
-    python ragout.py -c examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/ -g
+    python ragout.py examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/ -r
+    python ragout.py examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/ -r
+    python ragout.py examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/ -r
+    python ragout.py examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/ -r
 
 Algorithm overview
 ------------------
@@ -79,8 +83,8 @@ After running Ragout, an output directory will contain:
 
 * "scaffolds.ord" with a resulting order of contigs
 * "scaffolds.fasta" with scaffold sequences (contigs are separated by 11 Ns)
-* "scaffolds_refined.ord" with a refined order contigs (if -g was specified)
-* "scaffolds_refined.fasta" with refined scaffold sequences (if -g was specified)
+* "scaffolds_refined.ord" with a refined order contigs (if -r was specified)
+* "scaffolds_refined.fasta" with refined scaffold sequences (if -r was specified)
 
 The parameters choice
 ---------------------
@@ -110,7 +114,7 @@ procedures for the phylogenetic tree.
 Useful scripts
 --------------
 
-Scripts are located in "scripts" directory
+Scripts are located in "bin" directory
 
 **test.py:**
 
