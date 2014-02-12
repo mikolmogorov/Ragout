@@ -1,7 +1,7 @@
 import sys
 import networkx as nx
 from collections import defaultdict
-from itertools import izip
+from itertools import izip, combinations
 from Queue import Queue
 
 from permutations import Block
@@ -9,6 +9,7 @@ from permutations import Block
 def get_lcb(permutations, max_gap):
     graph = build_graph(permutations)
     graph.compress(max_gap)
+    graph.find_bulges(max_gap)
     return graph.get_permutations()
 
 
@@ -88,7 +89,7 @@ class BreakpointGraph:
         if len(neighbors) > 2:
             return True
 
-        #all edges should be either colored or black
+        #all edges should be either black or colored
         for neighbor in neighbors:
             edges = self.get_edges(node, neighbor)
             seq_ids = map(lambda e: e.seq_id, edges)
@@ -109,9 +110,9 @@ class BreakpointGraph:
             #check distance
             edges = self.get_colored_edges(prev_node, cur_node)
             get_len = lambda e: abs(e.right_pos - e.left_pos)
-            gaps = sorted(map(get_len, edges))
-            if gaps and gaps[-1] > max_gap:
-                print "oioioi", gaps[-1]
+            gaps = map(get_len, edges)
+            if gaps and max(gaps) > max_gap:
+                #print "oioioi", max(gaps)
                 break
 
             neighbors = self.neighbors(cur_node)
@@ -213,6 +214,27 @@ class BreakpointGraph:
 
             closed_nodes.add(node)
 
+
+    def collapse_bulge(self, branch1, branch2):
+        pass
+
+
+    def find_bulges(self, max_gap):
+        visited = set()
+        for node in self.nodes:
+            if not self.is_bifurcation(node):
+                continue
+
+            paths = {}
+            for neighbor in self.neighbors(node):
+                path = self.extend_path(node, neighbor, max_gap)
+                paths[neighbor] = path
+
+            for path1, path2 in combinations(paths.itervalues(), 2):
+                if path1[-1] != path2[-1]:
+                    continue
+
+                collapse_bulge(path1, path2)
 
 def build_graph(permutations):
     graph = BreakpointGraph()
