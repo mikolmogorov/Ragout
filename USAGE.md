@@ -5,14 +5,15 @@ Usage instructions for Ragout
     
 Supported arguments:
 
-    config_file           path to the configuration file
+    config_file             path to the configuration file
 
-    -h, --help            show this help message and exit
+    
+    -h, --help              show this help message and exit
     -o OUTPUT_DIR, 
     --outdir OUTPUT_DIR
-                        path to the working directory [default = ragout-out]
-    -r, --refine          refine with the assembly graph
-    -v, --version         show program's version number and exit
+                            path to the working directory [default = ragout-out]
+    -r, --refine            refine with the assembly graph
+    -v, --version           show program's version number and exit
 
 
 Examples
