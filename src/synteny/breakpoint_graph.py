@@ -233,6 +233,8 @@ class BreakpointGraph:
                 return False
             if len(branch) == 2 and self.get_black_edges(branch[0], branch[1]):
                 return False
+            if self.infinum in branch:
+                return False
 
         #print map(str, branch1), map(str, branch2)
 

@@ -30,7 +30,7 @@ def main():
     maf_file = sys.argv[1]
     out_dir = sys.argv[2]
     min_block = sys.argv[3]
-    get_synteny(maf_file, out_dir, min_block)
+    get_synteny(maf_file, out_dir, int(min_block))
 
 
 if __name__ == "__main__":
