@@ -9,22 +9,28 @@ import sys
 import logging
 import argparse
 
-import source.overlap as ovlp
-import source.scaffolder as scfldr
-import source.sibelia_parser as sp
-import source.merge_iters as merge
-import source.breakpoint_graph as bg
-import source.config_parser as cparser
-import source.assembly_refine as asref
-from source.phylogeny import Phylogeny
-from source.debug import DebugConfig
-from source.permutation import PermutationContainer
+import src.overlap as ovlp
+import src.scaffolder as scfldr
+import src.sibelia_parser as sp
+import src.merge_iters as merge
+import src.breakpoint_graph as bg
+import src.config_parser as cparser
+import src.assembly_refine as asref
+import src.utils as utils
+from src.phylogeny import Phylogeny
+from src.debug import DebugConfig
+from src.permutation import PermutationContainer
 
-SIBELIA_BIN = "../Sibelia/build/"
+
+LIB_DIR = "lib"
+SIBELIA_DIR = os.path.join(LIB_DIR, "Sibelia")
+SIBELIA_EXEC = "Sibelia"
+
 running_dir = os.path.dirname(os.path.realpath(__file__))
-os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_BIN)
+os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_DIR)
 
 logger = logging.getLogger()
+
 
 def enable_logging(log_file):
     log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
@@ -45,8 +51,7 @@ def enable_logging(log_file):
 #top-level logic of program
 def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     if not os.path.isdir(out_dir):
-        sys.stderr.write("Output directory doesn`t exists\n")
-        return
+        os.mkdir(out_dir)
 
     config = cparser.parse_ragout_config(config_file)
     phylogeny = Phylogeny(config.tree)
@@ -105,23 +110,37 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
     logger.info("Your Ragout is ready!")
 
 
+def check_dependencies():
+    if not utils.which(SIBELIA_EXEC):
+        return False
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references")
-    parser.add_argument("-c", action="store", metavar="config", dest="config",
-                        required=True, help="configuration file")
 
-    parser.add_argument("-o", action="store", metavar="output_dir",
-                        dest="output_dir", required=True, help="output directory")
+    parser.add_argument("config", metavar="config_file",
+                        help="path to the configuration file")
 
-    parser.add_argument("-s", action="store_const", metavar="skip_sibelia",
-                        dest="skip_sibelia", default=False, const=True,
-                        help="skip Sibelia running step")
+    parser.add_argument("-o", "--outdir", dest="output_dir",
+                        help="path to the working directory [default = ragout-out]", default="ragout-out")
 
-    parser.add_argument("-g", action="store_const", metavar="assembly_refine",
+    #for debugging
+    parser.add_argument("-s", "--skip-sibelia", action="store_true", dest="skip_sibelia",
+                        help=argparse.SUPPRESS)
+
+    parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
 
+    parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
+
     args = parser.parse_args()
+
+    if not check_dependencies():
+        sys.stderr.write("Sibelia is not installed. Use \"bin/install-deps.py\" to install it.\n")
+        return
+
     do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)
 
 if __name__ == "__main__":
