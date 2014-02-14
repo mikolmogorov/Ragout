@@ -12,6 +12,8 @@ def output_permutations(permutations, stream):
 
 
 def output_blocks_coords(permutations, stream):
+    #multiplicity = defaultdict(int)
+
     num_ids = dict(map(reversed, enumerate(permutations.keys())))
     by_block = defaultdict(list)
 
@@ -25,8 +27,10 @@ def output_blocks_coords(permutations, stream):
             by_block[abs(block.id)].append((block, num_ids[seq_id]))
 
     for block_id, blocklist in by_block.iteritems():
+        #multiplicity[len(blocklist)] += 1
         blocklist.sort(key=lambda b: b[1])
         stream.write("Block #{0}\nSeq_id\tStrand\tStart\tEnd\tLength\n".format(block_id))
+
         for block, seq_id in blocklist:
             strand = "+" if block.id > 0 else "-"
             start = block.start
@@ -34,6 +38,9 @@ def output_blocks_coords(permutations, stream):
             end = start + length
             stream.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(seq_id, strand, start, end, length))
         stream.write("-" * 80 + "\n")
+
+    #for mul, num in sorted(multiplicity.iteritems()):
+    #    print mul, num
 
 
 def load_permutations(file):

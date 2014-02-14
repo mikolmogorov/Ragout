@@ -14,6 +14,7 @@ def get_synteny(maf_file, out_dir, min_block):
     MAX_GAP = 5000
 
     permutations = maf.maf_to_permutations(maf_file, MIN_ALIGNMENT)
+    #permutations = perm.load_permutations(maf_file)
     lcb = bg.get_lcb(permutations, MAX_GAP)
     perm.filter_by_size(lcb, min_block)
 

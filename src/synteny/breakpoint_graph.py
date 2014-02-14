@@ -14,6 +14,8 @@ def get_lcb(permutations, max_gap):
         paths = graph.compress(max_gap)
         bulges = graph.find_bulges(max_gap)
         update = bool(paths + bulges)
+        sys.stderr.write("Iteration: {0} paths, {1} bulges\n"
+                                    .format(paths, bulges))
     return graph.get_permutations()
 
 
@@ -116,7 +118,6 @@ class BreakpointGraph:
             get_len = lambda e: abs(e.right_pos - e.left_pos)
             gaps = map(get_len, edges)
             if gaps and max(gaps) > max_gap:
-                #print "oioioi", max(gaps)
                 break
 
             neighbors = self.neighbors(cur_node)
@@ -180,8 +181,6 @@ class BreakpointGraph:
 
             while edge is not None:
                 black_edges = self.get_black_edges(prev.right_node, edge.left_node)
-                if not black_edges:
-                    print prev.right_node, edge.left_node
                 black_edge = black_edges[0]
 
                 block_id = get_id(black_edge)
@@ -189,7 +188,7 @@ class BreakpointGraph:
                 start = prev.right_pos
                 end = edge.left_pos
                 length = end - start
-                assert length > 0
+                assert length >= 0
 
                 blocks.append(Block(sign * block_id, start, length))
                 prev, edge = edge, edge.next_edge
@@ -200,40 +199,39 @@ class BreakpointGraph:
 
 
     def compress(self, max_gap):
+        #visited = set()
         num_compressed = 0
-        opened_nodes = set([self.infinum])
-        closed_nodes = set()
+        to_delete = []
 
-        queue = Queue()
-        queue.put(self.infinum)
+        for node in self.nodes:
+            if not self.is_bifurcation(node):
+                continue
 
-        while not queue.empty():
-            node = queue.get()
-            neighbors = self.neighbors(node)
+            for neighbor in self.neighbors(node):
+                path = self.extend_path(node, neighbor, max_gap)
+                if self.compress_path(path):
+                    num_compressed += 1
+                    to_delete.extend(path[1:-1])
 
-            for next_node in neighbors:
-                path = self.extend_path(node, next_node, max_gap)
-                path_end = path[-1]
-                if not path_end in closed_nodes:
-                    res = self.compress_path(path)
-                    num_compressed += int(res)
 
-                if not path_end in opened_nodes:
-                    queue.put(path_end)
-                    opened_nodes.add(path_end)
-
-            closed_nodes.add(node)
+        for node in to_delete:
+            del self.nodes[node]
 
         return num_compressed
 
 
     def collapse_bulge(self, branch1, branch2):
+        #TODO: think about this
+        if (len(self.neighbors(branch1[0])) > 3 or
+            len(self.neighbors(branch1[-1])) > 3):
+            return False
+
         for branch in [branch1, branch2]:
+            if self.infinum in branch:
+                return False
             if len(branch) not in [2, 4]:
                 return False
             if len(branch) == 2 and self.get_black_edges(branch[0], branch[1]):
-                return False
-            if self.infinum in branch:
                 return False
 
         #print map(str, branch1), map(str, branch2)
@@ -241,9 +239,6 @@ class BreakpointGraph:
         for branch in [branch1, branch2]:
             if len(branch) == 2:
                 continue
-
-            #print map(, self.get_edges(branch[0], branch[1]))
-            #print map(lambda e: e.seq_id, self.get_edges(branch[-2], branch[-1]))
 
             assert len(branch) == 4
             for adj in self.get_colored_edges(branch[0], branch[1]):
@@ -269,34 +264,36 @@ class BreakpointGraph:
                 next_adj.prev_edge = new_adj
                 prev_adj.next_edge = new_adj
 
-                #print new_adj, next_adj, prev_adj
-
             self.remove_edges(branch[0], branch[1])
             self.remove_edges(branch[-2], branch[-1])
-        #print ""
         return True
 
 
     def find_bulges(self, max_gap):
         num_collapsed = 0
 
-        visited = set()
         for node in self.nodes:
             if not self.is_bifurcation(node):
                 continue
 
-            paths = {}
-            for neighbor in self.neighbors(node):
-                path = self.extend_path(node, neighbor, max_gap)
-                paths[neighbor] = path
+            update = True
+            while update:
+                update = False
+                paths = {}
 
-            for path1, path2 in combinations(paths.itervalues(), 2):
-                if path1[-1] != path2[-1]:
-                    continue
+                for neighbor in self.neighbors(node):
+                    path = self.extend_path(node, neighbor, max_gap)
+                    paths[neighbor] = path
 
-                res = self.collapse_bulge(path1, path2)
-                num_collapsed += int(res)
-                break
+                for path1, path2 in combinations(paths.itervalues(), 2):
+                    if path1[-1] != path2[-1]:
+                        continue
+
+
+                    if self.collapse_bulge(path1, path2):
+                        num_collapsed += 1
+                        update = True
+                        break
 
         return num_collapsed
 
