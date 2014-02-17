@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import namedtuple, defaultdict
 
 Block = namedtuple("Block", ["id", "start", "length"])
@@ -12,7 +13,7 @@ def output_permutations(permutations, stream):
 
 
 def output_blocks_coords(permutations, stream):
-    #multiplicity = defaultdict(int)
+    multiplicity = defaultdict(int)
 
     num_ids = dict(map(reversed, enumerate(permutations.keys())))
     by_block = defaultdict(list)
@@ -27,7 +28,7 @@ def output_blocks_coords(permutations, stream):
             by_block[abs(block.id)].append((block, num_ids[seq_id]))
 
     for block_id, blocklist in by_block.iteritems():
-        #multiplicity[len(blocklist)] += 1
+        multiplicity[len(blocklist)] += 1
         blocklist.sort(key=lambda b: b[1])
         stream.write("Block #{0}\nSeq_id\tStrand\tStart\tEnd\tLength\n".format(block_id))
 
@@ -40,7 +41,7 @@ def output_blocks_coords(permutations, stream):
         stream.write("-" * 80 + "\n")
 
     #for mul, num in sorted(multiplicity.iteritems()):
-    #    print mul, num
+    #    print(mul, num)
 
 
 def load_permutations(file):
