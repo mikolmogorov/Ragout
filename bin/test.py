@@ -11,12 +11,13 @@ Entry = namedtuple("Entry", ["s_ref", "e_ref", "s_qry", "e_qry",
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign", "gap"])
 class Hit:
-    def __init__(self, pos, chr):
-        self.pos = pos
+    def __init__(self, index, chr, coord):
+        self.index = index
         self.chr = chr
+        self.coord = coord
 
     def __str__(self):
-        return str(self.pos) + " : " + str(self.chr)
+        return str(self.index) + " : " + str(self.chr)
 
 
 def parse_nucmer_output(filename):
@@ -60,7 +61,7 @@ def parse_contigs_order(filename):
 def get_order(entries):
     MIN_HIT = 0.45
 
-    chr_len = {}
+    chr_len = defaultdict(int)
     contig_len = defaultdict(int)
 
     by_name = defaultdict(list)
@@ -77,18 +78,18 @@ def get_order(entries):
 
     for entry in filtered_entries:
         contig_len[entry.contig_id] = max(entry.len_qry, contig_len[entry.contig_id])
+        chr_len[entry.ref_id] = max(entry.s_ref, chr_len[entry.ref_id])
 
     by_chr = defaultdict(list)
     for entry in filtered_entries:
         by_chr[entry.ref_id].append(entry)
     for chr_id in by_chr:
         by_chr[chr_id].sort(key=lambda e: e.s_ref)
-        chr_len[chr_id] = len(by_chr[chr_id])
 
     entry_ord = defaultdict(list)
     for chr_id, entries in by_chr.iteritems():
         for i, e in enumerate(entries):
-            entry_ord[e.contig_id].append(Hit(i, chr_id))
+            entry_ord[e.contig_id].append(Hit(i, chr_id, e.s_ref))
 
     return entry_ord, chr_len, contig_len
 
@@ -99,7 +100,7 @@ def gap_count(lst_1, lst_2):
 
     gaps = 99999
     for i, j in product(lst_1, lst_2):
-        gaps = min(gaps, abs(i.pos - j.pos) - 1)
+        gaps = min(gaps, abs(i.index - j.index) - 1)
     return gaps
 
 
@@ -130,15 +131,13 @@ def main():
                         breaks.append(contig.name)
                         total_breaks += 1
                         sys.stdout.write("$")
-                        #print map(lambda p: p.pos, prev)
+                        #print map(lambda p: p.index, prev)
                 else:
                     if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
-                        increasing = entry_ord[contig.name][0].pos > prev[0].pos
+                        increasing = entry_ord[contig.name][0].index > prev[0].index
 
             print "{0}\t{1}\t{2}".format(contig.name, contig_len[contig.name],
-                                        map(str, entry_ord[contig.name]))
-            #print increasing
-
+                                         map(str, entry_ord[contig.name]))
             total_contigs += 1
 
             if gap_count(prev, entry_ord[contig.name]) > 0:
@@ -166,10 +165,13 @@ def agreement(increasing, lst_1, lst_2, chr_len_dict):
             continue
 
         chr_len = chr_len_dict[i.chr]
-        over_oric = ((increasing and i.pos > chr_len * 4 / 5 and j.pos < chr_len / 5) or
-                    (not increasing and i.pos < chr_len / 5 and j.pos > chr_len * 4 / 5))
+        lower = chr_len * 0.2
+        higher = chr_len * 0.8
+        over_zero = ((increasing and i.coord > higher and j.coord < lower) or
+                    (not increasing and i.coord < lower and j.coord > higher))
 
-        if ((j.pos > i.pos) == increasing and abs(i.pos - j.pos) < chr_len / 3) or over_oric:
+        if ((j.index > i.index) == increasing and
+            abs(i.coord - j.coord) < chr_len / 3) or over_zero:
             return True
     return False
 

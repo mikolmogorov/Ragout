@@ -9,6 +9,7 @@ from collections import defaultdict, namedtuple
 from itertools import product
 import sys
 import logging
+import config
 
 logger = logging.getLogger()
 Edge = namedtuple("Edge", ["begin", "end", "label"])
@@ -17,9 +18,9 @@ Edge = namedtuple("Edge", ["begin", "end", "label"])
 #################################################
 
 #builds assembly graph and outputs it in "dot" format
-def make_overlap_graph(targets, dot_file, min_overlap):
+def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
-    edges = build_graph(targets.values(), min_overlap)
+    edges = build_graph(targets.values(), config.ASSEMBLY_MIN_OVERLAP)
     out_edges(edges, dot_file)
 
 

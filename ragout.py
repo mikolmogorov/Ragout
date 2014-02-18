@@ -15,13 +15,12 @@ import src.merge_iters as merge
 import src.breakpoint_graph as bg
 import src.config_parser as cparser
 import src.assembly_refine as asref
-import src.utils as utils
 from src.synteny.synteny_backend import SyntenyBackend
 from src.phylogeny import Phylogeny
 from src.debug import DebugConfig
 from src.permutation import PermutationContainer
 
-#TODO
+#register backends
 import src.synteny.sibelia
 import src.synteny.cactus
 
@@ -94,10 +93,8 @@ def do_job(config_file, out_dir, backend, assembly_refine):
     scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        MIN_OVERLAP = 33
-        MAX_PATH_LEN = 6
-        ovlp.make_overlap_graph(config.targets, out_overlap, MIN_OVERLAP)
-        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds, MAX_PATH_LEN)
+        ovlp.make_overlap_graph(config.targets, out_overlap)
+        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
 
@@ -105,28 +102,26 @@ def do_job(config_file, out_dir, backend, assembly_refine):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references")
+    parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references",
+                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("config", metavar="config_file",
                         help="path to the configuration file")
     parser.add_argument("-o", "--outdir", dest="output_dir",
-                        help="path to the working directory [default = ragout-out]", default="ragout-out")
+                        help="path to the working directory", default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend", default="sibelia",
-                        help="which tool to use for syntey block decomposition. (sibelia | cacuts) [default = sibelia]")
+                        help="which tool to use for synteny block decomposition.",
+                        choices=["sibelia", "cactus"])
     parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
     parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
     args = parser.parse_args()
 
-    if not args.synteny_backend in ["sibelia", "cactus"]:
-        sys.stderr.write("ERROR: Unknown synteny backend \"{0}\"\n".format(args.synteny_backend))
-        return
-
     backends = SyntenyBackend.get_available_backends()
     if args.synteny_backend not in backends:
         sys.stderr.write(args.synteny_backend +
-                    " is not installed. Use \"bin/install-deps.py\" to install it.\n")
+                         " is not installed. Use \"bin/install-deps.py\" to install it.\n")
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend, args.assembly_refine)

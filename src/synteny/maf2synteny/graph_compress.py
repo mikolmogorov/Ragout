@@ -60,7 +60,6 @@ def compress_path(graph, path):
 
 
 def compress_graph(graph, max_gap):
-    #visited = set()
     num_compressed = 0
     to_delete = []
 

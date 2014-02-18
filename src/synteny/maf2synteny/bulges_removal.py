@@ -1,25 +1,28 @@
 from itertools import combinations
+from collections import defaultdict
 
 import breakpoint_graph
 from graph_compress import extend_path
 
-def collapse_bulge(graph, branch1, branch2):
-    #TODO: think about this
-    if (len(graph.neighbors(branch1[0])) > 3 or
-        len(graph.neighbors(branch1[-1])) > 3):
-        return False
+def collapse_bulge(graph, branches):
+    """
+    print map(str, branch1), map(str, branch2)
 
     for branch in [branch1, branch2]:
-        if graph.infinum in branch:
-            return False
+        print "0 -- 1", map(str, graph.get_edges(branch[0], branch[1]))
+        if len(branch) > 3:
+            print "1 -- 2", map(str, graph.get_edges(branch[1], branch[2]))
+            print "3 -- 4", map(str, graph.get_edges(branch[2], branch[3]))
+        print ""
+    """
+    for branch in branches:
         if len(branch) not in [2, 4]:
             return False
-        if len(branch) == 2 and graph.get_black_edges(branch[0], branch[1]):
-            return False
 
-    #print map(str, branch1), map(str, branch2)
+    for branch in branches:
+        assert graph.infinum not in branch
+        assert len(branch) in [2, 4]
 
-    for branch in [branch1, branch2]:
         if len(branch) == 2:
             continue
 
@@ -59,23 +62,38 @@ def remove_bulges(graph, max_gap):
         if not graph.is_bifurcation(node):
             continue
 
-        update = True
-        while update:
-            update = False
-            paths = {}
+        by_end = defaultdict(list)
+        for neighbor in graph.neighbors(node):
+            path = extend_path(graph, node, neighbor, max_gap)
+            by_end[path[-1]].append(path)
 
-            for neighbor in graph.neighbors(node):
-                path = extend_path(graph, node, neighbor, max_gap)
-                paths[neighbor] = path
+        #checking bulge structure: -<=>-
+        if len(by_end) != 2:
+            continue
+        branches = None
+        left_flank = None
+        for b in by_end.values():
+            if len(b) == 1:
+                left_flank = graph.get_black_edges(b[0][0], b[0][1])
+            else:
+                branches = b
+        if not (branches and left_flank):
+            continue
 
-            for path1, path2 in combinations(paths.itervalues(), 2):
-                if path1[-1] != path2[-1]:
-                    continue
+        path_end = branches[0][-1]
+        branch_repr = [b[-2] for b in branches]
+        other_neighbors = []
+        for node in graph.neighbors(path_end):
+            if node not in branch_repr:
+                other_neighbors.append(node)
+        if len(other_neighbors) > 1:
+            continue
+        right_flank = graph.get_black_edges(path_end, other_neighbors[0])
+        if not right_flank:
+            continue
+        ##############
 
-
-                if collapse_bulge(graph, path1, path2):
-                    num_collapsed += 1
-                    update = True
-                    break
+        if collapse_bulge(graph, branches):
+            num_collapsed += 1
 
     return num_collapsed

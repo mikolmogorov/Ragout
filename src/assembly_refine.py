@@ -9,6 +9,8 @@ from itertools import izip
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
+import config
 from datatypes import Contig, Scaffold
 
 Edge = namedtuple("Edge", ["start", "end"])
@@ -19,7 +21,8 @@ logger = logging.getLogger()
 
 
 #does the job
-def refine_contigs(graph_file, scaffolds, max_path_len):
+def refine_contigs(graph_file, scaffolds):
+    max_path_len = config.ASSEMBLY_MAX_PATH_LEN
     logger.info("Refining with assembly graph")
     logger.debug("Max path len = {0}".format(max_path_len))
     new_scaffolds = insert_from_graph(graph_file, scaffolds, max_path_len)

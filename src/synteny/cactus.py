@@ -13,7 +13,8 @@ from synteny_backend import SyntenyBackend
 import maf2synteny.maf2synteny as m2s
 
 logger = logging.getLogger()
-
+CACTUS_DIR = "/home/volrath/Bioinf/Tools/progressiveCactus/"
+CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 
 #PUBLIC:
 ################################################################
@@ -71,8 +72,6 @@ def make_cactus_config(references, targets, tree_string, directory):
 
 
 def run_cactus(config_path, ref_genome, out_dir):
-    CACTUS_DIR = "/home/volrath/Bioinf/Tools/progressiveCactus/"
-    CACTUS_EXEC = "bin/runProgressiveCactus.sh"
     CACTUS_OUT = "alignment.hal"
     HAL2MAF = "submodules/hal/bin/hal2maf"
     MAF_OUT = "cactus.maf"

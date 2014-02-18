@@ -9,16 +9,14 @@ import copy
 import logging
 
 from .. import utils
+from .. import config
 from synteny_backend import SyntenyBackend
 
 logger = logging.getLogger()
 
-LIB_DIR = "lib"
-SIBELIA_DIR = os.path.join(LIB_DIR, "Sibelia")
-#running_dir = os.path.dirname(os.path.realpath(__file__))
-running_dir = os.getcwd()
-os.environ["PATH"] += os.pathsep + os.path.join(running_dir, SIBELIA_DIR)
 SIBELIA_EXEC = "Sibelia"
+SIBELIA_DIR = os.path.join(config.RAGOUT_LIB_DIR, "Sibelia")
+os.environ["PATH"] += os.pathsep + SIBELIA_DIR
 
 
 #PUBLIC:
