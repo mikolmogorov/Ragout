@@ -44,7 +44,7 @@ def enable_logging(log_file):
 
 
 #top-level logic of program
-def do_job(config_file, out_dir, backend, assembly_refine):
+def do_job(config_file, out_dir, backend, assembly_refine, circular_refs):
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
@@ -78,7 +78,7 @@ def do_job(config_file, out_dir, backend, assembly_refine):
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()
-        graph.build_from(perm_container, True)
+        graph.build_from(perm_container, circular_refs)
 
         connections = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(connections, perm_container)
@@ -115,6 +115,9 @@ def main():
     parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
+    parser.add_argument("-c", "--circular", action="store_const",
+                        dest="circular_refs", default=False, const=True,
+                        help="treat input references as circular")
     parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
     args = parser.parse_args()
 
@@ -124,7 +127,8 @@ def main():
                          " is not installed. Use \"bin/install-deps.py\" to install it.\n")
         return
 
-    do_job(args.config, args.output_dir, args.synteny_backend, args.assembly_refine)
+    do_job(args.config, args.output_dir, args.synteny_backend,
+            args.assembly_refine, args.circular_refs)
 
 if __name__ == "__main__":
     main()
