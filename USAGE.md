@@ -13,6 +13,7 @@ Supported arguments:
     --outdir OUTPUT_DIR
                             path to the working directory [default = ragout-out]
     -r, --refine            refine with the assembly graph
+    -c, --circular          treat input references as circular
     -v, --version           show program's version number and exit
 
 

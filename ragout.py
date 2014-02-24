@@ -49,7 +49,7 @@ def enable_logging(log_file):
 
 
 #top-level logic of program
-def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
+def do_job(config_file, out_dir, skip_sibelia, assembly_refine, circular_refs):
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
@@ -85,7 +85,7 @@ def do_job(config_file, out_dir, skip_sibelia, assembly_refine):
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()
-        graph.build_from(perm_container, True)
+        graph.build_from(perm_container, circular_refs)
 
         connections = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(connections, perm_container)
@@ -123,15 +123,20 @@ def main():
                         help="path to the configuration file")
 
     parser.add_argument("-o", "--outdir", dest="output_dir",
-                        help="path to the working directory [default = ragout-out]", default="ragout-out")
+                        help="path to the working directory [default = ragout-out]",
+                        default="ragout-out")
 
     #for debugging
-    parser.add_argument("-s", "--skip-sibelia", action="store_true", dest="skip_sibelia",
-                        help=argparse.SUPPRESS)
+    parser.add_argument("-s", "--skip-sibelia", action="store_true",
+                        dest="skip_sibelia", help=argparse.SUPPRESS)
 
-    parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
+    parser.add_argument("-r", "--refine", action="store_const",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
+
+    parser.add_argument("-c", "--circular", action="store_const",
+                        dest="circular_refs", default=False, const=True,
+                        help="treat input references as circular")
 
     parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
 
@@ -141,7 +146,8 @@ def main():
         sys.stderr.write("Sibelia is not installed. Use \"bin/install-deps.py\" to install it.\n")
         return
 
-    do_job(args.config, args.output_dir, args.skip_sibelia, args.assembly_refine)
+    do_job(args.config, args.output_dir, args.skip_sibelia,
+            args.assembly_refine, args.circular_refs)
 
 if __name__ == "__main__":
     main()
