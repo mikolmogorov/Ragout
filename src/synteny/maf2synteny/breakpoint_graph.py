@@ -91,15 +91,48 @@ class BreakpointGraph:
 
         return False
 
+    def get_fragmented_blocks(self):
+        set_objects = {}
+        def get_set_obj(edge):
+            if edge not in set_objects:
+                set_objects[edge] = SetObj(edge)
+            return set_objects[edge]
+
+        for node in self.nodes:
+            if not self.is_bifurcation(node):
+                continue
+
+            neighbors = self.neighbors(node)
+            if len(neighbors) != 3:
+                continue
+            if self.infinum not in neighbors:
+                continue
+            neighbors.remove(self.infinum)
+
+            left_node, right_node = neighbors
+            left_black = filter(lambda e: e.seq_id is None,
+                                self.nodes[left_node].edges)[0]
+            right_black = filter(lambda e: e.seq_id is None,
+                                 self.nodes[right_node].edges)[0]
+
+            Union(get_set_obj(left_black), get_set_obj(right_black))
+
+        groups_dict = defaultdict(list)
+        for obj in set_objects.itervalues():
+            groups_dict[Find(obj).obj].append(obj.obj)
+        return groups_dict
+
 
     def get_permutations(self):
-        next_id = [1]
-        block_ids = {}
-        def get_id(edge):
-            if not edge in block_ids:
-                block_ids[edge] = next_id[0]
-                next_id[0] += 1
-            return block_ids[edge]
+        ########
+        next_edge_id = [1]
+        edge_ids = {}
+        def get_edge_id(edge):
+            if not edge in edge_ids:
+                edge_ids[edge] = next_edge_id[0]
+                next_edge_id[0] += 1
+            return edge_ids[edge]
+        ########
 
         permutations = {}
         for seq_id, edge in self.origins.iteritems():
@@ -111,7 +144,7 @@ class BreakpointGraph:
                 black_edges = self.get_black_edges(prev.right_node, edge.left_node)
                 black_edge = black_edges[0]
 
-                block_id = get_id(black_edge)
+                block_id = get_edge_id(black_edge)
                 sign = 1 if black_edge.right_node == edge.left_node else -1
                 start = prev.right_pos
                 end = edge.left_pos
@@ -123,7 +156,11 @@ class BreakpointGraph:
 
             permutations[seq_id] = blocks
 
-        return permutations
+        enum_groups = {}
+        for repr_edge, edges in self.get_fragmented_blocks().iteritems():
+            enum_groups[get_edge_id(repr_edge)] = map(get_edge_id, edges)
+
+        return permutations, enum_groups
 
 
 def build_graph(permutations):
@@ -160,3 +197,32 @@ def build_graph(permutations):
         tail_edge.prev_edge = edge
 
     return graph
+
+
+#################
+class SetObj:
+    def __init__(self, obj):
+        self.obj = obj
+        MakeSet(self)
+
+def MakeSet(x):
+     x.parent = x
+     x.rank   = 0
+
+def Union(x, y):
+     xRoot = Find(x)
+     yRoot = Find(y)
+     if xRoot.rank > yRoot.rank:
+         yRoot.parent = xRoot
+     elif xRoot.rank < yRoot.rank:
+         xRoot.parent = yRoot
+     elif xRoot != yRoot:
+         yRoot.parent = xRoot
+         xRoot.rank = xRoot.rank + 1
+
+def Find(x):
+     if x.parent == x:
+        return x
+     else:
+        x.parent = Find(x.parent)
+        return x.parent

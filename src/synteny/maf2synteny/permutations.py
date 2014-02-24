@@ -56,12 +56,30 @@ def load_permutations(file):
     return permutations
 
 
-def filter_by_size(permutations, min_size):
-    should_output = set()
-    for blocks in permutations.itervalues():
+def filter_by_size(permutations, min_size, min_flank, block_groups):
+    block_to_group = defaultdict(lambda: None)
+    for group, blocks in block_groups.iteritems():
         for block in blocks:
+            block_to_group[block] = group
+    group_len = defaultdict(int)
+    for seq_id, blocks in permutations.iteritems():
+        for block in blocks:
+            group_id = block_to_group[abs(block.id)]
+            if not group_id:
+                continue
+            group_len[(group_id, seq_id)] += block.length
+
+    should_output = set()
+    for seq_id, blocks in permutations.iteritems():
+        for block in blocks:
+            group_id = block_to_group[abs(block.id)]
             if block.length >= min_size:
                 should_output.add(abs(block.id))
+            else:
+                group_id = block_to_group[abs(block.id)]
+                if (group_len[(group_id, seq_id)] >= min_size and
+                        block.length > min_flank):
+                    should_output.add(abs(block.id))
 
     for gen in permutations.keys():
         new_blocks = [b for b in permutations[gen] if abs(b.id) in should_output]
