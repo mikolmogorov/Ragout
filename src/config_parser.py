@@ -17,10 +17,10 @@ def parse_ragout_config(filename):
     tree_str = None
     block_size = None
 
-    ref_matcher = re.compile("REF\s+(.+)\s*=\s*(.+)$")
-    target_matcher = re.compile("TARGET\s+(.+)\s*=\s*(.+)$")
-    tree_matcher = re.compile("TREE\s*=\s*(.+)$")
-    block_matcher = re.compile("BLOCK\s*=\s*([0-9,]+)$")
+    ref_matcher = re.compile("REF\s+(\w+)\s*=\s*([^\s]+)$")
+    target_matcher = re.compile("TARGET\s+(\w+)\s*=\s*([^\s]+)$")
+    tree_matcher = re.compile("TREE\s*=\s*([^\s]+)$")
+    block_matcher = re.compile("BLOCK\s*=\s*([\d,]+)$")
 
     for lineno, line in enumerate(open(filename, "r").read().splitlines()):
         line = line.strip()
@@ -48,6 +48,8 @@ def parse_ragout_config(filename):
         if m:
             sizes = m.group(1).split(",")
             block_size = map(int, sizes)
+            if len(block_size) != len(set(block_size)):
+                raise Exception("Synteny block sizes are not unique")
             continue
 
         else:

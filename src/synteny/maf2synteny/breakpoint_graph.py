@@ -114,7 +114,6 @@ class BreakpointGraph:
                                 self.nodes[left_node].edges)[0]
             right_black = filter(lambda e: e.seq_id is None,
                                  self.nodes[right_node].edges)[0]
-
             Union(get_set_obj(left_black), get_set_obj(right_black))
 
         groups_dict = defaultdict(list)

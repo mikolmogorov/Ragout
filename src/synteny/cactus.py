@@ -64,8 +64,10 @@ def make_cactus_config(references, targets, tree_string, directory):
     file = open(os.path.join(directory, CONF_NAME), "w")
     file.write(tree_string + "\n")
 
-    genomes = dict(references.items() + targets.items())
-    for seq_id, seq_path in genomes.iteritems():
+    #genomes = dict(references.items() + targets.items())
+    for seq_id, seq_path in references.iteritems():
+        file.write("*{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
+    for seq_id, seq_path in targets.iteritems():
         file.write("{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
 
     return file.name

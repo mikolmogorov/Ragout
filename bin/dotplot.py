@@ -23,8 +23,8 @@ def main():
 def draw_dot_plot(blocks, seq_files, out_dir):
     seqs = {}
     for file in seq_files:
-        seq = SeqIO.parse(file, "fasta").next()
-        seqs[seq.id] = seq.seq
+        for seq in SeqIO.parse(file, "fasta"):
+            seqs[seq.id] = seq.seq
 
     out_dir = os.path.abspath(out_dir)
     DIR = "/home/volrath/Bioinf/Tools/gepard-1.30/"
@@ -56,7 +56,7 @@ def draw_dot_plot(blocks, seq_files, out_dir):
                                             .format(block_id, block1.chr_id, block2.chr_id))
 
         cmdline = [EXEC, "-seq1", file1, "-seq2", file2, "-outfile",
-                    out_dot, "-matrix", MATRIX, "-word", "15"]
+                    out_dot, "-matrix", MATRIX, "-word", "20"]
         subprocess.check_call(cmdline)
 
         os.remove(file1)
@@ -86,7 +86,8 @@ def parse_coords_file(blocks_file):
             chr_id = seq_info[chr_num].id
 
             num_id = block_id if bl_strand == "+" else -block_id
-            blocks_info[block_id].append(Block(num_id, int(bl_start), int(bl_length), chr_id))
+            blocks_info[block_id].append(Block(num_id, int(bl_start),
+                                        int(bl_length), chr_id))
     return blocks_info
 
 if __name__ == "__main__":
