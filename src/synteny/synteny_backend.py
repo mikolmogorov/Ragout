@@ -11,8 +11,8 @@ class SyntenyBackend:
 
 
     #runs backend and then prepare data for futher processing
-    def make_permutations(self, config, output_dir):
-        files = self.run_backend(config, output_dir)
+    def make_permutations(self, config, output_dir, overwrite):
+        files = self.run_backend(config, output_dir, overwrite)
         assert sorted(files.keys()) == sorted(config.blocks)
 
         for block_size, perm_file in files.iteritems():
@@ -28,7 +28,7 @@ class SyntenyBackend:
 
     #runs backend and returns a dict with permutations files
     #indexed by block sizes
-    def run_backend(self, config, output_dir):
+    def run_backend(self, config, output_dir, overwrite):
         return None
 
     @staticmethod

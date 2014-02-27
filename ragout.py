@@ -44,7 +44,9 @@ def enable_logging(log_file):
 
 
 #top-level logic of program
-def do_job(config_file, out_dir, backend, assembly_refine, circular_refs):
+def do_job(config_file, out_dir, backend, assembly_refine,
+           circular_refs, overwrite):
+
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
@@ -63,11 +65,11 @@ def do_job(config_file, out_dir, backend, assembly_refine, circular_refs):
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    backends[backend].make_permutations(config, out_dir)
+    backends[backend].make_permutations(config, out_dir, overwrite)
 
     last_scaffolds = None
     for block_size in config.blocks:
-        logger.info("Running Ragout with the block size {0}...".format(block_size))
+        logger.info("Running Ragout with the block size {0}".format(block_size))
         block_dir = os.path.join(out_dir, str(block_size))
         block_config = os.path.join(block_dir, "blocks.cfg")
         block_order = os.path.join(block_dir, "scaffolds.ord")
@@ -112,13 +114,16 @@ def main():
     parser.add_argument("-s", "--synteny", dest="synteny_backend", default="sibelia",
                         help="which tool to use for synteny block decomposition.",
                         choices=["sibelia", "cactus"])
-    parser.add_argument("-r", "--refine", action="store_const", metavar="assembly_refine",
+    parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="refine with the assembly graph")
-    parser.add_argument("-c", "--circular", action="store_const",
+    parser.add_argument("--circular", action="store_const",
                         dest="circular_refs", default=False, const=True,
                         help="treat input references as circular")
-    parser.add_argument("-v", "--version", action="version", version="Ragout v0.1b")
+    parser.add_argument("--overwrite", action="store_const",
+                        dest="overwrite", default=False, const=True,
+                        help="overwrite existing Sibelia/Cactus results")
+    parser.add_argument("--version", action="version", version="Ragout v0.1b")
     args = parser.parse_args()
 
     backends = SyntenyBackend.get_available_backends()
@@ -128,7 +133,7 @@ def main():
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend,
-            args.assembly_refine, args.circular_refs)
+            args.assembly_refine, args.circular_refs, args.overwrite)
 
 if __name__ == "__main__":
     main()

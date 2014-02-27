@@ -15,6 +15,7 @@ import maf2synteny.maf2synteny as m2s
 logger = logging.getLogger()
 CACTUS_DIR = "/home/volrath/Bioinf/Tools/progressiveCactus/"
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
+CACTUS_WORKDIR = "cactus-workdir"
 
 #PUBLIC:
 ################################################################
@@ -24,9 +25,9 @@ class CactusBackend(SyntenyBackend):
         SyntenyBackend.__init__(self)
 
 
-    def run_backend(self, config, output_dir):
-        return make_permutations(config.references, config.targets,
-                                 config.tree, config.blocks, output_dir)
+    def run_backend(self, config, output_dir, overwrite):
+        return make_permutations(config.references, config.targets, config.tree,
+                                 config.blocks, output_dir, overwrite)
 
 
 if True:
@@ -41,20 +42,40 @@ else:
 
 
 #Runs Cactus, then outputs preprocessesed results into output_dir
-def make_permutations(references, targets, tree, block_sizes, output_dir):
-    config_path = make_cactus_config(references, targets, tree, output_dir)
-    ref_genome = targets.keys()[0]
-    maf_file = run_cactus(config_path, ref_genome, output_dir)
-
+def make_permutations(references, targets, tree, block_sizes,
+                      output_dir, overwrite):
+    work_dir = os.path.join(output_dir, CACTUS_WORKDIR)
     files = {}
-    for block_size in block_sizes:
-        block_dir = os.path.join(output_dir, str(block_size))
-        if not os.path.isdir(block_dir):
-            os.mkdir(block_dir)
-        m2s.get_synteny(maf_file, block_dir, block_size)
-        perm_file = os.path.join(block_dir, "genomes_permutations.txt")
 
-        files[block_size] = os.path.abspath(perm_file)
+    if overwrite and os.path.isdir(work_dir):
+        shutil.rmtree(work_dir)
+
+    if os.path.isdir(work_dir):
+        #using existing results
+        logger.warning("Using existing Cactus results from previous run")
+        logger.warning("Use --overwrite to force alignment")
+        for block_size in block_sizes:
+            block_dir = os.path.join(work_dir, str(block_size))
+            perm_file = os.path.join(block_dir, "genomes_permutations.txt")
+            if not os.path.isfile(perm_file):
+                logger.error("Exitsing results are incompatible with input config")
+                raise Exception
+            files[block_size] = os.path.abspath(perm_file)
+
+    else:
+        #running cactus
+        os.mkdir(work_dir)
+        config_path = make_cactus_config(references, targets, tree, work_dir)
+        ref_genome = targets.keys()[0]
+        maf_file = run_cactus(config_path, ref_genome, work_dir)
+
+        for block_size in block_sizes:
+            block_dir = os.path.join(work_dir, str(block_size))
+            if not os.path.isdir(block_dir):
+                os.mkdir(block_dir)
+            m2s.get_synteny(maf_file, block_dir, block_size)
+            perm_file = os.path.join(block_dir, "genomes_permutations.txt")
+            files[block_size] = os.path.abspath(perm_file)
 
     return files
 
@@ -79,23 +100,23 @@ def run_cactus(config_path, ref_genome, out_dir):
     MAF_OUT = "cactus.maf"
 
     logger.info("Running progressiveCactus...")
-    work_dir = os.path.abspath(os.path.join(out_dir, "cactus-workdir"))
-    out_hal = os.path.abspath(os.path.join(work_dir, CACTUS_OUT))
-    out_maf = os.path.abspath(os.path.join(out_dir, MAF_OUT))
+    work_dir = os.path.abspath(out_dir)
+    out_hal = os.path.join(work_dir, CACTUS_OUT)
+    out_maf = os.path.join(work_dir, MAF_OUT)
     config_file = os.path.abspath(config_path)
     prev_dir = os.getcwd()
-    if not os.path.exists(CACTUS_DIR):
-        raise Exception("progressiveCactus is not installed")
+    #if not os.path.exists(CACTUS_DIR):
+    #    raise Exception("progressiveCactus is not installed")
 
     os.chdir(CACTUS_DIR)
-    #devnull = open(os.devnull, "w")
+    devnull = open(os.devnull, "w")
     cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal]
-    subprocess.check_call(cmdline)
+    subprocess.check_call(cmdline, stdout=devnull)
 
     #convert to maf
     logger.info("Converting HAL to MAF...")
     cmdline = [HAL2MAF, out_hal, out_maf, "--noAncestors", "--refGenome", ref_genome]
-    subprocess.check_call(cmdline)
+    subprocess.check_call(cmdline, stdout=devnull)
 
     os.chdir(prev_dir)
     return out_maf

@@ -132,14 +132,14 @@ def output_statistics(permutations, seq_length, stream):
     stream.write("-" * 80 + "\n")
 
     for seq_id, cov in covered.iteritems():
-        stream.write("{0}\t{1:4.2f}%\n".format(seq_id,
-                                        100 * float(cov) / seq_length[seq_id]))
+        stream.write("{0}\t{1:4.2f}%\n"
+                      .format(seq_id, 100 * float(cov) / seq_length[seq_id]))
 
 
 def merge_permutations(simplified_perms, initial_perms):
-    permutations = copy(simplified_perms)
+    permutations = defaultdict(list, simplified_perms)
     by_block = defaultdict(list)
-    starts, ends = {}, {}
+    starts, ends = defaultdict(list), defaultdict(list)
     next_id = 0
 
     for seq_id, blocks in simplified_perms.iteritems():
@@ -171,7 +171,6 @@ def merge_permutations(simplified_perms, initial_perms):
                 sign = 1 if block.id > 0 else -1
                 permutations[seq_id].append(Block(next_id * sign, block.start, block.length))
             next_id += 1
-
 
     for seq_id in permutations:
         permutations[seq_id].sort(key=lambda b: b.start)
