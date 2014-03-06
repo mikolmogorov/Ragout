@@ -86,7 +86,7 @@ def remove_bulges(graph, max_gap):
         for node in graph.neighbors(path_end):
             if node not in branch_repr:
                 other_neighbors.append(node)
-        if len(other_neighbors) > 1:
+        if len(other_neighbors) > 1 or not other_neighbors:
             continue
         right_flank = graph.get_black_edges(path_end, other_neighbors[0])
         if not right_flank:

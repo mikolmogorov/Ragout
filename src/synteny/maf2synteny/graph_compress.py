@@ -52,6 +52,8 @@ def compress_path(graph, path):
         while not tail_adj.has_node(path[0]) and not tail_adj.has_node(path[-1]):
             tail_adj = tail_adj.prev_edge
 
+        if head_adj.seq_id != tail_adj.seq_id:
+            print head_adj.seq_id, tail_adj.seq_id
         assert head_adj.seq_id == tail_adj.seq_id
         head_adj.prev_edge = tail_adj
         tail_adj.next_edge = head_adj
@@ -73,8 +75,15 @@ def compress_graph(graph, max_gap):
                 num_compressed += 1
                 to_delete.extend(path[1:-1])
 
-
+    #cleaning up
+    edges_to_del = set()
     for node in to_delete:
+        edges_to_del |= set(graph.nodes[node].edges)
         del graph.nodes[node]
+    for edge in edges_to_del:
+        edge.prev_edge = None
+        edge.next_edge = None
+        edge.left_node = None
+        edge.right_node = None
 
     return num_compressed

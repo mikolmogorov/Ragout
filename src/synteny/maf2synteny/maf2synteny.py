@@ -13,14 +13,17 @@ def get_synteny(maf_file, out_dir, min_block_out):
     out_permutations = os.path.join(out_dir, "genomes_permutations.txt")
     out_coords = os.path.join(out_dir, "blocks_coords.txt")
     out_stats = os.path.join(out_dir, "coverage_report.txt")
+    condensed_maf = maf_file + "_condensed"
 
-    MIN_ALIGNMENT = 100
+    MIN_ALIGNMENT = 30
     MIN_FLANK_RATE = 0.3
 
-    PARAMS = [(100,  1000),
+    PARAMS = [(30, 100),
+              (100,  1000),
               (1000, 5000),
               (5000, 15000)]
 
+    #maf.condense_maf(maf_file, condensed_maf)
     blocks, seq_length = maf.maf_to_permutations(maf_file, MIN_ALIGNMENT)
     for min_block, max_gap in PARAMS:
         print("Simplification with", min_block, max_gap, file=sys.stderr)

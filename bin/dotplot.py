@@ -24,7 +24,9 @@ def draw_dot_plot(blocks, seq_files, out_dir):
     seqs = {}
     for file in seq_files:
         for seq in SeqIO.parse(file, "fasta"):
-            seqs[seq.id] = seq.seq
+            seq_id = seq.id.split(" ")[0]
+            seq_id = seq_id.rstrip("|")
+            seqs[seq_id] = seq.seq
 
     out_dir = os.path.abspath(out_dir)
     DIR = "/home/volrath/Bioinf/Tools/gepard-1.30/"

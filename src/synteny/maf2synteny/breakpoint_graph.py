@@ -16,10 +16,8 @@ class Edge:
         self.prev_edge = None
         self.next_edge = None
 
-
     def has_node(self, node):
         return self.left_node == node or self.right_node == node
-
 
     def __str__(self):
         left = str(self.left_node) if self.left_node != sys.maxint else "inf"
@@ -29,7 +27,7 @@ class Edge:
 
 class Node:
     def __init__(self):
-        self.edges = set()
+        self.edges = []
 
 
 class BreakpointGraph:
@@ -38,35 +36,30 @@ class BreakpointGraph:
         self.nodes = defaultdict(Node)
         self.infinum = sys.maxint
 
-
     def add_edge(self, node1, node2, seq_id):
         edge = Edge(node1, node2, seq_id)
-        self.nodes[node1].edges.add(edge)
-        self.nodes[node2].edges.add(edge)
+        self.nodes[node1].edges.append(edge)
+        self.nodes[node2].edges.append(edge)
         return edge
-
 
     def get_edges(self, node1, node2):
         edges = self.nodes[node1].edges
         return filter(lambda e: e.left_node == node2 or e.right_node == node2, edges)
 
-
     def get_black_edges(self, node1, node2):
         edges = self.get_edges(node1, node2)
         return filter(lambda e: e.seq_id is None, edges)
-
 
     def get_colored_edges(self, node1, node2):
         edges = self.get_edges(node1, node2)
         return filter(lambda e: e.seq_id is not None, edges)
 
-
     def remove_edges(self, node1, node2):
-        edges = self.get_edges(node1, node2)
-        for e in edges:
-            self.nodes[node1].edges.remove(e)
-            self.nodes[node2].edges.remove(e)
-
+        to_del = self.get_edges(node1, node2)
+        self.nodes[node1].edges = [e for e in self.nodes[node1].edges
+                                        if e not in to_del]
+        self.nodes[node2].edges = [e for e in self.nodes[node2].edges
+                                        if e not in to_del]
 
     def neighbors(self, node):
         neighbors = set()
@@ -75,7 +68,6 @@ class BreakpointGraph:
             neighbors.add(other_node)
 
         return list(neighbors)
-
 
     def is_bifurcation(self, node):
         neighbors = self.neighbors(node)
@@ -120,7 +112,6 @@ class BreakpointGraph:
         for obj in set_objects.itervalues():
             groups_dict[Find(obj).obj].append(obj.obj)
         return groups_dict
-
 
     def get_permutations(self):
         ########
@@ -183,11 +174,16 @@ def build_graph(permutations):
 
         #adjacencies
         for block1, block2 in izip(blocks[:-1], blocks[1:]):
+            left_pos = block1.start + block1.length
+            right_pos = block2.start
+            if right_pos < left_pos:
+                print(block1.start, block1.start + block1.length,
+                      block2.start, block2.start + block2.length)
+                print(right_pos - left_pos)
+                continue
+                #print(edge.left_pos, edge.right_pos)
             edge = graph.add_edge(-block1.id, block2.id, seq_id)
-            edge.left_pos = block1.start + block1.length
-            edge.right_pos = block2.start
-            assert edge.right_pos >= edge.left_pos
-
+            edge.left_pos, edge.right_pos = left_pos, right_pos
             prev_edge.next_edge = edge
             edge.prev_edge = prev_edge
             prev_edge = edge
