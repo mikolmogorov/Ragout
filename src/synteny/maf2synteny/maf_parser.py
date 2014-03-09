@@ -61,6 +61,8 @@ def condense_maf(input_maf, output_maf):
 
         elif line.startswith("s"):
             seq_id, start, ungap_len, strand, seq_len, seq = line.split("\t")[1:]
+            if seq_id.startswith("gi") and seq_id[-1] != "|": #fix for cactus
+                seq_id += "|"
             start = int(start)
             seq_len = int(seq_len)
             ungap_len = int(ungap_len)
