@@ -58,12 +58,8 @@ def parse_contigs_order(filename):
     return scaffolds
 
 
-def get_order(entries):
+def filter_entries(entries):
     MIN_HIT = 0.45
-
-    chr_len = defaultdict(int)
-    contig_len = defaultdict(int)
-
     by_name = defaultdict(list)
     for entry in entries:
         by_name[entry.contig_id].append(entry)
@@ -76,12 +72,44 @@ def get_order(entries):
     for ent_lst in by_name.itervalues():
         filtered_entries.extend(ent_lst)
 
-    for entry in filtered_entries:
+    return filtered_entries
+
+
+def join_collinear_entries(entries):
+    new_entries = []
+    by_chr = defaultdict(list)
+    for entry in entries:
+        by_chr[entry.ref_id].append(entry)
+    for chr_id in by_chr:
+        by_chr[chr_id].sort(key=lambda e: e.s_ref)
+        #prev_contig = None
+        start_entry = None
+        last_entry = None
+        for entry in by_chr[chr_id]:
+            if not start_entry:
+                start_entry = entry
+            elif start_entry.contig_id != entry.contig_id:
+                new_entries.append(Entry(start_entry.s_ref, last_entry.e_ref,
+                                    start_entry.s_qry, last_entry.e_qry,
+                                    abs(last_entry.e_ref - start_entry.s_ref),
+                                    abs(last_entry.e_qry - start_entry.s_qry),
+                                    last_entry.ref_id, last_entry.contig_id))
+                start_entry = entry
+            last_entry = entry
+
+    return new_entries
+
+
+def get_order(entries):
+    chr_len = defaultdict(int)
+    contig_len = defaultdict(int)
+
+    for entry in entries:
         contig_len[entry.contig_id] = max(entry.len_qry, contig_len[entry.contig_id])
         chr_len[entry.ref_id] = max(entry.s_ref, chr_len[entry.ref_id])
 
     by_chr = defaultdict(list)
-    for entry in filtered_entries:
+    for entry in entries:
         by_chr[entry.ref_id].append(entry)
     for chr_id in by_chr:
         by_chr[chr_id].sort(key=lambda e: e.s_ref)
@@ -110,15 +138,17 @@ def main():
         return
 
     entries = parse_nucmer_output(sys.argv[1])
-    scaffolds = parse_contigs_order(sys.argv[2])
+    entries = filter_entries(entries)
+    entries = join_collinear_entries(entries)
     entry_ord, chr_len, contig_len = get_order(entries)
+    scaffolds = parse_contigs_order(sys.argv[2])
 
     #TODO: check signs
     total_breaks = 0
     total_gaps = 0
     total_contigs = 0
     for s in scaffolds:
-        print ">" + s.name
+        print "\n>" + s.name
 
         prev = None
         increasing = None
@@ -148,8 +178,8 @@ def main():
             if entry_ord[contig.name]:
                 prev = entry_ord[contig.name]
 
-        print "miss-ordered: ", breaks
-    print "Total miss-ordered:", total_breaks
+        print "\tmiss-ordered: ", len(breaks)
+    print "\nTotal miss-ordered:", total_breaks
     print "Total gaps:", total_gaps
     print "Total contigs:", total_contigs
     print "Total scaffolds:", len(scaffolds)

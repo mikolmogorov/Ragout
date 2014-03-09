@@ -9,7 +9,6 @@ class SyntenyBackend:
     def __init__(self):
         pass
 
-
     #runs backend and then prepare data for futher processing
     def make_permutations(self, config, output_dir, overwrite):
         files = self.run_backend(config, output_dir, overwrite)
@@ -24,7 +23,6 @@ class SyntenyBackend:
             chr_to_gen = get_chr_names(genomes)
             split_permutations(chr_to_gen, config.references,
                                config.targets, perm_file, block_dir)
-
 
     #runs backend and returns a dict with permutations files
     #indexed by block sizes
