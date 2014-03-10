@@ -75,8 +75,7 @@ def do_job(config_file, out_dir, backend, assembly_refine,
         block_order = os.path.join(block_dir, "scaffolds.ord")
 
         debug_dir = os.path.join(block_dir, "debug")
-        DebugConfig.get_writer().set_debug_dir(debug_dir)
-
+        DebugConfig.get_instance().set_debug_dir(debug_dir)
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()

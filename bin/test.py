@@ -138,8 +138,8 @@ def main():
         return
 
     entries = parse_nucmer_output(sys.argv[1])
-    entries = filter_entries(entries)
     entries = join_collinear_entries(entries)
+    entries = filter_entries(entries)
     entry_ord, chr_len, contig_len = get_order(entries)
     scaffolds = parse_contigs_order(sys.argv[2])
 

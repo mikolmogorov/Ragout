@@ -9,7 +9,7 @@ import os
 import logging
 
 from permutation import *
-from debug import DebugConfig, write_dot
+from debug import DebugConfig
 import phylogeny as phylo
 
 
@@ -36,40 +36,44 @@ class BreakpointGraph:
             if perm.ref_id not in self.references:
                 self.references.append(perm.ref_id)
 
-            prev = None
+            prev_block = None
             for block in perm.iter_blocks(circular):
-                if not prev:
-                    prev = block
+                if not prev_block:
+                    prev_block = block
                     continue
 
-                left_block = prev
-                right_block = block
-                self.bp_graph.add_node(-left_block)
-                self.bp_graph.add_node(right_block)
-                self.bp_graph.add_edge(-left_block, right_block, ref_id=perm.ref_id)
-
-                prev = block
+                self.bp_graph.add_node(-prev_block)
+                self.bp_graph.add_node(block)
+                self.bp_graph.add_edge(-prev_block, block, genome_id=perm.ref_id)
+                prev_block = block
 
         for perm in perm_container.target_perms_filtered:
             if perm.ref_id not in self.targets:
                 self.targets.append(perm.ref_id)
 
-            prev = None
+            prev_block = None
             for block in perm.iter_blocks(False):
-                if not prev:
-                    prev = block
+                if not prev_block:
+                    prev_block = block
                     continue
 
-                self.known_adjacencies[-prev] = block
-                self.known_adjacencies[block] = -prev
-                prev = block
+                self.bp_graph.add_node(-prev_block)
+                self.bp_graph.add_node(block)
+                self.bp_graph.add_edge(-prev_block, block, genome_id=perm.ref_id)
+                prev_block = block
 
 
     #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
+        if DebugConfig.get_instance().debugging:
+            out_tree = os.path.join(DebugConfig.get_instance().debug_dir,
+                                                         "phylogeny.png")
+            phylogeny.output_tree(out_tree)
+
         logger.info("Resolving breakpoint graph")
         chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+
 
         for comp_id, subgraph in enumerate(subgraphs):
             trimmed_graph = self.trim_known_edges(subgraph)
@@ -86,9 +90,8 @@ class BreakpointGraph:
             matching_edges = split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
 
-            if DebugConfig.get_writer().debugging:
-                debug_dir = DebugConfig.get_writer().debug_dir
-                debug_draw_component(comp_id, weighted_graph, subgraph, debug_dir)
+            if DebugConfig.get_instance().debugging:
+                debug_draw_component(comp_id, weighted_graph, subgraph)
 
         adjacencies = {}
         for edge in chosen_edges:
@@ -105,7 +108,9 @@ class BreakpointGraph:
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
                 continue
 
-            if self.known_adjacencies.get(v1, None) == v2:
+            genome_ids = map(lambda e: e["genome_id"], graph[v1][v2].itervalues())
+            target_id = self.targets[0]
+            if target_id in genome_ids:
                 trimmed_graph.remove_node(v1)
                 trimmed_graph.remove_node(v2)
 
@@ -123,17 +128,15 @@ class BreakpointGraph:
             adjacencies = {}
             for neighbor in graph.neighbors(node):
                 for edge in graph[node][neighbor].values():
-                    adjacencies[edge["ref_id"]] = neighbor
+                    adjacencies[edge["genome_id"]] = neighbor
 
             for ref_id in self.references:
                 if ref_id not in adjacencies:
                     adjacencies[ref_id] = None  #"void" state in paper
 
             for neighbor in graph.neighbors(node):
-                break_weight = 0.0
-                if not (self.known_adjacencies.get(node, None) == neighbor):
-                    adjacencies[target_id] = neighbor
-                    break_weight = phylogeny.estimate_tree(adjacencies)
+                adjacencies[target_id] = neighbor
+                break_weight = phylogeny.estimate_tree(adjacencies)
 
                 update_edge(g, node, neighbor, break_weight)
 
@@ -164,14 +167,15 @@ def update_edge(graph, v1, v2, weight):
         graph[v1][v2]["weight"] += weight
 
 
-def debug_draw_component(comp_id, weighted_graph, breakpoint_graph, debug_dir):
+def debug_draw_component(comp_id, weighted_graph, breakpoint_graph):
     if len(breakpoint_graph) == 2:
         return
+
+    bg_out_name = "comp{0}-bg.dot".format(comp_id)
+    weighted_out_name = "comp{0}-weighted.dot".format(comp_id)
+    DebugConfig.get_instance().output_bg_component(breakpoint_graph, bg_out_name)
 
     for e in weighted_graph.edges_iter():
         weighted_graph[e[0]][e[1]]["label"] = ("{0:7.4f}"
                                     .format(weighted_graph[e[0]][e[1]]["weight"]))
-    bg_out = os.path.join(debug_dir, "comp{0}-bg.dot".format(comp_id))
-    weighted_out = os.path.join(debug_dir, "comp{0}-weighted.dot".format(comp_id))
-    write_dot(breakpoint_graph, open(bg_out, "w"))
-    write_dot(weighted_graph, open(weighted_out, "w"))
+    DebugConfig.get_instance().output_bg_component(weighted_graph, weighted_out_name)

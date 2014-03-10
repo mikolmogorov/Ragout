@@ -10,6 +10,8 @@ Block = namedtuple("Block", ["id", "start", "length", "chr_id"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 
 
+GEPARD_DIR = "/home/volrath/Bioinf/tools/gepard-1.30/"
+
 def main():
     if len(sys.argv) < 4:
         print "Usage: dotplot.py <coords_file> <output_dir> <fasta_references>"
@@ -25,14 +27,12 @@ def draw_dot_plot(blocks, seq_files, out_dir):
     for file in seq_files:
         for seq in SeqIO.parse(file, "fasta"):
             seq_id = seq.id.split(" ")[0]
-            seq_id = seq_id.rstrip("|")
             seqs[seq_id] = seq.seq
 
     out_dir = os.path.abspath(out_dir)
-    DIR = "/home/volrath/Bioinf/Tools/gepard-1.30/"
-    os.chdir(DIR)
+    os.chdir(GEPARD_DIR)
     EXEC = "./gepardcmd.sh"
-    MATRIX = "matrices/blosum62.mat"
+    MATRIX = "matrices/edna.mat"
 
     for block_id, blocklist in blocks.iteritems():
         block1, block2 = blocklist[0:2]
@@ -58,7 +58,7 @@ def draw_dot_plot(blocks, seq_files, out_dir):
                                             .format(block_id, block1.chr_id, block2.chr_id))
 
         cmdline = [EXEC, "-seq1", file1, "-seq2", file2, "-outfile",
-                    out_dot, "-matrix", MATRIX, "-word", "20"]
+                    out_dot, "-matrix", MATRIX, "-word", "15"]
         subprocess.check_call(cmdline)
 
         os.remove(file1)

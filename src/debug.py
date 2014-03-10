@@ -15,6 +15,9 @@ class DebugConfig():
     def __init__(self):
         self.debug_dir = None
         self.debugging = False
+        self.gen_to_color = {}
+        self.colors = ["red", "green", "blue", "yellow",
+                        "cyan", "magnetta"]
 
     def set_debug_dir(self, debug_dir):
         self.debug_dir = debug_dir
@@ -23,31 +26,31 @@ class DebugConfig():
             shutil.rmtree(debug_dir)
         os.mkdir(debug_dir)
 
+    def genome_to_color(self, genome_id):
+        if genome_id not in self.gen_to_color:
+            self.gen_to_color[genome_id] = self.colors[0]
+            self.colors = self.colors[1:] + self.colors[:1] #rotate list
+        return self.gen_to_color[genome_id]
+
     @staticmethod
-    def get_writer():
+    def get_instance():
         if not DebugConfig.instance:
             DebugConfig.instance = DebugConfig()
         return DebugConfig.instance
 
+    #outputs colored breakpoint graph in "dot" format
+    def output_bg_component(self, component, name):
+        dot_file = open(os.path.join(self.debug_dir, name), "w")
+        dot_file.write("graph {\n")
+        for v_1, v_2, edge_data in component.edges(data=True):
+            label = ""
+            color = "black"
+            if "label" in edge_data:
+                label = edge_data["label"]
+            if "genome_id" in edge_data:
+                genome_id = edge_data["genome_id"]
+                color = self.genome_to_color(genome_id)
 
-#outputs colored breakpoint graph in "dot" format
-def write_dot(graph, dot_file):
-    colors = ["red", "green", "blue", "yellow", "black"]
-    ref_to_color = {}
-
-    dot_file.write("graph {\n")
-    for v_1, v_2, edge_data in graph.edges(data=True):
-        label = ""
-        color = "black"
-        if "label" in edge_data:
-            label = edge_data["label"]
-        if "ref_id" in edge_data:
-            ref_id = edge_data["ref_id"]
-            if ref_id not in ref_to_color:
-                ref_to_color[ref_id] = colors[0]
-                del colors[0]
-            color = ref_to_color[ref_id]
-
-        dot_file.write("{0} -- {1} [color=\"{2}\", label=\"{3}\"];\n"
-                            .format(v_1, v_2, color, label))
-    dot_file.write("}\n")
+            dot_file.write("{0} -- {1} [color=\"{2}\", label=\"{3}\"];\n"
+                                        .format(v_1, v_2, color, label))
+        dot_file.write("}\n")
