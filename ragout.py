@@ -45,7 +45,7 @@ def enable_logging(log_file):
 
 #top-level logic of program
 def do_job(config_file, out_dir, backend, assembly_refine,
-           circular_refs, overwrite):
+           circular_refs, overwrite, debug):
 
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
@@ -74,8 +74,9 @@ def do_job(config_file, out_dir, backend, assembly_refine,
         block_config = os.path.join(block_dir, "blocks.cfg")
         block_order = os.path.join(block_dir, "scaffolds.ord")
 
-        debug_dir = os.path.join(block_dir, "debug")
-        DebugConfig.get_instance().set_debug_dir(debug_dir)
+        if debug:
+            debug_dir = os.path.join(block_dir, "debug")
+            DebugConfig.get_instance().set_debug_dir(debug_dir)
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()
@@ -122,6 +123,9 @@ def main():
     parser.add_argument("--overwrite", action="store_const",
                         dest="overwrite", default=False, const=True,
                         help="overwrite existing Sibelia/Cactus results")
+    parser.add_argument("--debug", action="store_const",
+                        dest="debug", default=False, const=True,
+                        help="enable debug output")
     parser.add_argument("--version", action="version", version="Ragout v0.1b")
     args = parser.parse_args()
 
@@ -132,7 +136,7 @@ def main():
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend,
-            args.assembly_refine, args.circular_refs, args.overwrite)
+           args.assembly_refine, args.circular_refs, args.overwrite, args.debug)
 
 if __name__ == "__main__":
     main()

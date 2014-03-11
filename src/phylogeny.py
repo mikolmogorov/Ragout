@@ -26,17 +26,7 @@ class Phylogeny:
     def estimate_tree(self, adjacencies):
         return tree_score(self.tree, adjacencies)
 
-    def output_tree(self, out_file):
-        import pylab
-
-        for clade in self.tree.find_clades():
-            if clade.is_terminal():
-                clade.color = DebugConfig.get_instance().genome_to_color(clade.name)
-        self.tree.ladderize()
-        pylab.rcParams["lines.linewidth"] = 3.0
-        Phylo.draw(self.tree, do_show=False)
-        pylab.savefig(out_file)
-#PRIVATE:
+    #PRIVATE:
 ####################################################
 
 #scoring with DP (see algorithm description in the paper)

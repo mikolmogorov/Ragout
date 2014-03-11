@@ -5,13 +5,13 @@
 
 import networkx as nx
 from collections import namedtuple
+from itertools import chain
 import os
 import logging
 
 from permutation import *
 from debug import DebugConfig
 import phylogeny as phylo
-
 
 Connection = namedtuple("Connection", ["start", "end"])
 logger = logging.getLogger()
@@ -27,14 +27,21 @@ class BreakpointGraph:
         self.references = []
         self.known_adjacencies = {}
 
-
     #builds breakpoint graph from permutations
-    def build_from(self, perm_container, circular):
+    def build_from(self, perm_container, circular_refs):
         logger.info("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
             if perm.ref_id not in self.references:
                 self.references.append(perm.ref_id)
+
+        for perm in perm_container.target_perms_filtered:
+            if perm.ref_id not in self.targets:
+                self.targets.append(perm.ref_id)
+
+        for perm in chain(perm_container.ref_perms_filtered,
+                          perm_container.target_perms_filtered):
+            circular = circular_refs if perm.ref_id in self.references else False
 
             prev_block = None
             for block in perm.iter_blocks(circular):
@@ -47,33 +54,14 @@ class BreakpointGraph:
                 self.bp_graph.add_edge(-prev_block, block, genome_id=perm.ref_id)
                 prev_block = block
 
-        for perm in perm_container.target_perms_filtered:
-            if perm.ref_id not in self.targets:
-                self.targets.append(perm.ref_id)
-
-            prev_block = None
-            for block in perm.iter_blocks(False):
-                if not prev_block:
-                    prev_block = block
-                    continue
-
-                self.bp_graph.add_node(-prev_block)
-                self.bp_graph.add_node(block)
-                self.bp_graph.add_edge(-prev_block, block, genome_id=perm.ref_id)
-                prev_block = block
-
-
     #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
         if DebugConfig.get_instance().debugging:
-            out_tree = os.path.join(DebugConfig.get_instance().debug_dir,
-                                                         "phylogeny.png")
-            phylogeny.output_tree(out_tree)
+            DebugConfig.get_instance().output_phylogeny(phylogeny, "phylogeny.png")
 
         logger.info("Resolving breakpoint graph")
         chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
-
 
         for comp_id, subgraph in enumerate(subgraphs):
             trimmed_graph = self.trim_known_edges(subgraph)
@@ -100,7 +88,6 @@ class BreakpointGraph:
 
         return adjacencies
 
-
     #removes edges with known target's adjacencies
     def trim_known_edges(self, graph):
         trimmed_graph = graph.copy()
@@ -115,7 +102,6 @@ class BreakpointGraph:
                 trimmed_graph.remove_node(v2)
 
         return trimmed_graph
-
 
     #converts breakpoint graph into weighted graph
     def make_weighted(self, graph, phylogeny):
@@ -168,14 +154,13 @@ def update_edge(graph, v1, v2, weight):
 
 
 def debug_draw_component(comp_id, weighted_graph, breakpoint_graph):
-    if len(breakpoint_graph) == 2:
+    if len(breakpoint_graph) == 2:  #draw only non-trivial components
         return
 
-    bg_out_name = "comp{0}-bg.dot".format(comp_id)
-    weighted_out_name = "comp{0}-weighted.dot".format(comp_id)
-    DebugConfig.get_instance().output_bg_component(breakpoint_graph, bg_out_name)
+    weights = {}
+    for v1, v2, data in weighted_graph.edges_iter(data=True):
+        weights[(v1, v2)] = data["weight"]
 
-    for e in weighted_graph.edges_iter():
-        weighted_graph[e[0]][e[1]]["label"] = ("{0:7.4f}"
-                                    .format(weighted_graph[e[0]][e[1]]["weight"]))
-    DebugConfig.get_instance().output_bg_component(weighted_graph, weighted_out_name)
+    bg_out_name = "comp{0}-bg.png".format(comp_id)
+    DebugConfig.get_instance().draw_breakpoint_graph(breakpoint_graph,
+                                                     bg_out_name, weights)
