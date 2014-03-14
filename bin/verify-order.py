@@ -34,7 +34,7 @@ def gap_count(lst_1, lst_2):
     return gaps
 
 
-def agreement(increasing, lst_1, lst_2, chr_len_dict):
+def agreement_ord(increasing, lst_1, lst_2, chr_len_dict):
     if not lst_1 or not lst_2:
         return True
 
@@ -55,6 +55,13 @@ def agreement(increasing, lst_1, lst_2, chr_len_dict):
     return False
 
 
+def agreement_strands(lst_1, lst_2):
+    for i, j in product(lst_1, lst_2):
+        if i == j:
+            return True
+    return False
+
+
 def do_job(nucmer_coords, scaffolds_ord):
     alignment = parse_nucmer_coords(nucmer_coords)
     #alignment = join_collinear_alignments(alignment)
@@ -62,42 +69,59 @@ def do_job(nucmer_coords, scaffolds_ord):
     entry_ord, chr_len, contig_len = get_order(alignment)
     scaffolds = parse_contigs_order(scaffolds_ord)
 
-    #TODO: check signs
     total_breaks = 0
     total_gaps = 0
     total_contigs = 0
     for s in scaffolds:
         print("\n>" + s.name)
 
-        prev = None
+        prev_aln = None
+        prev_strand = None
         increasing = None
         breaks = []
         for contig in s.contigs:
-            if prev:
+            miss_ord = False
+            miss_strand = False
+
+            #checking order
+            if prev_aln:
                 if increasing is not None:
-                    if not agreement(increasing, prev, entry_ord[contig.name], chr_len):
+                    if not agreement_ord(increasing, prev_aln, entry_ord[contig.name], chr_len):
                         increasing = None
                         breaks.append(contig.name)
                         total_breaks += 1
-                        sys.stdout.write("$")
-                        #print map(lambda p: p.index, prev)
-                else:
-                    if len(entry_ord[contig.name]) == 1 and len(prev) == 1:
-                        increasing = entry_ord[contig.name][0].index > prev[0].index
+                        miss_ord = True
+                elif len(entry_ord[contig.name]) == 1 and len(prev_aln) == 1:
+                    increasing = entry_ord[contig.name][0].index > prev_aln[0].index
 
-            print("{0}\t{1}\t{2}".format(contig.name, contig_len[contig.name],
-                                         map(str, entry_ord[contig.name])))
-            total_contigs += 1
-
-            if gap_count(prev, entry_ord[contig.name]) > 0:
-                total_gaps += 1
-            #total_gaps += gap_count(prev, entry_ord[contig.name])
+            #checking strand
+            cur_strand = map(lambda h: h.sign * contig.sign, entry_ord[contig.name])
+            if not miss_ord and prev_strand and cur_strand:
+                if not agreement_strands(prev_strand, cur_strand):
+                    breaks.append(contig.name)
+                    total_breaks += 1
+                    miss_strand = True
+                    prev_strand = None
 
             #only if this contig has alignments
             if entry_ord[contig.name]:
-                prev = entry_ord[contig.name]
+                prev_aln = entry_ord[contig.name]
+                if not miss_strand:
+                    prev_strand = cur_strand
 
+            #output
+            sign = "+" if contig.sign > 0 else "-"
+            print("{0}{1}\t{2}\t{3}".format(sign, contig.name, contig_len[contig.name],
+                                            map(str, entry_ord[contig.name])), end="")
+            print("\t<<<order" if miss_ord else "", end="")
+            print("\t<<<strand" if miss_strand else "", end="")
+            print("")
+            total_contigs += 1
+            if gap_count(prev_aln, entry_ord[contig.name]) > 0:
+                total_gaps += 1
+            ###
         print("\tmiss-ordered: ", len(breaks))
+
     print("\nTotal miss-ordered:", total_breaks)
     print("Total gaps:", total_gaps)
     print("Total contigs:", total_contigs)

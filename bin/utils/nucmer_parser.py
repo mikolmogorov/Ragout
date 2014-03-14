@@ -4,10 +4,11 @@ AlignmentInfo = namedtuple("AlignmentInfo", ["s_ref", "e_ref", "s_qry", "e_qry",
                             "len_ref", "len_qry", "ref_id", "contig_id"])
 
 class Hit:
-    def __init__(self, index, chr, coord):
+    def __init__(self, index, chr, coord, sign):
         self.index = index
         self.chr = chr
         self.coord = coord
+        self.sign = sign
 
     def __str__(self):
         return str(self.index) + " : " + str(self.chr)
@@ -34,7 +35,8 @@ def get_order(alignment):
     entry_ord = defaultdict(list)
     for chr_id, alignment in by_chr.iteritems():
         for i, e in enumerate(alignment):
-            entry_ord[e.contig_id].append(Hit(i, chr_id, e.s_ref))
+            sign = 1 if e.e_qry > e.s_qry else -1
+            entry_ord[e.contig_id].append(Hit(i, chr_id, e.s_ref, sign))
 
     return entry_ord, chr_len, contig_len
 

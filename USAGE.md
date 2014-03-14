@@ -25,7 +25,7 @@ You can try Ragout on the provided ready-to-use examples:
     python ragout.py examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/ -r
     python ragout.py examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/ -r
     python ragout.py examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/ -r
-    python ragout.py examples/V.Cholerea/cholerea.cfg -o examples/V.Cholerea/out/ -r
+    python ragout.py examples/V.Cholerae/cholerae.cfg -o examples/V.Cholerae/out/ -r
 
 Algorithm overview
 ------------------
@@ -118,7 +118,7 @@ Useful scripts
 
 Scripts are located in "bin" directory
 
-**test.py:**
+**verify-order.py:**
 
 Tests the correctness of the infered order of contigs if a closely related reference
 is available. First, contigs should be mapped on this reference using *nucmer* software:
@@ -127,4 +127,4 @@ is available. First, contigs should be mapped on this reference using *nucmer* s
 
 Then run the script with the obtained "coords" file:
 
-    python test.py nucmer_coords ord_file
+    python verify-order.py nucmer_coords ord_file
