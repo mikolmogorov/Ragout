@@ -8,12 +8,12 @@ import shutil
 import subprocess
 import logging
 
+from .. import config
 from .. import utils
 from synteny_backend import SyntenyBackend
 import maf2synteny.maf2synteny as m2s
 
 logger = logging.getLogger()
-CACTUS_DIR = "/home/volrath/Bioinf/Tools/progressiveCactus/"
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
 
@@ -108,7 +108,7 @@ def run_cactus(config_path, ref_genome, out_dir):
     #if not os.path.exists(CACTUS_DIR):
     #    raise Exception("progressiveCactus is not installed")
 
-    os.chdir(CACTUS_DIR)
+    os.chdir(config.CACTUS_DIR)
     devnull = open(os.devnull, "w")
     cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal]
     subprocess.check_call(cmdline, stdout=devnull)

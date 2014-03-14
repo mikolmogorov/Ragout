@@ -25,6 +25,7 @@ import src.synteny.sibelia
 import src.synteny.cactus
 
 logger = logging.getLogger()
+debugger = DebugConfig.get_instance()
 
 
 def enable_logging(log_file):
@@ -46,9 +47,12 @@ def enable_logging(log_file):
 #top-level logic of program
 def do_job(config_file, out_dir, backend, assembly_refine,
            circular_refs, overwrite, debug):
-
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
+
+    if debug:
+        core_debug = os.path.join(out_dir, "debug")
+        debugger.set_debug_dir(core_debug)
 
     config = cparser.parse_ragout_config(config_file)
     phylogeny = Phylogeny(config.tree)
@@ -75,8 +79,8 @@ def do_job(config_file, out_dir, backend, assembly_refine,
         block_order = os.path.join(block_dir, "scaffolds.ord")
 
         if debug:
-            debug_dir = os.path.join(block_dir, "debug")
-            DebugConfig.get_instance().set_debug_dir(debug_dir)
+            debug_dir = os.path.join(core_debug, str(block_size))
+            debugger.set_debug_dir(debug_dir)
 
         perm_container = PermutationContainer(block_config)
         graph = bg.BreakpointGraph()

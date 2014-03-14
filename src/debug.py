@@ -17,17 +17,17 @@ class DebugConfig():
     def __init__(self):
         self.debug_dir = None
         self.debugging = False
-        self.gen_to_color = {}
-        self.colors = ["red", "green", "blue", "yellow",
-                        "cyan", "magnetta"]
+        #self.gen_to_color = {}
+        #self.colors = ["red", "green", "blue", "yellow",
+        #               "cyan", "magnetta"]
 
     #also enables debugging
     def set_debug_dir(self, debug_dir):
-        try:
-            import pygraphviz
-            import pylab
-        except ImportError:
-            raise Exception("Debugging requires pygraphviz and matplotlib")
+        #try:
+        #    import pygraphviz
+        #    import pylab
+        #except ImportError:
+        #    raise Exception("Debugging requires pygraphviz and matplotlib")
 
         self.debug_dir = debug_dir
         self.debugging = True
@@ -35,11 +35,13 @@ class DebugConfig():
             shutil.rmtree(debug_dir)
         os.mkdir(debug_dir)
 
+    """
     def genome_to_color(self, genome_id):
         if genome_id not in self.gen_to_color:
             self.gen_to_color[genome_id] = self.colors[0]
             self.colors = self.colors[1:] + self.colors[:1] #rotate list
         return self.gen_to_color[genome_id]
+    """
 
     @staticmethod
     def get_instance():
@@ -48,6 +50,7 @@ class DebugConfig():
         return DebugConfig.instance
 
     #outputs colored breakpoint graph
+    """
     def draw_breakpoint_graph(self, graph, name, weights={}):
         graph_to_draw = nx.MultiGraph()
         for v_1, v_2, edge_data in graph.edges_iter(data=True):
@@ -63,7 +66,9 @@ class DebugConfig():
         agraph = nx.to_agraph(graph_to_draw)
         agraph.layout()
         agraph.draw(out_file)
+    """
 
+    """
     def output_phylogeny(self, phylogeny, name):
         import pylab
         for clade in phylogeny.tree.find_clades():
@@ -75,3 +80,4 @@ class DebugConfig():
 
         out_file = os.path.join(self.debug_dir, name)
         pylab.savefig(out_file)
+    """

@@ -6,8 +6,11 @@
 from collections import defaultdict
 import config_parser as parser
 import logging
+import os
+from debug import DebugConfig
 
 logger = logging.getLogger()
+debugger = DebugConfig.get_instance()
 
 #PUBLIC:
 ########################################################
@@ -49,20 +52,28 @@ class PermutationContainer:
         for t_id, t_file in config.targets.iteritems():
             self.target_perms.extend(parse_blocks_file(t_id, t_file))
 
-        self.duplications = find_duplications(self.ref_perms, self.target_perms)
-
         self.target_blocks = set()
         for perm in self.target_perms:
             self.target_blocks |= set(map(abs, perm.blocks))
 
+        #filter dupilcated blocks
+        self.duplications = find_duplications(self.ref_perms, self.target_perms)
         to_hold = self.target_blocks - self.duplications
-        self.ref_perms_filtered = [filter_perm(p, to_hold) for p in self.ref_perms]
-        self.target_perms_filtered = [filter_perm(p, to_hold) for p in self.target_perms]
+        self.ref_perms_filtered = [filter_perm(p, to_hold)
+                                      for p in self.ref_perms]
+        self.target_perms_filtered = [filter_perm(p, to_hold)
+                                         for p in self.target_perms]
+        #and possible empty contigs
+        self.target_perms_filtered = filter(lambda p: p.blocks,
+                                         self.target_perms_filtered)
+
+        if debugger.debugging:
+            file = os.path.join(debugger.debug_dir, "used_contigs.txt")
+            write_permutations(self.target_perms_filtered, open(file, "w"))
 
 
 #PRIVATE:
 #######################################################
-
 
 #find duplicated blocks
 def find_duplications(ref_perms, target_perms):
@@ -104,3 +115,12 @@ def parse_blocks_file(ref_id, filename):
             permutations.append(Permutation(ref_id, name, chr_count, map(int, blocks)))
             chr_count += 1
     return permutations
+
+
+#iutputs permutations to stream
+def write_permutations(permutations, out_stream):
+    for perm in permutations:
+        out_stream.write(">" + perm.chr_id + "\n")
+        for block in perm.blocks:
+            out_stream.write("{0:+} ".format(block))
+        out_stream.write("$\n")

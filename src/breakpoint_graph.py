@@ -9,12 +9,13 @@ from itertools import chain
 import os
 import logging
 
-from permutation import *
+#from permutation import *
 from debug import DebugConfig
 import phylogeny as phylo
 
 Connection = namedtuple("Connection", ["start", "end"])
 logger = logging.getLogger()
+debugger = DebugConfig.get_instance()
 
 #PUBLIC:
 ################################################
@@ -56,9 +57,6 @@ class BreakpointGraph:
 
     #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
-        if DebugConfig.get_instance().debugging:
-            DebugConfig.get_instance().output_phylogeny(phylogeny, "phylogeny.png")
-
         logger.info("Resolving breakpoint graph")
         chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
@@ -78,13 +76,21 @@ class BreakpointGraph:
             matching_edges = split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
 
-            if DebugConfig.get_instance().debugging:
-                debug_draw_component(comp_id, weighted_graph, subgraph)
+            #if debugger.debugging:
+            #    output_component(comp_id, weighted_graph, subgraph)
 
         adjacencies = {}
         for edge in chosen_edges:
             adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
             adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
+
+        if debugger.debugging:
+            phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")
+            graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
+            edges_out = os.path.join(debugger.debug_dir, "predicted_edges.dot")
+            output_graph(self.bp_graph, graph_out)
+            output_edges(chosen_edges, edges_out)
+            output_phylogeny(phylogeny.tree_string, self.targets[0], phylo_out)
 
         return adjacencies
 
@@ -152,15 +158,21 @@ def update_edge(graph, v1, v2, weight):
     else:
         graph[v1][v2]["weight"] += weight
 
+################################
 
-def debug_draw_component(comp_id, weighted_graph, breakpoint_graph):
-    if len(breakpoint_graph) == 2:  #draw only non-trivial components
-        return
+def output_graph(graph, out_file):
+    agraph = nx.write_dot(graph, out_file)
 
-    weights = {}
-    for v1, v2, data in weighted_graph.edges_iter(data=True):
-        weights[(v1, v2)] = data["weight"]
 
-    bg_out_name = "comp{0}-bg.png".format(comp_id)
-    DebugConfig.get_instance().draw_breakpoint_graph(breakpoint_graph,
-                                                     bg_out_name, weights)
+def output_edges(edges, out_file):
+    fout = open(out_file, "w")
+    fout.write("graph {\n")
+    for (v1, v2) in edges:
+        fout.write("{0} -- {1};\n".format(v1, v2))
+    fout.write("}")
+
+
+def output_phylogeny(tree_string, target_name, out_file):
+    fout = open(out_file, "w")
+    fout.write(tree_string + "\n")
+    fout.write(target_name)

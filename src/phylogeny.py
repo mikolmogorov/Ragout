@@ -18,6 +18,7 @@ class Phylogeny:
     def __init__(self, newick_string):
         self.tree = Phylo.read(StringIO(newick_string), "newick")
         self.validate_tree()
+        self.tree_string = newick_string
 
     #TODO
     def validate_tree(self):

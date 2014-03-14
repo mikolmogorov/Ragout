@@ -8,7 +8,9 @@ from Bio.SeqRecord import SeqRecord
 from collections import defaultdict, namedtuple
 from itertools import product
 import sys
+import random
 import logging
+
 import config
 
 logger = logging.getLogger()
@@ -20,7 +22,11 @@ Edge = namedtuple("Edge", ["begin", "end", "label"])
 #builds assembly graph and outputs it in "dot" format
 def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
-    edges = build_graph(targets.values(), config.ASSEMBLY_MIN_OVERLAP)
+    #edges = build_graph(targets.values(), config.ASSEMBLY_MIN_OVERLAP)
+    contigs = get_contigs(targets.values())
+    kmer = guess_kmer(contigs)
+    logger.info("Kmer value seems to be equal to " + str(kmer))
+    edges = build_with_hash(contigs, kmer)
     out_edges(edges, dot_file)
 
 
@@ -32,16 +38,32 @@ def get_contigs(files):
     contigs = {}
     for file in files:
         for seq in SeqIO.parse(file, "fasta"):
-            contigs["+" + seq.id] = seq.seq
-            contigs["-" + seq.id] = seq.seq.reverse_complement()
+            contigs["+" + seq.id] = str(seq.seq)
+            contigs["-" + seq.id] = str(seq.seq.reverse_complement())
     return contigs
 
 
+def build_with_hash(contigs, kmer_len):
+    next_kmer_id = [0]
+    kmers_ids = {}
+    def kmer_enum(kmer):
+        if not kmer in kmers_ids:
+            kmers_ids[kmer] = next_kmer_id[0]
+            next_kmer_id[0] += 1
+        return kmers_ids[kmer]
+
+    edges = []
+    for hdr, seq in contigs.iteritems():
+        begin = kmer_enum(seq[:kmer_len])
+        end = kmer_enum(seq[-kmer_len:])
+        edges.append(Edge(begin, end, hdr))
+
+    return edges
+
+
 #finds overlap between two strings
-#TODO: moar efficency!
 def find_overlap(str1, str2, min_k):
-    MAX_OVLP = 100
-    max_k = min(MAX_OVLP, len(str1), len(str2))
+    max_k = min(config.ASSEMBLY_MAX_OVERLAP, len(str1), len(str2))
     max_ovlp = 0
     for i in xrange(min_k, max_k + 1):
         if str(str1)[-i:] == str(str2)[:i]:
@@ -49,6 +71,26 @@ def find_overlap(str1, str2, min_k):
     return max_ovlp
 
 
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+
+
+def guess_kmer(contigs):
+    to_compare = random.sample(contigs.keys(), 100)
+    overlaps = []
+    for hdr1 in to_compare:
+        for hdr2 in contigs:
+            if hdr1 == hdr2:
+                continue
+            ovlp = find_overlap(contigs[hdr1], contigs[hdr2],
+                                10)
+            if ovlp:
+                overlaps.append(ovlp)
+    print overlaps
+    return most_common(overlaps)
+
+
+"""
 #helper function to track next unused id
 def new_node_id():
     tmp = new_node_id.node_id
@@ -98,7 +140,7 @@ def build_graph(files, min_ovlp):
             dfs(ctg, new_node_id())
 
     return edges
-
+"""
 
 #outputs edges to file
 def out_edges(edges, dot_file):
