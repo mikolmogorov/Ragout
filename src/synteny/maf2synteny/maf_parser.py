@@ -6,22 +6,25 @@ import sys
 Hit = namedtuple("Column", ["seq_id", "start", "seq_len", "len", "strand", "seq"])
 
 
-def extend_column(prev_col, next_col, max_gap):
+def extend_column(prev_col, next_col, max_ref_gap):
     if len(prev_col) != len(next_col):
         return None
 
     new_column = []
-    for prev_hit, next_hit in izip(prev_col, next_col):
+    for num, (prev_hit, next_hit) in enumerate(izip(prev_col, next_col)):
         if prev_hit.seq_id != next_hit.seq_id:
             return None
         if prev_hit.strand != next_hit.strand:
             return None
+
         diff = next_hit.start - (prev_hit.start + prev_hit.len)
-        if diff > max_gap or diff < 0:
+        #num == 0 -> reference
+        if ((diff != 0 and num != 0) or
+            (num == 0 and not (0 <= diff <= max_ref_gap))):
             return None
 
         new_len = next_hit.len + prev_hit.len + diff
-        new_seq = prev_hit.seq + "N" * diff + next_hit.seq
+        new_seq = prev_hit.seq + "-" * diff + next_hit.seq
         new_column.append(Hit(prev_hit.seq_id, prev_hit.start, prev_hit.seq_len,
                               new_len, prev_hit.strand, new_seq))
 
@@ -39,7 +42,7 @@ def output_column(column, stream):
     stream.write("\n")
 
 
-def condense_maf(input_maf, output_maf):
+def condense_maf(input_maf, output_maf, max_ref_gap):
     prev_column = []
     current_column = []
     output_maf = open(output_maf, "w")
@@ -47,22 +50,23 @@ def condense_maf(input_maf, output_maf):
     for line in open(input_maf, "r"):
         line = line.strip()
         if line.startswith("a"):
-            if not prev_column:
-                prev_column = current_column
+            if not current_column:
                 continue
-            if current_column:
-                result = extend_column(prev_column, current_column, 0)
-                if not result:
-                    output_column(prev_column, output_maf)
-                    prev_column = current_column
-                else:
-                    prev_column = result
-                current_column = []
+
+            if prev_column:
+                result = extend_column(prev_column, current_column, max_ref_gap)
+            else:
+                result = current_column
+
+            if not result:  #merge failed
+                output_column(prev_column, output_maf)
+                prev_column = current_column
+            else:
+                prev_column = result
+            current_column = []
 
         elif line.startswith("s"):
             seq_id, start, ungap_len, strand, seq_len, seq = line.split("\t")[1:]
-            if seq_id.startswith("gi") and seq_id[-1] != "|": #fix for cactus
-                seq_id += "|"
             start = int(start)
             seq_len = int(seq_len)
             ungap_len = int(ungap_len)
@@ -106,6 +110,8 @@ def maf_to_permutations(maf_file, min_block):
 
         elif line.startswith("s"):
             seq_id, start, ungapped_len, strand, src_len, seq = line.split("\t")[1:]
+            if seq_id.startswith("gi") and seq_id[-1] != "|": #fix for cactus
+                seq_id += "|"
             start = int(start)
             src_len = int(src_len)
             ungapped_len = int(ungapped_len)

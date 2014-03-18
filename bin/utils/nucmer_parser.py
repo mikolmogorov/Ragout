@@ -41,6 +41,29 @@ def get_order(alignment):
     return entry_ord, chr_len, contig_len
 
 
+def join_collinear(alignment):
+    new_entries = []
+    by_chr = group_by_chr(alignment)
+    for chr_id in by_chr:
+        by_chr[chr_id].sort(key=lambda e: e.s_ref)
+        #prev_contig = None
+        start_entry = None
+        last_entry = None
+        for entry in by_chr[chr_id]:
+            if not start_entry:
+                start_entry = entry
+            elif start_entry.contig_id != entry.contig_id:
+                new_entries.append(AlignmentInfo(start_entry.s_ref, last_entry.e_ref,
+                                    start_entry.s_qry, last_entry.e_qry,
+                                    abs(last_entry.e_ref - start_entry.s_ref),
+                                    abs(last_entry.e_qry - start_entry.s_qry),
+                                    last_entry.ref_id, last_entry.contig_id))
+                start_entry = entry
+            last_entry = entry
+
+    return new_entries
+
+
 def parse_nucmer_coords(filename):
     chr_alias = {}
     chr_num = 1

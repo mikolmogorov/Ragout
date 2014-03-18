@@ -177,11 +177,10 @@ def build_graph(permutations):
             left_pos = block1.start + block1.length
             right_pos = block2.start
             if right_pos < left_pos:
+                print("WARNING: overlapping blocks")
                 print(block1.start, block1.start + block1.length,
-                      block2.start, block2.start + block2.length)
-                print(right_pos - left_pos)
-                continue
-                #print(edge.left_pos, edge.right_pos)
+                      block2.start, block2.start + block2.length,
+                      "|", right_pos - left_pos, seq_id)
             edge = graph.add_edge(-block1.id, block2.id, seq_id)
             edge.left_pos, edge.right_pos = left_pos, right_pos
             prev_edge.next_edge = edge

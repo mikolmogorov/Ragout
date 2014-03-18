@@ -105,7 +105,7 @@ def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
             continue
         comp_file = os.path.join(out_dir, "comp{0}-bg.png".format(comp_id))
         agraph = nx.to_agraph(subgr)
-        agraph.layout(prog="sfdp")
+        agraph.layout(prog="dot")
         agraph.draw(comp_file)
 
 
@@ -138,14 +138,15 @@ def do_job(nucmer_coords, debug_dir, circular):
     contigs = get_contig_permutations(used_contigs)
     alignment = parse_nucmer_coords(nucmer_coords)
     alignment = filter(lambda e: e.contig_id in contigs, alignment)
-    #alignment = join_collinear_alignments(alignment)
+    #alignment = join_collinear(alignment)
     alignment = filter_by_coverage(alignment)
+    alignment = join_collinear(alignment)
     break_contigs = verify_alignment(alignment, contigs)
 
     true_adj = get_true_adjacencies(alignment, contigs, break_contigs, circular)
     output_edges(true_adj, true_adj_out)
     draw_breakpoint_graph(base_dot, predicted_dot, true_adj, debug_dir)
-    print(g2c.table)
+    #print(g2c.table)
 
 
 def main():

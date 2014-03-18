@@ -17,13 +17,14 @@ def get_synteny(maf_file, out_dir, min_block_out):
 
     MIN_ALIGNMENT = 30
     MIN_FLANK_RATE = 0.3
+    MAX_REF_GAP = 100
 
     PARAMS = [(30, 100),
               (100,  1000),
               (1000, 5000),
               (5000, 15000)]
 
-    maf.condense_maf(maf_file, condensed_maf)
+    maf.condense_maf(maf_file, condensed_maf, MAX_REF_GAP)
     blocks, seq_length = maf.maf_to_permutations(condensed_maf, MIN_ALIGNMENT)
     for min_block, max_gap in PARAMS:
         print("Simplification with", min_block, max_gap, file=sys.stderr)

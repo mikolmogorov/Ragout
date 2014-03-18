@@ -64,7 +64,7 @@ def agreement_strands(lst_1, lst_2):
 
 def do_job(nucmer_coords, scaffolds_ord):
     alignment = parse_nucmer_coords(nucmer_coords)
-    #alignment = join_collinear_alignments(alignment)
+    alignment = join_collinear(alignment)
     alignment = filter_by_coverage(alignment)
     entry_ord, chr_len, contig_len = get_order(alignment)
     scaffolds = parse_contigs_order(scaffolds_ord)
