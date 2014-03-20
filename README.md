@@ -42,12 +42,12 @@ but we are working on expanding it to mammalinan-scaled ones.
 Install
 -------
 
-See *INSTALL.md* file.
+See *doc/INSTALL.md* file.
 
 Usage
 -----
 
-See *USAGE.md* file.
+See *doc/USAGE.md* file.
 
 Authors
 -------

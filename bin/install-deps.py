@@ -9,8 +9,7 @@ import subprocess
 import shutil
 
 parent_dir = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
-sys.path.insert(0, parent_dir)
-import src.utils as utils
+import utils.utils as utils
 
 LIB_DIR = os.path.join(parent_dir, "lib")
 SIBELIA_DIR = "Sibelia"

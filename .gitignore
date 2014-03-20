@@ -1,3 +1,5 @@
 *.swp
 *.pyc
-lib/*
+*.o
+lib/Sibelia
+lib/overlap/bin/*

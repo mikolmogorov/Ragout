@@ -9,20 +9,20 @@ import sys
 import logging
 import argparse
 
-import src.overlap as ovlp
-import src.scaffolder as scfldr
-import src.merge_iters as merge
-import src.breakpoint_graph as bg
-import src.config_parser as cparser
-import src.assembly_refine as asref
-from src.synteny.synteny_backend import SyntenyBackend
-from src.phylogeny import Phylogeny
-from src.debug import DebugConfig
-from src.permutation import PermutationContainer
+import ragout.overlap as ovlp
+import ragout.scaffolder as scfldr
+import ragout.merge_iters as merge
+import ragout.breakpoint_graph as bg
+import ragout.config_parser as cparser
+import ragout.assembly_refine as asref
+from ragout.synteny.synteny_backend import SyntenyBackend
+from ragout.phylogeny import Phylogeny
+from ragout.debug import DebugConfig
+from ragout.permutation import PermutationContainer
 
 #register backends
-import src.synteny.sibelia
-import src.synteny.cactus
+import ragout.synteny.sibelia
+import ragout.synteny.cactus
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -99,7 +99,7 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        ovlp.make_overlap_graph(config.targets, out_overlap)
+        #ovlp.make_overlap_graph(config.targets, out_overlap)
         refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
