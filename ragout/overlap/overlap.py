@@ -58,6 +58,8 @@ new_node_id.node_id = 0
 
 
 def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
+    logger.warning("C++ library for building assembly graph not found. "
+                   "Using slow python version.")
     contigs = get_contigs([contigs_in])
     edges = []
     heads = {}
@@ -117,5 +119,4 @@ def out_edges(edges, dot_file):
 try:
     from .coverlap import build_overlap_graph
 except ImportError:
-    logger.warning("C++ library for building assembly graph not found. "
-                   "Using slow python version.")
+    pass
