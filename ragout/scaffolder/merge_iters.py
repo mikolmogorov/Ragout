@@ -5,7 +5,8 @@
 from collections import namedtuple
 import sys
 import logging
-from datatypes import *
+
+from shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 

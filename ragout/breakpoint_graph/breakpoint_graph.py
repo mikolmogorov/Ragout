@@ -9,8 +9,7 @@ from itertools import chain
 import os
 import logging
 
-#from permutation import *
-from debug import DebugConfig
+from debug.debug import DebugConfig
 import phylogeny as phylo
 
 Connection = namedtuple("Connection", ["start", "end"])

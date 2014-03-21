@@ -8,9 +8,9 @@ import subprocess
 import copy
 import logging
 
-from .. import utils
-from .. import config
-from synteny_backend import SyntenyBackend
+from shared import utils
+from .synteny_backend import SyntenyBackend
+import config
 
 logger = logging.getLogger()
 

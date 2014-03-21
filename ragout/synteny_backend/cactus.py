@@ -8,9 +8,8 @@ import shutil
 import subprocess
 import logging
 
-from .. import config
-from .. import utils
-from synteny_backend import SyntenyBackend
+import config
+from .synteny_backend import SyntenyBackend
 import maf2synteny.maf2synteny as m2s
 
 logger = logging.getLogger()

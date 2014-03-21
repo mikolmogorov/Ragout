@@ -7,7 +7,7 @@ from Bio import Phylo
 from cStringIO import StringIO
 from collections import defaultdict
 
-from debug import DebugConfig
+from debug.debug import DebugConfig
 
 #PUBLIC:
 ####################################################

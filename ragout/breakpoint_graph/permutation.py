@@ -4,10 +4,11 @@
 ######################################################
 
 from collections import defaultdict
-import config_parser as parser
 import logging
 import os
-from debug import DebugConfig
+
+from debug.debug import DebugConfig
+import parsers.config_parser as parser
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

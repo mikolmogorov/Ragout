@@ -9,29 +9,30 @@ import sys
 import logging
 import argparse
 
-import ragout.overlap as ovlp
-import ragout.scaffolder as scfldr
-import ragout.merge_iters as merge
-import ragout.breakpoint_graph as bg
-import ragout.config_parser as cparser
-import ragout.assembly_refine as asref
-from ragout.synteny.synteny_backend import SyntenyBackend
-from ragout.phylogeny import Phylogeny
-from ragout.debug import DebugConfig
-from ragout.permutation import PermutationContainer
+import assembly_graph.overlap as ovlp
+import assembly_graph.assembly_refine as asref
+import breakpoint_graph.breakpoint_graph as bg
+from breakpoint_graph.phylogeny import Phylogeny
+from breakpoint_graph.permutation import PermutationContainer
+import scaffolder.scaffolder as scfldr
+import scaffolder.merge_iters as merge
+from synteny_backend.synteny_backend import SyntenyBackend
+import parsers.config_parser as cparser
+from debug.debug import DebugConfig
 
 #register backends
-import ragout.synteny.sibelia
-import ragout.synteny.cactus
+import synteny_backend.sibelia
+import synteny_backend.cactus
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
 
 def enable_logging(log_file):
-    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: %(message)s", "%H:%M:%S")
-    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%H:%M:%S")
-
+    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: "
+                                      "%(message)s", "%H:%M:%S")
+    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: "
+                                          "%(message)s", "%H:%M:%S")
     console_log = logging.StreamHandler()
     console_log.setLevel(logging.INFO)
     console_log.setFormatter(console_formatter)
@@ -99,17 +100,19 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        #ovlp.make_overlap_graph(config.targets, out_overlap)
+        ovlp.make_overlap_graph(config.targets, out_overlap)
         refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_scaffolds(config.targets, refined_scaffolds, out_refined_scaffolds)
+        scfldr.output_scaffolds(config.targets, refined_scaffolds,
+                                out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for assisted assembly using multiple references",
-                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="A tool for assisted assembly"
+                                                 " using multiple references",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("config", metavar="config_file",
                         help="path to the configuration file")

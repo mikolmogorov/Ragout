@@ -10,7 +10,7 @@ from collections import defaultdict
 import copy
 import logging
 
-from datatypes import *
+from shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 

@@ -1,7 +1,6 @@
 import os
 
-RAGOUT_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-RAGOUT_LIB_DIR = os.path.join(RAGOUT_ROOT, "lib")
+RAGOUT_LIB_DIR = os.environ["RAGOUT_LIB"]
 
 ASSEMBLY_MIN_OVERLAP = 33
 ASSEMBLY_MAX_OVERLAP = 100

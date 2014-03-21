@@ -11,7 +11,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 import config
-from datatypes import Contig, Scaffold
+from shared.datatypes import Contig, Scaffold
 
 Edge = namedtuple("Edge", ["start", "end"])
 logger = logging.getLogger()

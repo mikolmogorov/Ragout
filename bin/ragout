@@ -1,0 +1,17 @@
+#!/bin/bash 
+
+binDir=`pwd`/$(dirname $0)
+python="python"
+
+export RAGOUT_ROOT="$binDir/../ragout"
+export RAGOUT_LIB="$binDir/../lib"
+
+#envFile=${binDir}/../environment
+
+#options=""
+#for arg in "$@"
+#do
+#	 options="$options '${arg}'"
+#done
+
+$python $RAGOUT_ROOT/main.py "$@"
