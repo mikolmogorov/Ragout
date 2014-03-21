@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #include <utility>
 #include <list>
@@ -8,6 +9,9 @@
 #include <unordered_set>
 
 #include "fasta.h"
+
+namespace
+{
 
 struct Edge
 {
@@ -204,22 +208,33 @@ bool buildGraph(const std::string& filename, int minOverlap,
 	return true;
 }
 
-bool doJob(const std::string& filename, int minOverlap, int maxOverlap)
+}	//end anonymous namespace
+
+bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
+		  			  int minOverlap, int maxOverlap)
 {
 	std::list<Edge> edges;
-	if (!buildGraph(filename, minOverlap, maxOverlap, edges)) return false;
+	if (!buildGraph(fileIn, minOverlap, maxOverlap, edges)) return false;
 	
-	std::cout << "digraph {\n";
+	std::ofstream streamOut(fileOut);
+	if (!streamOut)
+	{
+		std::cerr << "Cannot open: " << fileOut << std::endl;
+		return false;
+	}
+
+	streamOut << "digraph {\n";
 	for (auto edge : edges)
 	{
-		std::cout << edge.begin << " -> " << edge.end 
+		streamOut << edge.begin << " -> " << edge.end 
 				  << " [label=\"" << edge.contigId << "\"];\n";
 	}
-	std::cout << "}\n";
+	streamOut << "}\n";
 
 	return true;
 }
 
+/*
 int main(int argc, char** argv)
 {
 	if (argc != 4)
@@ -231,3 +246,4 @@ int main(int argc, char** argv)
 	}
 	return !doJob(argv[1], atoi(argv[2]), atoi(argv[3]));
 }
+*/

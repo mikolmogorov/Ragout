@@ -1,13 +1,14 @@
 PY=python
-LIB_DIR=lib
+OVLP_DIR="ragout/overlap/cpp_impl/"
+export PYTHON_INCLUDE="/usr/include/python2.7"
 
 all: overlap dependencies
 
 overlap:
-	cd ${LIB_DIR}/overlap/src; make
+	cd ${OVLP_DIR}; make
 
 dependencies:
-	${PY} bin/install-deps.py
+	${PY} scripts/install-deps.py
 
 clean:
-	cd ${LIB_DIR}/overlap/src; make clean
+	cd ${OVLP_DIR}; make clean

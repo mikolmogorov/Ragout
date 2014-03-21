@@ -9,7 +9,7 @@ import sys
 import logging
 import argparse
 
-import assembly_graph.overlap as ovlp
+import overlap.overlap as ovlp
 import assembly_graph.assembly_refine as asref
 import breakpoint_graph.breakpoint_graph as bg
 from breakpoint_graph.phylogeny import Phylogeny
