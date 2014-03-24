@@ -3,14 +3,14 @@
 #adjacencies
 ################################################
 
-import networkx as nx
 from collections import namedtuple
 from itertools import chain
 import os
 import logging
 
-from debug.debug import DebugConfig
-import phylogeny as phylo
+import networkx as nx
+
+from shared.debug import DebugConfig
 
 Connection = namedtuple("Connection", ["start", "end"])
 logger = logging.getLogger()
@@ -72,11 +72,8 @@ class BreakpointGraph:
                 continue
 
             weighted_graph = self.make_weighted(trimmed_graph, phylogeny)
-            matching_edges = split_graph(weighted_graph)
+            matching_edges = _split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
-
-            #if debugger.debugging:
-            #    output_component(comp_id, weighted_graph, subgraph)
 
         adjacencies = {}
         for edge in chosen_edges:
@@ -87,9 +84,9 @@ class BreakpointGraph:
             phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")
             graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
             edges_out = os.path.join(debugger.debug_dir, "predicted_edges.dot")
-            output_graph(self.bp_graph, graph_out)
-            output_edges(chosen_edges, edges_out)
-            output_phylogeny(phylogeny.tree_string, self.targets[0], phylo_out)
+            _output_graph(self.bp_graph, graph_out)
+            _output_edges(chosen_edges, edges_out)
+            _output_phylogeny(phylogeny.tree_string, self.targets[0], phylo_out)
 
         return adjacencies
 
@@ -129,7 +126,7 @@ class BreakpointGraph:
                 adjacencies[target_id] = neighbor
                 break_weight = phylogeny.estimate_tree(adjacencies)
 
-                update_edge(g, node, neighbor, break_weight)
+                _update_edge(g, node, neighbor, break_weight)
 
         return g
 
@@ -138,7 +135,7 @@ class BreakpointGraph:
 ###########################################################################
 
 
-def split_graph(graph):
+def _split_graph(graph):
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
 
@@ -151,19 +148,20 @@ def split_graph(graph):
     return unique_edges
 
 
-def update_edge(graph, v1, v2, weight):
+def _update_edge(graph, v1, v2, weight):
     if not graph.has_edge(v1, v2):
         graph.add_edge(v1, v2, weight=weight)
     else:
         graph[v1][v2]["weight"] += weight
 
 ################################
+#output generators
 
-def output_graph(graph, out_file):
+def _output_graph(graph, out_file):
     agraph = nx.write_dot(graph, out_file)
 
 
-def output_edges(edges, out_file):
+def _output_edges(edges, out_file):
     fout = open(out_file, "w")
     fout.write("graph {\n")
     for (v1, v2) in edges:
@@ -171,7 +169,7 @@ def output_edges(edges, out_file):
     fout.write("}")
 
 
-def output_phylogeny(tree_string, target_name, out_file):
+def _output_phylogeny(tree_string, target_name, out_file):
     fout = open(out_file, "w")
     fout.write(tree_string + "\n")
     fout.write(target_name)

@@ -2,16 +2,15 @@
 #by overlapping contigs
 ################################################
 
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from collections import defaultdict, namedtuple
 from itertools import product
 import sys
 import random
 import logging
 
-import config
+from Bio import SeqIO
+
+from shared import config
 
 logger = logging.getLogger()
 Edge = namedtuple("Edge", ["begin", "end", "label"])
@@ -23,15 +22,15 @@ Edge = namedtuple("Edge", ["begin", "end", "label"])
 #builds assembly graph and outputs it in "dot" format
 def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
-    edges = build_overlap_graph(targets.values()[0], dot_file,
-                                config.ASSEMBLY_MIN_OVERLAP,
-                                config.ASSEMBLY_MAX_OVERLAP)
+    edges = _build_overlap_graph(targets.values()[0], dot_file,
+                                 config.ASSEMBLY_MIN_OVERLAP,
+                                 config.ASSEMBLY_MAX_OVERLAP)
 
 #PRIVATE:
 #################################################
 
 #reads contigs from given files
-def get_contigs(files):
+def _get_contigs(files):
     contigs = {}
     for file in files:
         for seq in SeqIO.parse(file, "fasta"):
@@ -40,7 +39,7 @@ def get_contigs(files):
     return contigs
 
 #finds overlap between two strings
-def find_overlap(str1, str2, min_ovlp, max_ovlp):
+def _find_overlap(str1, str2, min_ovlp, max_ovlp):
     max_k = min(max_ovlp, len(str1), len(str2))
     max_ovlp = 0
     for i in xrange(min_ovlp, max_k + 1):
@@ -50,17 +49,17 @@ def find_overlap(str1, str2, min_ovlp, max_ovlp):
 
 
 #helper function to track next unused id
-def new_node_id():
-    tmp = new_node_id.node_id
-    new_node_id.node_id += 1
+def _new_node_id():
+    tmp = _new_node_id.node_id
+    _new_node_id.node_id += 1
     return tmp
-new_node_id.node_id = 0
+_new_node_id.node_id = 0
 
 
-def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
+def _build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
     logger.warning("C++ library for building assembly graph not found. "
                    "Using slow python version.")
-    contigs = get_contigs([contigs_in])
+    contigs = _get_contigs([contigs_in])
     edges = []
     heads = {}
     visited = set()
@@ -70,7 +69,7 @@ def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
         if work_ctg in visited:
             continue
 
-        dfsStack.append((work_ctg, new_node_id()))
+        dfsStack.append((work_ctg, _new_node_id()))
         visited.add(work_ctg)
         while len(dfsStack):
             ctg, node_id = dfsStack.pop()
@@ -81,7 +80,7 @@ def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
                 if ctg == other_ctg:
                     continue
 
-                ovlp = find_overlap(contigs[ctg], contigs[other_ctg],
+                ovlp = _find_overlap(contigs[ctg], contigs[other_ctg],
                                     min_ovlp, max_ovlp)
                 if ovlp > min_ovlp:
                     overlaps.append(other_ctg)
@@ -91,7 +90,7 @@ def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
                 if sample_ctg in heads:
                     cur_node = heads[sample_ctg]
                 else:
-                    cur_node = new_node_id()
+                    cur_node = _new_node_id()
                     for ovlp in overlaps:
                         heads[ovlp] = cur_node
                     assert sample_ctg not in visited
@@ -101,14 +100,14 @@ def build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
                         dfsStack.append((ovlp, cur_node))
                         visited.add(ovlp)
             else:
-                cur_node = new_node_id()
+                cur_node = _new_node_id()
 
             edges.append(Edge(node_id, cur_node, ctg))
 
-    out_edges(edges, dot_out)
+    _output_edges(edges, dot_out)
 
 #outputs edges to file
-def out_edges(edges, dot_file):
+def _output_edges(edges, dot_file):
     fout = open(dot_file, "w")
     fout.write("digraph {\n")
     for edge in edges:
@@ -117,6 +116,6 @@ def out_edges(edges, dot_file):
 
 #Try load fast c++ library
 try:
-    from .coverlap import build_overlap_graph
+    from .coverlap import _build_overlap_graph
 except ImportError:
     pass

@@ -20,7 +20,7 @@ logger = logging.getLogger()
 #Assembles scaffolds
 def get_scaffolds(connections, perm_container):
     logger.info("Building scaffolds")
-    scaffolds = extend_scaffolds(connections, perm_container)
+    scaffolds = _extend_scaffolds(connections, perm_container)
     scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
     return scaffolds
 
@@ -35,7 +35,7 @@ def output_order(scaffolds, out_order):
 
 
 #Outputs scaffodls to file in "fasta" format
-def output_scaffolds(target_dict, scaffolds, out_fasta):
+def output_fasta(target_dict, scaffolds, out_fasta):
     MIN_CONTIG_LEN = 0
 
     contigs_fasta = {}
@@ -74,8 +74,8 @@ def output_scaffolds(target_dict, scaffolds, out_fasta):
 ################################################################
 
 #Assembles contigs into scaffolds
-def extend_scaffolds(connections, perm_container):
-    contigs, contig_index = make_contigs(perm_container)
+def _extend_scaffolds(connections, perm_container):
+    contigs, contig_index = _make_contigs(perm_container)
 
     scaffolds = []
     visited = set()
@@ -146,7 +146,7 @@ def extend_scaffolds(connections, perm_container):
 
 
 #Converts permutations into contigs
-def make_contigs(perm_container):
+def _make_contigs(perm_container):
     contigs = []
     index = defaultdict(list)
     for perm in perm_container.target_perms_filtered:

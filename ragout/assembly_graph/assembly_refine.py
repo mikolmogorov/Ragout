@@ -6,11 +6,12 @@ import re
 import logging
 from collections import namedtuple
 from itertools import izip
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-import config
+from shared import config
 from shared.datatypes import Contig, Scaffold
 
 Edge = namedtuple("Edge", ["start", "end"])
@@ -19,13 +20,12 @@ logger = logging.getLogger()
 #PUBLIC:
 ########################################################
 
-
 #does the job
-def refine_contigs(graph_file, scaffolds):
+def refine_scaffolds(graph_file, scaffolds):
     max_path_len = config.ASSEMBLY_MAX_PATH_LEN
     logger.info("Refining with assembly graph")
     logger.debug("Max path len = {0}".format(max_path_len))
-    new_scaffolds = insert_from_graph(graph_file, scaffolds, max_path_len)
+    new_scaffolds = _insert_from_graph(graph_file, scaffolds, max_path_len)
     return new_scaffolds
 
 
@@ -33,7 +33,7 @@ def refine_contigs(graph_file, scaffolds):
 #########################################################
 
 #ignore heavy python-graphviz
-def load_dot(filename):
+def _load_dot(filename):
     graph = nx.MultiDiGraph()
     edges = {}
     pattern = re.compile("([0-9]+)\s*\->\s*([0-9]+)\s*\[.*=.*\"(.+)\".*\];")
@@ -51,7 +51,7 @@ def load_dot(filename):
 
 
 #check if there is no multiedges along the path
-def check_unique(graph, path):
+def _check_unique(graph, path):
     for v1, v2 in izip(path[:-1], path[1:]):
         assert graph.has_edge(v1, v2)
         if len(graph[v1][v2]) > 1:
@@ -60,7 +60,7 @@ def check_unique(graph, path):
 
 
 #finds a unique path between two nodes in graph
-def get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
+def _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
     try:
         src = edges[str(prev_cont)].end
         dst = edges[str(new_cont)].start
@@ -77,7 +77,7 @@ def get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
         return None
 
     paths = [p for p in nx.all_shortest_paths(graph, src, dst)]
-    if len(paths) > 1 or not check_unique(graph, paths[0]):
+    if len(paths) > 1 or not _check_unique(graph, paths[0]):
         logger.debug("multiple paths {0} -- {1}".format(prev_cont, new_cont))
         return None
 
@@ -104,9 +104,9 @@ def get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
 
 
 #inserts contigs from the assembly graph into scaffolds
-def insert_from_graph(graph_file, scaffolds_in, max_path_len):
+def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
     new_scaffolds = []
-    graph, edges = load_dot(graph_file)
+    graph, edges = _load_dot(graph_file)
 
     ordered_contigs = set()
     for scf in scaffolds_in:
@@ -119,7 +119,7 @@ def insert_from_graph(graph_file, scaffolds_in, max_path_len):
             new_scaffolds[-1].contigs.append(prev_cont)
 
             #find unique path
-            path_edges = get_unique_path(graph, edges, prev_cont, new_cont, max_path_len)
+            path_edges = _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len)
             if path_edges is None:
                 continue
 

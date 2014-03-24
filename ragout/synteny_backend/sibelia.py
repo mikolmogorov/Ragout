@@ -10,14 +10,16 @@ import logging
 
 from shared import utils
 from .synteny_backend import SyntenyBackend
-import config
 
 logger = logging.getLogger()
 
 SIBELIA_EXEC = "Sibelia"
 SIBELIA_WORKDIR = "sibelia-workdir"
-SIBELIA_DIR = os.path.join(config.RAGOUT_LIB_DIR, "Sibelia")
-os.environ["PATH"] += os.pathsep + SIBELIA_DIR
+try:
+    SIBELIA_INSTALL = os.environ["SIBELIA_INSTALL"]
+    os.environ["PATH"] += os.pathsep + SIBELIA_INSTALL
+except:
+    pass
 
 
 #PUBLIC:
@@ -53,16 +55,16 @@ class SibeliaBackend(SyntenyBackend):
                 if not os.path.isdir(block_dir):
                     os.mkdir(block_dir)
 
-                perm_file = run_sibelia(genomes.values(), block_size, block_dir)
+                perm_file = _run_sibelia(genomes.values(), block_size, block_dir)
                 files[block_size] = perm_file
 
         return files
 
 
-def check_installation():
+def _check_installation():
     return bool(utils.which(SIBELIA_EXEC))
 
-if check_installation():
+if _check_installation():
     logger.debug("Sibelia is installed")
     SyntenyBackend.register_backend("sibelia", SibeliaBackend())
 else:
@@ -72,7 +74,7 @@ else:
 #PRIVATE:
 #################################################################
 
-def run_sibelia(fasta_files, block_size, out_dir):
+def _run_sibelia(fasta_files, block_size, out_dir):
 
     logger.info("Running Sibelia with block size " + str(block_size))
     if not utils.which(SIBELIA_EXEC):

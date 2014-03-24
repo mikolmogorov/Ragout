@@ -20,8 +20,8 @@ coverlap_build_overlap_graph(PyObject* self, PyObject* args)
 
 static PyMethodDef coverlapMethods[] = 
 {
-	{"build_overlap_graph", coverlap_build_overlap_graph,
-					METH_VARARGS, "Build overlap graph"},
+	{"_build_overlap_graph", coverlap_build_overlap_graph,
+					 METH_VARARGS, "Build overlap graph"},
 	{NULL, NULL, 0, NULL}
 };
 

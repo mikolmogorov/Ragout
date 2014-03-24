@@ -18,7 +18,7 @@ import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
 import parsers.config_parser as cparser
-from debug.debug import DebugConfig
+from shared.debug import DebugConfig
 
 #register backends
 import synteny_backend.sibelia
@@ -97,13 +97,13 @@ def do_job(config_file, out_dir, backend, assembly_refine,
             last_scaffolds = scaffolds
 
     scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_scaffolds(config.targets, last_scaffolds, out_scaffolds)
+    scfldr.output_fasta(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
         ovlp.make_overlap_graph(config.targets, out_overlap)
-        refined_scaffolds = asref.refine_contigs(out_overlap, last_scaffolds)
+        refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_scaffolds(config.targets, refined_scaffolds,
+        scfldr.output_fasta(config.targets, refined_scaffolds,
                                 out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")

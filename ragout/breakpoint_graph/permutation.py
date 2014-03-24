@@ -7,7 +7,7 @@ from collections import defaultdict
 import logging
 import os
 
-from debug.debug import DebugConfig
+from shared.debug import DebugConfig
 import parsers.config_parser as parser
 
 logger = logging.getLogger()
@@ -48,21 +48,21 @@ class PermutationContainer:
         logging.info("Reading permutation file")
         config = parser.parse_ragout_config(config_file)
         for ref_id, ref_file in config.references.iteritems():
-            self.ref_perms.extend(parse_blocks_file(ref_id, ref_file))
+            self.ref_perms.extend(_parse_blocks_file(ref_id, ref_file))
 
         for t_id, t_file in config.targets.iteritems():
-            self.target_perms.extend(parse_blocks_file(t_id, t_file))
+            self.target_perms.extend(_parse_blocks_file(t_id, t_file))
 
         self.target_blocks = set()
         for perm in self.target_perms:
             self.target_blocks |= set(map(abs, perm.blocks))
 
         #filter dupilcated blocks
-        self.duplications = find_duplications(self.ref_perms, self.target_perms)
+        self.duplications = _find_duplications(self.ref_perms, self.target_perms)
         to_hold = self.target_blocks - self.duplications
-        self.ref_perms_filtered = [filter_perm(p, to_hold)
+        self.ref_perms_filtered = [_filter_perm(p, to_hold)
                                       for p in self.ref_perms]
-        self.target_perms_filtered = [filter_perm(p, to_hold)
+        self.target_perms_filtered = [_filter_perm(p, to_hold)
                                          for p in self.target_perms]
         #and possible empty contigs
         self.target_perms_filtered = filter(lambda p: p.blocks,
@@ -70,14 +70,14 @@ class PermutationContainer:
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
-            write_permutations(self.target_perms_filtered, open(file, "w"))
+            _write_permutations(self.target_perms_filtered, open(file, "w"))
 
 
 #PRIVATE:
 #######################################################
 
 #find duplicated blocks
-def find_duplications(ref_perms, target_perms):
+def _find_duplications(ref_perms, target_perms):
     index = defaultdict(set)
     duplications = set()
     for perm in ref_perms + target_perms:
@@ -91,7 +91,7 @@ def find_duplications(ref_perms, target_perms):
 
 
 #filters duplications
-def filter_perm(perm, to_hold):
+def _filter_perm(perm, to_hold):
     new_perm = Permutation(perm.ref_id, perm.chr_id, perm.chr_num, [])
     for block in perm.blocks:
         if abs(block) in to_hold:
@@ -100,7 +100,7 @@ def filter_perm(perm, to_hold):
 
 
 #parses config file
-def parse_blocks_file(ref_id, filename):
+def _parse_blocks_file(ref_id, filename):
     name = ""
     permutations = []
     chr_count = 0
@@ -119,7 +119,7 @@ def parse_blocks_file(ref_id, filename):
 
 
 #iutputs permutations to stream
-def write_permutations(permutations, out_stream):
+def _write_permutations(permutations, out_stream):
     for perm in permutations:
         out_stream.write(">" + perm.chr_id + "\n")
         for block in perm.blocks:

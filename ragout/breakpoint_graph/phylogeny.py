@@ -3,11 +3,10 @@
 #####################################################
 
 import math
-from Bio import Phylo
 from cStringIO import StringIO
 from collections import defaultdict
 
-from debug.debug import DebugConfig
+from Bio import Phylo
 
 #PUBLIC:
 ####################################################
@@ -25,13 +24,13 @@ class Phylogeny:
         self.tree.clade.branch_length = 0
 
     def estimate_tree(self, adjacencies):
-        return tree_score(self.tree, adjacencies)
+        return _tree_score(self.tree, adjacencies)
 
     #PRIVATE:
 ####################################################
 
 #scoring with DP (see algorithm description in the paper)
-def tree_score(tree, leaf_states):
+def _tree_score(tree, leaf_states):
     all_states = set(leaf_states.values())
 
     #score of a tree branch

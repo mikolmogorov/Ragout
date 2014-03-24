@@ -8,13 +8,16 @@ import shutil
 import subprocess
 import logging
 
-import config
 from .synteny_backend import SyntenyBackend
 import maf2synteny.maf2synteny as m2s
 
-logger = logging.getLogger()
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
+try:
+    CACTUS_INSTALL = os.environ["CACTUS_INSTALL"]
+except:
+    CACTUS_INSTALL = ""
+logger = logging.getLogger()
 
 #PUBLIC:
 ################################################################
@@ -25,11 +28,11 @@ class CactusBackend(SyntenyBackend):
 
 
     def run_backend(self, config, output_dir, overwrite):
-        return make_permutations(config.references, config.targets, config.tree,
+        return _make_permutations(config.references, config.targets, config.tree,
                                  config.blocks, output_dir, overwrite)
 
 
-if True:
+if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
     logger.debug("progressiveCactus is installed")
     SyntenyBackend.register_backend("cactus", CactusBackend())
 else:
@@ -41,8 +44,8 @@ else:
 
 
 #Runs Cactus, then outputs preprocessesed results into output_dir
-def make_permutations(references, targets, tree, block_sizes,
-                      output_dir, overwrite):
+def _make_permutations(references, targets, tree, block_sizes,
+                       output_dir, overwrite):
     work_dir = os.path.join(output_dir, CACTUS_WORKDIR)
     files = {}
 
@@ -64,9 +67,9 @@ def make_permutations(references, targets, tree, block_sizes,
     else:
         #running cactus
         os.mkdir(work_dir)
-        config_path = make_cactus_config(references, targets, tree, work_dir)
+        config_path = _make_cactus_config(references, targets, tree, work_dir)
         ref_genome = targets.keys()[0]
-        maf_file = run_cactus(config_path, ref_genome, work_dir)
+        maf_file = _run_cactus(config_path, ref_genome, work_dir)
 
         for block_size in block_sizes:
             block_dir = os.path.join(work_dir, str(block_size))
@@ -79,7 +82,7 @@ def make_permutations(references, targets, tree, block_sizes,
     return files
 
 
-def make_cactus_config(references, targets, tree_string, directory):
+def _make_cactus_config(references, targets, tree_string, directory):
     CONF_NAME = "cactus.cfg"
     file = open(os.path.join(directory, CONF_NAME), "w")
     file.write(tree_string + "\n")
@@ -93,7 +96,7 @@ def make_cactus_config(references, targets, tree_string, directory):
     return file.name
 
 
-def run_cactus(config_path, ref_genome, out_dir):
+def _run_cactus(config_path, ref_genome, out_dir):
     CACTUS_OUT = "alignment.hal"
     HAL2MAF = "submodules/hal/bin/hal2maf"
     MAF_OUT = "cactus.maf"
@@ -119,5 +122,3 @@ def run_cactus(config_path, ref_genome, out_dir):
 
     os.chdir(prev_dir)
     return out_maf
-
-
