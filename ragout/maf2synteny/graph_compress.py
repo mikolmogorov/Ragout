@@ -5,7 +5,8 @@ def extend_path(graph, prev_node, cur_node, max_gap):
     path = [prev_node, cur_node]
     while True:
         #check if it's a bufurcation point
-        if graph.is_bifurcation(cur_node) or graph.infinum in [prev_node, cur_node]:
+        if (graph.is_bifurcation(cur_node) or
+            graph.infinum in [prev_node, cur_node]):
             break
 
         #check distance

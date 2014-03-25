@@ -1,21 +1,22 @@
-CC=g++
-CFLAGS=-c -fPIC -Wall -std=c++0x -O3 -I${PYTHON_INCLUDE}
+CFLAGS=-c -fPIC -Wall -O3 -I${PYTHON_INCLUDE}
 LDFLAGS=-shared
 OUT_DIR=..
+
+.PHONY: all clean overlap_python
 
 all: overlap_python
 
 overlap_python: overlap.o fasta.o overlap_python.o
-	$(CC) $(LDFLAGS) overlap.o fasta.o overlap_python.o -o ${OUT_DIR}/coverlap.so
+	$(CPP) $(LDFLAGS) overlap.o fasta.o overlap_python.o -o ${OUT_DIR}/coverlap.so
 
 overlap.o: overlap.cpp fasta.h overlap.h
-	$(CC) $(CFLAGS) overlap.cpp -o overlap.o
+	$(CPP) $(CFLAGS) overlap.cpp -o overlap.o
 
 overlap_python.o: overlap_python.cpp overlap.h
-	$(CC) $(CFLAGS) overlap_python.cpp -o overlap_python.o 
+	$(CPP) $(CFLAGS) overlap_python.cpp -o overlap_python.o 
 
 fasta.o: fasta.h fasta.cpp
-	$(CC) $(CFLAGS) fasta.cpp -o fasta.o
+	$(CPP) $(CFLAGS) fasta.cpp -o fasta.o
 
 clean:
 	rm *.o

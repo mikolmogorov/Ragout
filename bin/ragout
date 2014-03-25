@@ -1,17 +1,10 @@
 #!/bin/bash 
 
-binDir=`pwd`/$(dirname $0)
-python="python"
+BIN_DIR=`pwd`/$(dirname $0)
+PYTHON="python"
 
-export RAGOUT_ROOT="$binDir/../ragout"
-export RAGOUT_LIB="$binDir/../lib"
+export RAGOUT_ROOT="$BIN_DIR/../ragout"
+export SIBELIA_INSTALL="$BIN_DIR/../lib/Sibelia"
+export CACTUS_INSTALL="/home/volrath/Bioinf/tools/progressiveCactus/"
 
-#envFile=${binDir}/../environment
-
-#options=""
-#for arg in "$@"
-#do
-#	 options="$options '${arg}'"
-#done
-
-$python $RAGOUT_ROOT/main.py "$@"
+$PYTHON $RAGOUT_ROOT/main.py "$@"

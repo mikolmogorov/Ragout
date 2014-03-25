@@ -17,7 +17,7 @@ class Edge:
         self.next_edge = None
 
     def has_node(self, node):
-        return self.left_node == node or self.right_node == node
+        return node in [self.left_node, self.right_node]
 
     def __str__(self):
         left = str(self.left_node) if self.left_node != sys.maxint else "inf"
@@ -44,7 +44,8 @@ class BreakpointGraph:
 
     def get_edges(self, node1, node2):
         edges = self.nodes[node1].edges
-        return filter(lambda e: e.left_node == node2 or e.right_node == node2, edges)
+        return filter(lambda e: e.left_node == node2 or
+                      e.right_node == node2, edges)
 
     def get_black_edges(self, node1, node2):
         edges = self.get_edges(node1, node2)
@@ -64,7 +65,8 @@ class BreakpointGraph:
     def neighbors(self, node):
         neighbors = set()
         for edge in self.nodes[node].edges:
-            other_node = edge.left_node if edge.left_node != node else edge.right_node
+            other_node = (edge.left_node if edge.left_node != node
+                          else edge.right_node)
             neighbors.add(other_node)
 
         return list(neighbors)
@@ -131,7 +133,8 @@ class BreakpointGraph:
             edge = edge.next_edge
 
             while edge is not None:
-                black_edges = self.get_black_edges(prev.right_node, edge.left_node)
+                black_edges = self.get_black_edges(prev.right_node,
+                                                    edge.left_node)
                 black_edge = black_edges[0]
 
                 block_id = get_edge_id(black_edge)
