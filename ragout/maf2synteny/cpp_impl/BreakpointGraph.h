@@ -47,7 +47,9 @@ struct Block
 struct Permutation
 {
 	int seqId;
+	int nucLength;
 	std::vector<Block> blocks;
+	std::string chrId;
 };
 
 typedef std::vector<Edge*> EdgeVec;
