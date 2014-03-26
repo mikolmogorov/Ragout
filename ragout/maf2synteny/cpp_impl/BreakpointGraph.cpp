@@ -1,6 +1,8 @@
 #include "BreakpointGraph.h"
 #include "Utility.h"
+#include "PathCompress.h"
 #include <iostream>
+#include <set>
 
 BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 {
@@ -9,9 +11,7 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 		//black edges
 		for (auto &block : perm.blocks)
 		{
-			std::vector<Edge*> edges;
-			this->getBlackEdges(block.blockId, -block.blockId, edges);
-			if (edges.empty())
+			if (this->getBlackEdges(block.blockId, -block.blockId).empty())
 				this->addEdge(block.blockId, -block.blockId, Edge::BLACK);
 		}
 
@@ -78,9 +78,8 @@ void BreakpointGraph::getPermutations(std::vector<Permutation>& permutations)
 
 		while (curEdge)
 		{
-			std::vector<Edge*> blackEdges;
-			this->getBlackEdges(prevEdge->rightNode, curEdge->leftNode, 
-								blackEdges);
+			EdgeVec blackEdges = this->getBlackEdges(prevEdge->rightNode, 
+													 curEdge->leftNode);
 			assert(blackEdges.size() == 1);
 
 			int blockId = getEdgeId(blackEdges.back());

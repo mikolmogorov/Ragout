@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <list>
 #include <unordered_map>
@@ -27,7 +29,6 @@ struct Edge
 
 struct Node
 {
-	//Node(int id): nodeId(id) {}
 	std::list<Edge*> edges;
 };
 
@@ -49,6 +50,9 @@ struct Permutation
 	std::vector<Block> blocks;
 };
 
+typedef std::vector<Edge*> EdgeVec;
+typedef std::vector<int> NodeVec;
+
 class BreakpointGraph
 {
 public:
@@ -62,30 +66,36 @@ public:
 		return edge;
 	}
 
-	void getEdges(int nodeOne, int nodeTwo, std::vector<Edge*>& edgesOut)
+	EdgeVec getEdges(int nodeOne, int nodeTwo)
 	{
+		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
 			if (e->hasNode(nodeTwo)) edgesOut.push_back(e);
 		}
+		return edgesOut;
 	}
 
-	void getBlackEdges(int nodeOne, int nodeTwo, std::vector<Edge*>& edgesOut)
+	EdgeVec getBlackEdges(int nodeOne, int nodeTwo)
 	{
+		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
 			if (e->hasNode(nodeTwo) && e->seqId == Edge::BLACK)
 				edgesOut.push_back(e);
 		}
+		return edgesOut;
 	}
 
-	void getColoredEdges(int nodeOne, int nodeTwo, std::vector<Edge*>& edgesOut)
+	EdgeVec getColoredEdges(int nodeOne, int nodeTwo)
 	{
+		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
 			if (e->hasNode(nodeTwo) && e->seqId != Edge::BLACK)
 				edgesOut.push_back(e);
 		}
+		return edgesOut;
 	}
 
 	void removeEdges(int nodeOne, int nodeTwo)
@@ -101,8 +111,9 @@ public:
 		}
 	}
 
-	void getNeighbors(int node, std::vector<int>& outNodes)
+	NodeVec getNeighbors(int node)
 	{
+		NodeVec outNodes;
 		std::unordered_set<int> neighbors;
 		for (auto e : _nodes[node].edges)
 		{
@@ -110,25 +121,32 @@ public:
 		}
 		std::copy(neighbors.begin(), neighbors.end(), 
 				  std::back_inserter(outNodes));
+		return outNodes;
 	}
 
 	bool isBifurcation(int node)
 	{
-		std::vector<int> neighbors;
-		this->getNeighbors(node, neighbors);
+		NodeVec neighbors = this->getNeighbors(node);
 		if (neighbors.size() > 2) return true;
 
 		//all edges should be either balck or colred
 		for (auto neighbor : neighbors)
 		{
-			std::vector<Edge*> edges;
-			this->getEdges(node, neighbor, edges);
+			EdgeVec edges = this->getEdges(node, neighbor);
 
 			bool hasBlack = false;
 			for (auto e : edges) if (e->seqId == Edge::BLACK) hasBlack = true;
 			if (hasBlack && edges.size() > 1) return true;
 		}
 		return false;
+	}
+
+	NodeVec iterNodes()
+	{
+		NodeVec nodes;
+		for (auto itNode : _nodes)
+			nodes.push_back(itNode.first);
+		return nodes;
 	}
 
 	void getFragmentedBlocks(std::vector<std::vector<int>>& groups);
