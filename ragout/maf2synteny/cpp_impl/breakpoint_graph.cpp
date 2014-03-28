@@ -1,6 +1,6 @@
-#include "BreakpointGraph.h"
-#include "Utility.h"
-#include "PathCompress.h"
+#include "breakpoint_graph.h"
+#include "utility.h"
+#include "compress_algorithms.h"
 #include <iostream>
 #include <set>
 
@@ -8,6 +8,8 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 {
 	for (auto &perm : permutations)
 	{
+		assert(!perm.blocks.empty());
+
 		//black edges
 		for (auto &block : perm.blocks)
 		{
@@ -16,10 +18,10 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 		}
 
 		//chromosome ends
-		Edge* headEdge = this->addEdge(INFINUM, perm.blocks.front().blockId,
+		Edge* headEdge = this->addEdge(INFINUM, perm.blocks.front().signedId(),
 									   perm.seqId);
 		headEdge->rightPos = perm.blocks.front().start;
-		Edge* tailEdge = this->addEdge(-perm.blocks.back().blockId, INFINUM,
+		Edge* tailEdge = this->addEdge(-perm.blocks.back().signedId(), INFINUM,
 									   perm.seqId);
 		tailEdge->leftPos = perm.blocks.back().end;
 		_origins.push_back(headEdge);
@@ -39,8 +41,8 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 						  << " " << blockPair.second.start << " "
 						  << blockPair.second.end << " | " << perm.seqId << "\n";
 
-			curEdge = this->addEdge(-blockPair.first.blockId,
-									blockPair.second.blockId, perm.seqId);
+			curEdge = this->addEdge(-blockPair.first.signedId(),
+									blockPair.second.signedId(), perm.seqId);
 			curEdge->leftPos = leftPos;
 			curEdge->rightPos = rightPos;
 
@@ -59,8 +61,10 @@ void BreakpointGraph::getFragmentedBlocks(std::vector<std::vector<int>>& groups)
 	//TODO
 }
 
-void BreakpointGraph::getPermutations(std::vector<Permutation>& permutations)
+std::vector<Permutation> BreakpointGraph::getPermutations()
 {
+	std::vector<Permutation> permutations;
+
 	int nextEdgeId = 0;
 	std::unordered_map<Edge*, int> edgeIds;
 	auto getEdgeId = [&nextEdgeId, &edgeIds] (Edge* e) 
@@ -73,18 +77,18 @@ void BreakpointGraph::getPermutations(std::vector<Permutation>& permutations)
 	for (auto startEdge : _origins)
 	{
 		permutations.push_back(Permutation());
-		Edge* prevEdge = startEdge;
-		Edge* curEdge = startEdge->nextEdge;
-
-		while (curEdge)
+		//Edge* prevEdge = startEdge;
+		Edge* curEdge = startEdge;//->nextEdge;
+		do
 		{
+			Edge* prevEdge = curEdge;
+			curEdge = curEdge->nextEdge;
 			EdgeVec blackEdges = this->getBlackEdges(prevEdge->rightNode, 
 													 curEdge->leftNode);
 			assert(blackEdges.size() == 1);
 
-			int blockId = getEdgeId(blackEdges.back());
-			int sign = (blackEdges.back()->rightNode == curEdge->leftNode) 
-							? 1 : -1;
+			int blockId = getEdgeId(blackEdges[0]);
+			int sign = (blackEdges[0]->rightNode == curEdge->leftNode) ? 1 : -1;
 			int start = prevEdge->rightPos;
 			int end = curEdge->leftPos;
 			assert(end >= start);
@@ -92,8 +96,8 @@ void BreakpointGraph::getPermutations(std::vector<Permutation>& permutations)
 			permutations.back().blocks.push_back(Block(blockId, sign, 
 													   start, end));
 			permutations.back().seqId = startEdge->seqId;
-			prevEdge = curEdge;
-			curEdge = curEdge->nextEdge;
 		}
+		while (!curEdge->hasNode(INFINUM));
 	}
+	return permutations;
 }

@@ -1,8 +1,9 @@
-#include "BreakpointGraph.h"
-#include "CompressAlgorithms.h"
+#include "breakpoint_graph.h"
+#include "compress_algorithms.h"
 
 #include <deque>
 #include <unordered_set>
+#include <iostream>
 
 void extendPath(BreakpointGraph& graph, int prevNode, int curNode, 
 				int maxGap, std::deque<int>& outPath)
@@ -23,32 +24,43 @@ void extendPath(BreakpointGraph& graph, int prevNode, int curNode,
 
 		//everything is ok, continue path
 		NodeVec neighbors = graph.getNeighbors(curNode);
-		int otherNode = (neighbors[0] == prevNode) ? neighbors[0] : neighbors[1];
+		assert(neighbors.size() == 2);
+		int otherNode = (neighbors[0] != prevNode) ? neighbors[0] : neighbors[1];
 		
-		outPath.push_back(curNode);
 		prevNode = curNode;
 		curNode = otherNode;
+		outPath.push_back(curNode);
 	}
 }
 
 //The code below was written in military registration office
 //during my waiting for departure to Scientific Detachment
 
-bool compressPath(BreakpointGraph& graph, std::deque<int>& path)
+bool compressPath(BreakpointGraph& graph, std::deque<int>& path,
+				  std::unordered_set<int>& nodesToDel)
 {
 	if (path.size() <= 2) return false;
+	//std::deque<int> copy = path;
 
-	//ensure we starts and end with black edges
-	if (!graph.getBlackEdges(path[0], path[1]).empty())
+	//ensure we start and end with black edges
+	if (graph.getBlackEdges(path[0], path[1]).empty())
 		path.pop_front();
-	if (!graph.getBlackEdges(path[path.size()-2], path[path.size()-1]).empty())
+	if (graph.getBlackEdges(path[path.size()-2], path[path.size()-1]).empty())
 		path.pop_back();
 	if (path.size() == 2) return false;
+	assert (path.size() >= 4);
 	
 	//updating graph
 	graph.removeEdges(path[0], path[1]);
 	graph.removeEdges(path[path.size()-2], path[path.size()-1]);
+	std::copy(path.begin() + 1, path.end() - 1, 
+			  std::inserter(nodesToDel, nodesToDel.begin()));
 	graph.addEdge(path.front(), path.back(), Edge::BLACK);
+	//for (auto p : path)
+	//	std::cout << p << " ";
+	//std::cout << "\n\n";
+	//std::cout << path.front() << " " << path.back() 
+	//		  << " " << path.size() << std::endl;
 
 	//updating links
 	//for each colored edge in path
@@ -60,17 +72,60 @@ bool compressPath(BreakpointGraph& graph, std::deque<int>& path)
 
 		Edge* tailAdj = adj->prevEdge;
 		while(!tailAdj->hasNode(path.front()) && !tailAdj->hasNode(path.back()))
-			tailAdj = tailAdj->nextEdge;
+			tailAdj = tailAdj->prevEdge;
 
 		assert(headAdj->seqId == tailAdj->seqId);
 		headAdj->prevEdge = tailAdj;
 		tailAdj->nextEdge = headAdj;
 	}
+
+	return true;
+}
+
+int compressGraph(BreakpointGraph& graph, int maxGap)
+{
+	int numCompressed = 0;
+	std::unordered_set<int> nodesToDel;
+
+	for (int node : graph.iterNodes())
+	{
+		if (nodesToDel.count(node) || !graph.isBifurcation(node))
+			continue;
+
+		for (int neighbor : graph.getNeighbors(node))
+		{
+			assert(graph.getNeighbors(node).size() >= 2);
+			std::deque<int> path;
+			extendPath(graph, node, neighbor, maxGap, path);
+			if (compressPath(graph, path, nodesToDel))
+			{
+				++numCompressed;
+				//std::copy(path.begin() + 1, path.end() - 1, 
+				//		  std::inserter(nodesToDel, nodesToDel.begin()));
+			}
+		}
+	}
+
+	//cleaning up
+	//std::unordered_set<Edge*> edgesToDel;
+	for (int node : nodesToDel)
+	{
+		graph.removeNode(node);
+		//_nodes.erase(node);
+		//std::copy(_nodes[node].edges.begin(), _nodes[node].edges.end(),
+		//		  std::inserter(edgesToDel, edgesToDel.begin()));
+	}
+	//for (auto edge : edgesToDel)
+	//	delete edge;
+	//TODO: cleanup
+	
+	return numCompressed;
 }
 
 typedef std::vector<std::deque<int>> BranchSet;
 
-bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches)
+bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches,
+				   std::unordered_set<int>& nodesToDel)
 {
 	//checking bulge structure
 	for (auto &branch : branches)
@@ -82,6 +137,7 @@ bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches)
 		if (branch.size() == 2) //a branch from one colored edge, nothing to do
 			continue;
 
+		assert(branch.size() == 4);
 		//replace three edges with one (colored) -- "hiding" varinance
 		for (Edge* adj : graph.getColoredEdges(branch[0], branch[1]))
 		{
@@ -117,10 +173,17 @@ bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches)
 
 		//cleaning up
 		graph.removeEdges(branch[0], branch[1]);
-		graph.removeEdges(branch[1], branch[2]);
 		graph.removeEdges(branch[2], branch[3]);
 
-		//TODO: delete nodes
+		assert(graph.getEdges(branch[0], branch[1]).empty());
+		//graph.removeEdges(branch[1], branch[2]);
+		std::copy(branch.begin() + 1, branch.end() - 1,
+				  std::inserter(nodesToDel, nodesToDel.begin()));
+		//std::cout << branch[0] << " " << branch[1] << " " 
+		//		  << branch[2] << " " << branch[3] << "\n";
+		//nodesToDel.insert(branch[1]);
+		//nodesToDel.insert(branch[2]);
+		//nodesToDel.insert(branch[3]);
 	}
 
 	return true;
@@ -176,54 +239,19 @@ bool findBulge(BreakpointGraph& graph, int node, int maxGap, BranchSet& branches
 int removeBulges(BreakpointGraph& graph, int maxGap)
 {
 	int numCollapsed = 0;
+	std::unordered_set<int> nodesToDel;
 	for (int node : graph.iterNodes())
 	{
-		if (!graph.isBifurcation(node))
+		if (nodesToDel.count(node) || !graph.isBifurcation(node))
 			continue;
 
 		BranchSet branches;
 		if (findBulge(graph, node, maxGap, branches))
-			if (collapseBulge(graph, branches))
+			if (collapseBulge(graph, branches, nodesToDel))
 				++numCollapsed;
 	}
-	//TODO: cleanup
+	for (int node : nodesToDel)
+		graph.removeNode(node);
+
 	return numCollapsed;
-}
-
-int compressGraph(BreakpointGraph& graph, int maxGap)
-{
-	int numCompressed = 0;
-	std::unordered_set<int> nodesToDel;
-
-	for (int node : graph.iterNodes())
-	{
-		if (!graph.isBifurcation(node))
-			continue;
-
-		for (int neighbor : graph.getNeighbors(node))
-		{
-			std::deque<int> path;
-			extendPath(graph, node, neighbor, maxGap, path);
-			if (compressPath(graph, path))
-			{
-				++numCompressed;
-				std::copy(path.begin() + 1, path.end() - 1, 
-						  std::inserter(nodesToDel, nodesToDel.begin()));
-			}
-		}
-	}
-
-	//cleaning up
-	std::unordered_set<Edge*> edgesToDel;
-	for (auto node : nodesToDel)
-	{
-		//_nodes.erase(node);
-		//std::copy(_nodes[node].edges.begin(), _nodes[node].edges.end(),
-		//		  std::inserter(edgesToDel, edgesToDel.begin()));
-	}
-	//for (auto edge : edgesToDel)
-	//	delete edge;
-	//TODO: cleanup
-	
-	return numCompressed;
 }

@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <limits>
 #include <cassert>
+#include <iostream>
+
+#include "permutation.h"
 
 struct Edge
 {
@@ -32,25 +35,6 @@ struct Node
 	std::list<Edge*> edges;
 };
 
-struct Block
-{
-	Block(int blockId, int sign, int start, int end):
-		blockId(blockId), sign(sign), start(start), end(end) {}
-	int getLen() const {assert(end >= start); return end - start;}
-
-	int blockId;
-	int sign;
-	int start;
-	int end;
-};
-
-struct Permutation
-{
-	int seqId;
-	int nucLength;
-	std::vector<Block> blocks;
-	std::string chrId;
-};
 
 typedef std::vector<Edge*> EdgeVec;
 typedef std::vector<int> NodeVec;
@@ -62,6 +46,7 @@ public:
 
 	Edge* addEdge(int leftNode, int rightNode, int seqId)
 	{
+		assert(leftNode && rightNode);
 		Edge* edge = new Edge(leftNode, rightNode, seqId);
 		_nodes[leftNode].edges.push_back(edge);
 		_nodes[rightNode].edges.push_back(edge);
@@ -70,16 +55,19 @@ public:
 
 	EdgeVec getEdges(int nodeOne, int nodeTwo)
 	{
+		assert(nodeOne && nodeTwo);
 		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
-			if (e->hasNode(nodeTwo)) edgesOut.push_back(e);
+			if (e->hasNode(nodeTwo))
+				edgesOut.push_back(e);
 		}
 		return edgesOut;
 	}
 
 	EdgeVec getBlackEdges(int nodeOne, int nodeTwo)
 	{
+		assert(nodeOne && nodeTwo);
 		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
@@ -91,6 +79,7 @@ public:
 
 	EdgeVec getColoredEdges(int nodeOne, int nodeTwo)
 	{
+		assert(nodeOne && nodeTwo);
 		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
@@ -102,19 +91,37 @@ public:
 
 	void removeEdges(int nodeOne, int nodeTwo)
 	{
-		for (auto e = _nodes[nodeOne].edges.begin();
-			 	e != _nodes[nodeOne].edges.end(); ++e)
+		assert(nodeOne && nodeTwo);
+		assert(nodeOne != nodeTwo);
+
+		auto e = _nodes[nodeOne].edges.begin();
+		while (e != _nodes[nodeOne].edges.end()) 
 		{
 			if ((*e)->hasNode(nodeTwo))
 			{
-				e = _nodes[nodeOne].edges.erase(e);
+				delete *e;
 				_nodes[nodeTwo].edges.remove(*e);
+				e = _nodes[nodeOne].edges.erase(e);
+			}
+			else
+			{
+				++e;
 			}
 		}
 	}
 
+	void removeNode(int node)
+	{
+		if (!_nodes.count(node))
+			return;
+		for (int neighbor : this->getNeighbors(node))
+			this->removeEdges(neighbor, node);
+		_nodes.erase(node);
+	}
+
 	NodeVec getNeighbors(int node)
 	{
+		assert(node);
 		NodeVec outNodes;
 		std::unordered_set<int> neighbors;
 		for (auto e : _nodes[node].edges)
@@ -152,7 +159,7 @@ public:
 	}
 
 	void getFragmentedBlocks(std::vector<std::vector<int>>& groups);
-	void getPermutations(std::vector<Permutation>& permutstions);
+	std::vector<Permutation> getPermutations();
 
 	static const int INFINUM = std::numeric_limits<int>::max();
 

@@ -2,8 +2,6 @@
 
 #include <iterator>
 #include <utility>
-#include <string>
-#include <vector>
 
 //taken from http://stackoverflow.com/questions/14826893
 template <typename FwdIt> class adjacent_iterator 
@@ -66,7 +64,8 @@ template <typename C> auto make_adjacent_range(C& c) ->
 
 
 /////////////
-split(const std::string &s, char delim, std::vector<std::string> &elems) 
+/*
+inline void split(const std::string &s, char delim, std::vector<std::string> &elems) 
 {
     std::stringstream ss(s);
     std::string item;
@@ -77,9 +76,10 @@ split(const std::string &s, char delim, std::vector<std::string> &elems)
 }
 
 
-std::vector<std::string> split(const std::string &s, char delim) 
+inline std::vector<std::string> split(const std::string &s, char delim) 
 {
     std::vector<std::string> elems;
     split(s, delim, elems);
     return elems;
 }
+*/
