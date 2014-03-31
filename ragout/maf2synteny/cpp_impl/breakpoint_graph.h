@@ -36,8 +36,8 @@ struct Node
 };
 
 
-typedef std::vector<Edge*> EdgeVec;
-typedef std::vector<int> NodeVec;
+typedef std::vector<Edge*> 	EdgeVec;
+typedef std::vector<int> 	NodeVec;
 
 class BreakpointGraph
 {
@@ -119,6 +119,16 @@ public:
 		_nodes.erase(node);
 	}
 
+	Edge* getAdjacentBlackEdge(int node)
+	{
+		for (Edge* e : _nodes[node].edges)
+		{
+			if (e->seqId == Edge::BLACK)
+				return e;
+		}
+		return nullptr;
+	}
+
 	NodeVec getNeighbors(int node)
 	{
 		assert(node);
@@ -136,7 +146,8 @@ public:
 	bool isBifurcation(int node)
 	{
 		NodeVec neighbors = this->getNeighbors(node);
-		if (neighbors.size() > 2) return true;
+		if (neighbors.size() > 2)
+			return true;
 
 		//all edges should be either balck or colred
 		for (auto neighbor : neighbors)
@@ -144,8 +155,11 @@ public:
 			EdgeVec edges = this->getEdges(node, neighbor);
 
 			bool hasBlack = false;
-			for (auto e : edges) if (e->seqId == Edge::BLACK) hasBlack = true;
-			if (hasBlack && edges.size() > 1) return true;
+			for (auto e : edges)
+				if (e->seqId == Edge::BLACK)
+					hasBlack = true;
+			if (hasBlack && edges.size() > 1)
+				return true;
 		}
 		return false;
 	}
@@ -158,13 +172,14 @@ public:
 		return nodes;
 	}
 
-	void getFragmentedBlocks(std::vector<std::vector<int>>& groups);
-	std::vector<Permutation> getPermutations();
+	void getPermutations(PermVec& permutations, BlockGroups& blockGroups);
 
 	static const int INFINUM = std::numeric_limits<int>::max();
 
 private:
 	std::unordered_map<int, Node> 	_nodes;
 	std::vector<Edge*> 				_origins;
+	std::unordered_map<int, int> 	_seqLength;
+	std::unordered_map<int, std::string> _seqNames;
 
 };

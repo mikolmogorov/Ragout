@@ -1,5 +1,6 @@
 #include "breakpoint_graph.h"
 #include "compress_algorithms.h"
+#include "utility.h"
 
 #include <deque>
 #include <unordered_set>
@@ -145,7 +146,7 @@ bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches,
 			Edge* newAdj = nullptr;
 			Edge* prevAdj = nullptr;
 			//checking direction
-			if (std::count(branch.begin(), branch.end(), nextAdj->leftNode))
+			if (contains(branch, nextAdj->leftNode))
 			{
 				nextAdj = nextAdj->nextEdge;
 				prevAdj = adj->prevEdge;
@@ -223,7 +224,7 @@ bool findBulge(BreakpointGraph& graph, int node, int maxGap, BranchSet& branches
 	std::vector<int> otherNeighbors;
 	for (int neighbor : graph.getNeighbors(pathEnd))
 	{
-		if (!std::count(branchRepr.begin(), branchRepr.end(), neighbor))
+		if (!contains(branchRepr, neighbor))
 			otherNeighbors.push_back(neighbor);
 	}
 	if (otherNeighbors.size() > 1 || otherNeighbors.empty())

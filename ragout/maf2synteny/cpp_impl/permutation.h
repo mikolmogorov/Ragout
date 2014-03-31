@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <cassert>
 
 struct Block
@@ -26,5 +27,13 @@ struct Permutation
 };
 
 typedef std::vector<Permutation> PermVec;
+typedef std::unordered_map<int, int> BlockGroups;
 
-void outputPermutation(const PermVec& permutations, const std::string outFile);
+void outputPermutation(const PermVec& permutations, const std::string& outFile);
+void outputCoords(const PermVec& permutations, const std::string& outFile);
+void outputStatistics(PermVec& permutations, const std::string& outFile);
+void renumerate(PermVec& permutations);
+PermVec mergePermutations(const PermVec& simplifiedPerms,
+						  const PermVec& initialPerms);
+PermVec filterBySize(const PermVec& permutations, 
+					 const BlockGroups& blockGroups, int minBlock, int minFlank);

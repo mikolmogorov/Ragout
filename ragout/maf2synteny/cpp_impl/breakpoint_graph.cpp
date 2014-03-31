@@ -1,6 +1,8 @@
 #include "breakpoint_graph.h"
 #include "utility.h"
 #include "compress_algorithms.h"
+#include "disjoint_set.h"
+
 #include <iostream>
 #include <set>
 
@@ -9,6 +11,8 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 	for (auto &perm : permutations)
 	{
 		assert(!perm.blocks.empty());
+		_seqNames[perm.seqId] = perm.seqName;
+		_seqLength[perm.seqId] = perm.nucLength;
 
 		//black edges
 		for (auto &block : perm.blocks)
@@ -56,16 +60,49 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 	}
 }
 
-void BreakpointGraph::getFragmentedBlocks(std::vector<std::vector<int>>& groups)
+namespace
 {
-	//TODO
+	std::unordered_map<Edge*, int> getConjunctionEdges(BreakpointGraph& bg)
+	{
+		std::unordered_map<Edge*, int> edgeToGroup;
+		std::unordered_map<Edge*, SetNode<int>*> setNodes;
+		int nextId = 1;
+		auto getSetNode = [&setNodes, &nextId] (Edge* e) 
+		{
+			if (!setNodes.count(e))
+				setNodes[e] = new SetNode<int>(nextId++);
+			return setNodes[e];
+		};
+
+		for (int node : bg.iterNodes())
+		{
+			if (!bg.isBifurcation(node))
+				continue;
+
+			NodeVec neighbors = bg.getNeighbors(node);
+			if (neighbors.size() != 3 || !contains(neighbors, bg.INFINUM))
+				continue;
+			neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), 
+										int(bg.INFINUM)), neighbors.end());
+			
+			Edge* leftEdge = bg.getAdjacentBlackEdge(neighbors[0]);
+			Edge* rightEdge = bg.getAdjacentBlackEdge(neighbors[1]);
+			unionSet(getSetNode(leftEdge), getSetNode(rightEdge));
+		}
+
+		for (auto &nodePair : setNodes)
+			edgeToGroup[nodePair.first] = findSet(nodePair.second)->data;
+
+		return edgeToGroup;
+	}
 }
 
-std::vector<Permutation> BreakpointGraph::getPermutations()
+void BreakpointGraph::getPermutations(PermVec& permutations, 
+									  BlockGroups& blockGroups)
 {
-	std::vector<Permutation> permutations;
+	//std::vector<Permutation> permutations;
 
-	int nextEdgeId = 0;
+	int nextEdgeId = 1;
 	std::unordered_map<Edge*, int> edgeIds;
 	auto getEdgeId = [&nextEdgeId, &edgeIds] (Edge* e) 
 	{
@@ -77,8 +114,7 @@ std::vector<Permutation> BreakpointGraph::getPermutations()
 	for (auto startEdge : _origins)
 	{
 		permutations.push_back(Permutation());
-		//Edge* prevEdge = startEdge;
-		Edge* curEdge = startEdge;//->nextEdge;
+		Edge* curEdge = startEdge;
 		do
 		{
 			Edge* prevEdge = curEdge;
@@ -96,8 +132,14 @@ std::vector<Permutation> BreakpointGraph::getPermutations()
 			permutations.back().blocks.push_back(Block(blockId, sign, 
 													   start, end));
 			permutations.back().seqId = startEdge->seqId;
+			permutations.back().seqName = _seqNames[startEdge->seqId];
+			permutations.back().nucLength = _seqLength[startEdge->seqId];
 		}
 		while (!curEdge->hasNode(INFINUM));
+
+		std::unordered_map<Edge*, int> edgeToGroup = getConjunctionEdges(*this);
+		for (auto &edgePair : edgeToGroup)
+			blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
+		
 	}
-	return permutations;
 }

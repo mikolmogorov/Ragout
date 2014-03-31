@@ -5,8 +5,12 @@
 
 #include <iostream>
 
-void simplifyGraph(BreakpointGraph& bg, int maxGap)
+//void processGraph(BreakpointGraph& bg, int maxGap)
+void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
+				  BlockGroups& groupsOut)
 {
+	BreakpointGraph bg(permsIn);
+
 	int totalPaths = 0;
 	int totalBulges = 0;
 	while (true)
@@ -20,6 +24,50 @@ void simplifyGraph(BreakpointGraph& bg, int maxGap)
 	}
 	std::cerr << "Done: " << totalPaths << " paths compressed, "
 			  << totalBulges << " bulges removed\n";
+
+	bg.getPermutations(permsOut, groupsOut);
+}
+
+struct ParamPair 
+{
+	int minBlock;
+	int maxGap;
+};
+
+void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
+{
+	std::string permsFile = outDir + "/genomes_permutations.txt";
+	std::string coordsFile = outDir + "/blocks_coords.txt";
+	std::string statsFile = outDir + "/coverage_report.txt";
+
+
+	const int MIN_ALIGNMENT = 30;
+	const float MIN_FLANK_RATE = 0.3;
+	const std::vector<ParamPair> PARAMS = {{30, 100}, {100, 1000}, 
+										  {1000, 5000}, {5000, 15000}};
+
+	PermVec currentBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
+	BlockGroups blockGroups;
+	for (const ParamPair& ppair : PARAMS)
+	{
+		std::cerr << "Simplification with " << ppair.minBlock << " "
+				  << ppair.maxGap << std::endl;
+		PermVec inputBlocks = filterBySize(currentBlocks, BlockGroups(),
+										   ppair.minBlock, 0);
+		PermVec outBlocks;
+		blockGroups.clear();
+		processGraph(inputBlocks, ppair.maxGap, outBlocks, blockGroups);
+		currentBlocks = mergePermutations(outBlocks, currentBlocks);
+	}
+
+	int flankLen = minBlock * MIN_FLANK_RATE;
+	PermVec outPerms = filterBySize(currentBlocks, blockGroups, 
+									minBlock, flankLen);
+	renumerate(outPerms);
+
+	outputPermutation(outPerms, permsFile);
+	outputCoords(outPerms, coordsFile);
+	outputStatistics(outPerms, statsFile);
 }
 
 int main(int argc, char** argv)
@@ -33,13 +81,15 @@ int main(int argc, char** argv)
 	std::string outDir = argv[2];
 	int blockSize = atoi(argv[3]);
 
-	std::string permsFile = outDir + "/genomes_permutations.txt";
+	try
+	{
+		doJob(inputMaf, outDir, blockSize);
+	}
+	catch (std::runtime_error& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return 1;
+	}
 
-	std::vector<Permutation> perms = mafToPermutations(inputMaf, 100);
-	BreakpointGraph bg(perms);
-	simplifyGraph(bg, 1000);
-	PermVec outPerms = bg.getPermutations();
-
-	outputPermutation(outPerms, permsFile);
 	return 0;
 }
