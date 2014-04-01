@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-//void processGraph(BreakpointGraph& bg, int maxGap)
 void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 				  BlockGroups& groupsOut)
 {
@@ -28,6 +27,15 @@ void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 	bg.getPermutations(permsOut, groupsOut);
 }
 
+void compressPaths(const PermVec& permsIn, int maxGap, PermVec& permsOut,
+				  BlockGroups& groupsOut)
+{
+	BreakpointGraph bg(permsIn);
+	int paths = compressGraph(bg, maxGap);
+	std::cerr << "Initial compression: " << paths << " paths\n";
+	bg.getPermutations(permsOut, groupsOut);
+}
+
 struct ParamPair 
 {
 	int minBlock;
@@ -41,15 +49,21 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 	std::string statsFile = outDir + "/coverage_report.txt";
 
 
-	const int MIN_ALIGNMENT = 30;
+	const int MIN_ALIGNMENT = 1;
+	const int MAX_ALIGNMENT_GAP = 10;
 	const float MIN_FLANK_RATE = 0.3;
 	const std::vector<ParamPair> PARAMS = {{30, 100}, {100, 1000}, 
 										  {1000, 5000}, {5000, 15000}};
 
-	PermVec currentBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
 	BlockGroups blockGroups;
+	PermVec currentBlocks;
+	PermVec mafBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
+	compressPaths(mafBlocks, MAX_ALIGNMENT_GAP, currentBlocks, blockGroups);
+
 	for (const ParamPair& ppair : PARAMS)
 	{
+		if (ppair.minBlock > minBlock) break;
+
 		std::cerr << "Simplification with " << ppair.minBlock << " "
 				  << ppair.maxGap << std::endl;
 		PermVec inputBlocks = filterBySize(currentBlocks, BlockGroups(),

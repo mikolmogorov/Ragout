@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <iostream>
 
 static const std::string SEPARATOR(80, '-');
 
@@ -23,40 +24,31 @@ void outputPermutation(const PermVec& permutations, const std::string& outFile)
 	}
 }
 
-void outputCoords(const PermVec& permutations, const std::string& outFile)
+void outputCoords(PermVec& permutations, const std::string& outFile)
 {
 	std::ofstream fout(outFile);
 	if (!fout) throw std::runtime_error("Can't open " + outFile);
 
-	std::unordered_map<int, std::vector<const Block*>> byBlock;
-	std::unordered_map<const Block*, int> seqIds;
-	for (const Permutation& perm : permutations)
-	{
-		for (const Block& block : perm.blocks)
-		{
-			byBlock[block.blockId].push_back(&block);
-			seqIds[&block] = perm.seqId;
-		}
-	}
-	
 	fout << "Seq_id\tSize\tDescription\n";
-	for (const Permutation& perm : permutations)
+	for (Permutation& perm : permutations)
 	{
 		fout << perm.seqId << "\t" << perm.nucLength << "\t"
 			 << perm.seqName << std::endl;
 	}
 	fout << SEPARATOR << std::endl;
 
-	for (auto &itBlocks : byBlock)
+	auto blocksIndex = groupByBlockId(permutations);
+	for (auto &itBlocks : blocksIndex)
 	{
 		fout << "Block #" << itBlocks.first << "\nSeq_id\tStrand\tStart\t"
 			 << "End\tLength\n";
 
-		for (const Block* block : itBlocks.second)
+		for (BlockPair& bp : itBlocks.second)
 		{
-			char strand = (block->sign > 0) ? '+' : '-';
-			fout << seqIds[block] << "\t" << strand << "\t" << block->start
-				 << "\t" << block->end << "\t" << block->getLen() << std::endl;
+			char strand = (bp.block->sign > 0) ? '+' : '-';
+			fout << bp.seqId << "\t" << strand << "\t"
+				 << bp.block->start << "\t" << bp.block->end
+				 << "\t" << bp.block->getLen() << std::endl;
 		}
 		fout << SEPARATOR << std::endl;
 	}
@@ -67,7 +59,6 @@ void outputStatistics(PermVec& permutations, const std::string& outFile)
 	std::ofstream fout(outFile);
 	if (!fout) throw std::runtime_error("Can't open " + outFile);
 
-	std::unordered_map<int, std::vector<const Block*>> byBlock;
 	std::unordered_map<int, int> multiplicity;
 	std::unordered_map<std::string, float> covered;
 
@@ -75,8 +66,6 @@ void outputStatistics(PermVec& permutations, const std::string& outFile)
 	{
 		for (const Block& block : perm.blocks)
 		{
-			byBlock[block.blockId].push_back(&block);
-			assert(!perm.seqName.empty());
 			covered[perm.seqName] += block.getLen();
 		}
 		covered[perm.seqName] /= perm.nucLength;
@@ -90,7 +79,8 @@ void outputStatistics(PermVec& permutations, const std::string& outFile)
 	}
 	fout << SEPARATOR << std::endl;
 
-	for (auto &blockPair : byBlock)
+	auto blocksIndex = groupByBlockId(permutations);
+	for (auto &blockPair : blocksIndex)
 	{
 		++multiplicity[blockPair.second.size()];
 	}
@@ -127,38 +117,17 @@ void renumerate(PermVec& permutations)
 }
 
 //the function merges two permutations in different scales.
-//simplifiedPerms is expoected to be in finer, 
-//and initialPerms - in lower;
-PermVec mergePermutations(const PermVec& simplifiedPerms,
-						  const PermVec& initialPerms)
+PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms)
 {
-	PermVec permutations = simplifiedPerms;
-	std::unordered_map<int, Permutation*> bySeqId;
-	for (Permutation& perm : permutations)
-	{
-		bySeqId[perm.seqId] = &perm;
-	}
-
 	std::unordered_map<int, std::vector<int>> blockStarts;
 	std::unordered_map<int, std::vector<int>> blockEnds;
-	for (const Permutation& perm : simplifiedPerms)
+	int nextId = 0;
+	for (Permutation& perm : loosePerms)
 	{
-		for (const Block& block : perm.blocks)
+		for (Block& block : perm.blocks)
 		{
 			blockStarts[perm.seqId].push_back(block.start);
 			blockEnds[perm.seqId].push_back(block.end);
-		}
-	}
-
-	int nextId = 1;
-	std::unordered_map<int, std::vector<const Block*>> byBlock;
-	std::unordered_map<const Block*, int> seqIds;
-	for (const Permutation& perm : initialPerms)
-	{
-		for (const Block& block : perm.blocks)
-		{
-			byBlock[block.blockId].push_back(&block);
-			seqIds[&block] = perm.seqId;
 			nextId = std::max(nextId, block.blockId);
 		}
 	}
@@ -166,40 +135,59 @@ PermVec mergePermutations(const PermVec& simplifiedPerms,
 
 	//here we check if block from finer scale do not intersect with
 	//others from loose scale
-	for (auto &blockPair : byBlock)
+	auto fineIndex = groupByBlockId(finePerms);
+	std::vector<int> blocksToInsert;
+	for (auto &indexPair : fineIndex)
 	{
-		std::vector<const Block*> toInsert;
-		for (const Block* block : blockPair.second)
+		bool inserting = true;
+		for (BlockPair& bp : indexPair.second)
 		{
-			auto &endVec = blockEnds[seqIds[block]];
-			auto leftIns = std::upper_bound(endVec.begin(), endVec.end(), 
-										   block->start);
-			auto &startVec = blockStarts[seqIds[block]];
-			auto rightIns = std::upper_bound(startVec.begin(), startVec.end(), 
-										    block->end);
+			auto &endVec = blockEnds[bp.seqId];
+			int leftIns = std::upper_bound(endVec.begin(), endVec.end(),
+										   bp.block->start) - endVec.begin();
+			auto &startVec = blockStarts[bp.seqId];
+			int rightIns = std::upper_bound(startVec.begin(), startVec.end(),
+											bp.block->end) - startVec.begin();
 
-			if (leftIns == rightIns) toInsert.push_back(block);
-		}
-
-		if (!toInsert.empty())
-		{
-			for (const Block* block : toInsert)
+			if (leftIns != rightIns) 
 			{
-				int seqId = seqIds[block];
-				bySeqId[seqId]->blocks.push_back(*block);
-				bySeqId[seqId]->blocks.back().blockId = nextId;
+				inserting = false;
+				break;
 			}
-			++nextId;
 		}
+
+		if (inserting) blocksToInsert.push_back(indexPair.first);
 	}
 
-	auto cmp = [](const Block& a, const Block& b) {return a.start < b.start;};
-	for (Permutation& perm : permutations)
+	std::unordered_map<int, std::vector<Block>> outBlocks;
+	auto fineBySeqId = indexBySeqId(finePerms);
+	for (Permutation& perm : loosePerms)
 	{
-		std::sort(perm.blocks.begin(), perm.blocks.end(), cmp);
+		outBlocks[perm.seqId] = perm.blocks;
+	}
+	for (int block : blocksToInsert)
+	{
+		for (BlockPair& bp : fineIndex[block])
+		{
+			outBlocks[bp.seqId].push_back(*bp.block);
+			outBlocks[bp.seqId].back().blockId = nextId;
+		}
+		++nextId;
 	}
 
-	return permutations;
+	PermVec outPerms;
+	auto cmp = [](const Block& a, const Block& b) {return a.start < b.start;};
+	for (auto &blockPair : outBlocks)
+	{
+		std::sort(blockPair.second.begin(), blockPair.second.end(), cmp);
+
+		Permutation* p = fineBySeqId[blockPair.first];
+		outPerms.push_back(Permutation(blockPair.first, p->seqName, 
+									   p->nucLength));
+		outPerms.back().blocks = std::move(blockPair.second);
+	}
+
+	return outPerms;
 }
 
 PermVec filterBySize(const PermVec& permutations, 
@@ -259,5 +247,3 @@ PermVec filterBySize(const PermVec& permutations,
 
 	return outPerms;
 }
-
-
