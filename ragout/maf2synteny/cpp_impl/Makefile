@@ -1,4 +1,5 @@
-CPP := g++ -std=c++11 -g -D_GLIBCXX_DEBUG
+#CPP := g++ -std=c++11 -g -D_GLIBCXX_DEBUG
+CPP := g++ -std=c++11 -O3
 CFLAGS := -c -Wall
 LDFLAGS := 
 

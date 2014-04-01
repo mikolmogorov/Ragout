@@ -117,7 +117,7 @@ void renumerate(PermVec& permutations)
 }
 
 //the function merges two permutations in different scales.
-PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms)
+PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms, int minBlock)
 {
 	std::unordered_map<int, std::vector<int>> blockStarts;
 	std::unordered_map<int, std::vector<int>> blockEnds;
@@ -142,6 +142,12 @@ PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms)
 		bool inserting = true;
 		for (BlockPair& bp : indexPair.second)
 		{
+			if (bp.block->getLen() < minBlock) 
+			{
+				inserting = false;
+				break;
+			}
+
 			auto &endVec = blockEnds[bp.seqId];
 			int leftIns = std::upper_bound(endVec.begin(), endVec.end(),
 										   bp.block->start) - endVec.begin();

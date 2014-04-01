@@ -49,10 +49,10 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 	std::string statsFile = outDir + "/coverage_report.txt";
 
 
-	const int MIN_ALIGNMENT = 1;
-	const int MAX_ALIGNMENT_GAP = 10;
+	const int MIN_ALIGNMENT = 5;
+	const int MAX_ALIGNMENT_GAP = 5;
 	const float MIN_FLANK_RATE = 0.3;
-	const std::vector<ParamPair> PARAMS = {{30, 100}, {100, 1000}, 
+	const std::vector<ParamPair> PARAMS = {{30, 30}, {100, 100}, {500, 1000},
 										  {1000, 5000}, {5000, 15000}};
 
 	BlockGroups blockGroups;
@@ -71,7 +71,7 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 		PermVec outBlocks;
 		blockGroups.clear();
 		processGraph(inputBlocks, ppair.maxGap, outBlocks, blockGroups);
-		currentBlocks = mergePermutations(outBlocks, currentBlocks);
+		currentBlocks = mergePermutations(outBlocks, currentBlocks, minBlock);
 	}
 
 	int flankLen = minBlock * MIN_FLANK_RATE;
