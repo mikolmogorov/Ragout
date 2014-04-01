@@ -5,16 +5,6 @@ import breakpoint_graph
 from graph_compress import extend_path
 
 def collapse_bulge(graph, branches):
-    """
-    print map(str, branch1), map(str, branch2)
-
-    for branch in [branch1, branch2]:
-        print "0 -- 1", map(str, graph.get_edges(branch[0], branch[1]))
-        if len(branch) > 3:
-            print "1 -- 2", map(str, graph.get_edges(branch[1], branch[2]))
-            print "3 -- 4", map(str, graph.get_edges(branch[2], branch[3]))
-        print ""
-    """
     for branch in branches:
         if len(branch) not in [2, 4]:
             return False
@@ -51,7 +41,9 @@ def collapse_bulge(graph, branches):
             prev_adj.next_edge = new_adj
 
         graph.remove_edges(branch[0], branch[1])
+        graph.remove_edges(branch[1], branch[2])
         graph.remove_edges(branch[-2], branch[-1])
+
     return True
 
 

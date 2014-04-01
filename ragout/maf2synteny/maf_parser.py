@@ -3,7 +3,8 @@ from permutations import Block
 from itertools import izip
 import sys
 
-Hit = namedtuple("Column", ["seq_id", "start", "seq_len", "len", "strand", "seq"])
+Hit = namedtuple("Column", ["seq_id", "start", "seq_len",
+                            "len", "strand", "seq"])
 
 
 def extend_column(prev_col, next_col, max_ref_gap):
@@ -109,14 +110,16 @@ def maf_to_permutations(maf_file, min_block):
             update_perms()
 
         elif line.startswith("s"):
-            seq_id, start, ungapped_len, strand, src_len, seq = line.split("\t")[1:]
+            (seq_id, start, ungapped_len,
+                    strand, src_len, seq) = line.split("\t")[1:]
             if seq_id.startswith("gi") and seq_id[-1] != "|": #fix for cactus
                 seq_id += "|"
             start = int(start)
             src_len = int(src_len)
             ungapped_len = int(ungapped_len)
             gapped_len = len(seq)
-            absolute_start = start if strand == "+" else src_len - (start + ungapped_len)
+            absolute_start = start if strand == "+" else (src_len -
+                                                          start - ungapped_len)
 
             gap_rate = float(gapped_len - ungapped_len) / float(gapped_len)
             if ungapped_len >= min_block and gap_rate < MAX_GAP_RATE:
@@ -124,7 +127,8 @@ def maf_to_permutations(maf_file, min_block):
                     block_id += 1
                     new_lcb = False
                 numeric_id = int("{0}{1}".format(strand, block_id))
-                new_blocks[seq_id].append(Block(numeric_id, absolute_start, ungapped_len))
+                new_blocks[seq_id].append(Block(numeric_id, absolute_start,
+                                                ungapped_len))
 
             seq_length[seq_id] = src_len
 

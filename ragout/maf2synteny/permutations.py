@@ -18,14 +18,14 @@ def output_blocks_coords(permutations, seq_length, stream):
     num_ids = dict(map(reversed, enumerate(permutations.keys())))
     by_block = defaultdict(list)
 
+    for seq_id, blocks in permutations.iteritems():
+        for block in blocks:
+            by_block[abs(block.id)].append((block, num_ids[seq_id]))
+
     stream.write("Seq_id\tSize\tDescription\n")
     for seq, id in num_ids.iteritems():
         stream.write("{0}\t{1}\t{2}\n".format(id, seq_length[seq], seq))
     stream.write("-" * 80 + "\n")
-
-    for seq_id, blocks in permutations.iteritems():
-        for block in blocks:
-            by_block[abs(block.id)].append((block, num_ids[seq_id]))
 
     for block_id, blocklist in by_block.iteritems():
         blocklist.sort(key=lambda b: b[1])
@@ -169,7 +169,8 @@ def merge_permutations(simplified_perms, initial_perms):
         if len(inserted_blocks) > 1:
             for block, seq_id in inserted_blocks:
                 sign = 1 if block.id > 0 else -1
-                permutations[seq_id].append(Block(next_id * sign, block.start, block.length))
+                permutations[seq_id].append(Block(next_id * sign, block.start,
+                                                  block.length))
             next_id += 1
 
     for seq_id in permutations:
