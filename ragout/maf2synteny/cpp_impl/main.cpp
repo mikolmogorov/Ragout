@@ -2,6 +2,7 @@
 #include "compress_algorithms.h"
 #include "maf_tools.h"
 #include "permutation.h"
+#include "utility.h"
 
 #include <iostream>
 
@@ -10,19 +11,23 @@ void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 {
 	BreakpointGraph bg(permsIn);
 
+	DEBUG_PRINT("Started graph simplification");
+
 	int totalPaths = 0;
 	int totalBulges = 0;
 	while (true)
 	{
 		int paths = compressGraph(bg, maxGap);
+		DEBUG_PRINT(paths << " paths compressed");
 		int bulges = removeBulges(bg, maxGap);
+		DEBUG_PRINT(bulges << " bulges removed");
 		totalPaths += paths;
 		totalBulges += bulges;
 		if (paths + bulges == 0)
 			break;
 	}
-	std::cerr << "Done: " << totalPaths << " paths compressed, "
-			  << totalBulges << " bulges removed\n";
+	DEBUG_PRINT("Done: " << totalPaths << " paths compressed, "
+			  	<< totalBulges << " bulges removed\n");
 
 	bg.getPermutations(permsOut, groupsOut);
 }

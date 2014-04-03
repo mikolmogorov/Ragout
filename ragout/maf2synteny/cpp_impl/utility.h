@@ -2,6 +2,13 @@
 
 #include <iterator>
 #include <utility>
+#include <iostream>
+
+#ifdef _DEBUG
+#define DEBUG_PRINT(x) do {std::cerr << x << std::endl;} while(0)
+#else
+#define DEBUG_PRINT(x)
+#endif
 
 //taken from http://stackoverflow.com/questions/14826893
 template <typename FwdIt> class adjacent_iterator 
@@ -66,4 +73,10 @@ template <class C, class V>
 bool contains(C container, V value)
 {
 	return std::count(container.begin(), container.end(), value);
+}
+
+template <class T>
+void vecRemove(std::vector<T>& vec, const T& val)
+{
+	vec.erase(std::remove(vec.begin(), vec.end(), val), std::end(vec));
 }

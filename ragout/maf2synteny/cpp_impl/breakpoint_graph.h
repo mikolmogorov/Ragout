@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "permutation.h"
+#include "utility.h"
 
 struct Edge
 {
@@ -32,7 +33,8 @@ struct Edge
 
 struct Node
 {
-	std::list<Edge*> edges;
+	std::vector<Edge*> edges;
+	std::vector<int>   neighbors;
 };
 
 
@@ -43,13 +45,28 @@ class BreakpointGraph
 {
 public:
 	BreakpointGraph(const std::vector<Permutation>& permutations);
+	~BreakpointGraph();
 
 	Edge* addEdge(int leftNode, int rightNode, int seqId)
 	{
-		assert(leftNode && rightNode);
+		assert((leftNode != rightNode) || seqId != Edge::BLACK);
 		Edge* edge = new Edge(leftNode, rightNode, seqId);
+
 		_nodes[leftNode].edges.push_back(edge);
-		_nodes[rightNode].edges.push_back(edge);
+		if (!contains(_nodes[leftNode].neighbors, rightNode))
+		{
+			_nodes[leftNode].neighbors.push_back(rightNode);
+		}
+
+		if (leftNode != rightNode)
+		{
+			_nodes[rightNode].edges.push_back(edge);
+			if (!contains(_nodes[rightNode].neighbors, leftNode))
+			{
+				_nodes[rightNode].neighbors.push_back(leftNode);
+			}
+		}
+		
 		return edge;
 	}
 
@@ -59,8 +76,7 @@ public:
 		EdgeVec edgesOut;
 		for (Edge* e : _nodes[nodeOne].edges)
 		{
-			if (e->hasNode(nodeTwo))
-				edgesOut.push_back(e);
+			if (e->hasNode(nodeTwo)) edgesOut.push_back(e);
 		}
 		return edgesOut;
 	}
@@ -89,19 +105,26 @@ public:
 		return edgesOut;
 	}
 
-	void removeEdges(int nodeOne, int nodeTwo)
+	void removeEdges(int idOne, int idTwo)
 	{
-		assert(nodeOne && nodeTwo);
-		assert(nodeOne != nodeTwo);
+		//assert(idOne != idTwo);
 
-		auto e = _nodes[nodeOne].edges.begin();
-		while (e != _nodes[nodeOne].edges.end()) 
+		Node& nodeOne = _nodes.at(idOne);
+		Node& nodeTwo = _nodes.at(idTwo);
+
+		assert(contains(nodeOne.neighbors, idTwo));
+		assert(contains(nodeTwo.neighbors, idOne));
+		vecRemove(nodeOne.neighbors, idTwo);
+		vecRemove(nodeTwo.neighbors, idOne);
+
+		auto e = nodeOne.edges.begin();
+		while (e != nodeOne.edges.end()) 
 		{
-			if ((*e)->hasNode(nodeTwo))
+			if ((*e)->hasNode(idTwo))
 			{
 				delete *e;
-				_nodes[nodeTwo].edges.remove(*e);
-				e = _nodes[nodeOne].edges.erase(e);
+				if (idOne != idTwo) vecRemove(nodeTwo.edges, *e);
+				e = nodeOne.edges.erase(e);
 			}
 			else
 			{
@@ -132,15 +155,7 @@ public:
 	NodeVec getNeighbors(int node)
 	{
 		assert(node);
-		NodeVec outNodes;
-		std::unordered_set<int> neighbors;
-		for (auto e : _nodes[node].edges)
-		{
-			neighbors.insert(e->leftNode != node ? e->leftNode : e->rightNode);
-		}
-		std::copy(neighbors.begin(), neighbors.end(), 
-				  std::back_inserter(outNodes));
-		return outNodes;
+		return _nodes[node].neighbors;
 	}
 
 	bool isBifurcation(int node)

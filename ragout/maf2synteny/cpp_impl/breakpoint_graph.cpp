@@ -6,8 +6,18 @@
 #include <iostream>
 #include <set>
 
+BreakpointGraph::~BreakpointGraph()
+{
+	for (int node : this->iterNodes())
+	{
+		this->removeNode(node);
+	}
+}
+
 BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 {
+	DEBUG_PRINT("Constructing breakpoint graph");
+
 	for (auto &perm : permutations)
 	{
 		assert(!perm.blocks.empty());
@@ -58,12 +68,16 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 		curEdge->nextEdge = tailEdge;
 		tailEdge->prevEdge = curEdge;
 	}
+
+	DEBUG_PRINT("Constructed graph with " << _nodes.size() << " nodes");
 }
 
 namespace
 {
 	std::unordered_map<Edge*, int> getConjunctionEdges(BreakpointGraph& bg)
 	{
+		DEBUG_PRINT("Finding conjunction edges");
+
 		std::unordered_map<Edge*, int> edgeToGroup;
 		std::unordered_map<Edge*, SetNode<int>*> setNodes;
 		int nextId = 1;
@@ -93,6 +107,7 @@ namespace
 		for (auto &nodePair : setNodes)
 			edgeToGroup[nodePair.first] = findSet(nodePair.second)->data;
 
+		DEBUG_PRINT("Finding conjunction edges - finished");
 		return edgeToGroup;
 	}
 }
@@ -100,7 +115,7 @@ namespace
 void BreakpointGraph::getPermutations(PermVec& permutations, 
 									  BlockGroups& blockGroups)
 {
-	//std::vector<Permutation> permutations;
+	DEBUG_PRINT("Reading permutations from graph");
 
 	int nextEdgeId = 1;
 	std::unordered_map<Edge*, int> edgeIds;
@@ -136,10 +151,10 @@ void BreakpointGraph::getPermutations(PermVec& permutations,
 			permutations.back().nucLength = _seqLength[startEdge->seqId];
 		}
 		while (!curEdge->hasNode(INFINUM));
-
-		std::unordered_map<Edge*, int> edgeToGroup = getConjunctionEdges(*this);
-		for (auto &edgePair : edgeToGroup)
-			blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
-		
 	}
+	std::unordered_map<Edge*, int> edgeToGroup = getConjunctionEdges(*this);
+	for (auto &edgePair : edgeToGroup)
+		blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
+		
+	DEBUG_PRINT("Reading permutations from graph - finished");
 }

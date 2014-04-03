@@ -101,24 +101,15 @@ int compressGraph(BreakpointGraph& graph, int maxGap)
 			if (compressPath(graph, path, nodesToDel))
 			{
 				++numCompressed;
-				//std::copy(path.begin() + 1, path.end() - 1, 
-				//		  std::inserter(nodesToDel, nodesToDel.begin()));
 			}
 		}
 	}
 
 	//cleaning up
-	//std::unordered_set<Edge*> edgesToDel;
 	for (int node : nodesToDel)
 	{
 		graph.removeNode(node);
-		//_nodes.erase(node);
-		//std::copy(_nodes[node].edges.begin(), _nodes[node].edges.end(),
-		//		  std::inserter(edgesToDel, edgesToDel.begin()));
 	}
-	//for (auto edge : edgesToDel)
-	//	delete edge;
-	//TODO: cleanup
 	
 	return numCompressed;
 }
@@ -130,15 +121,16 @@ bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches,
 {
 	//checking bulge structure
 	for (auto &branch : branches)
+	{
 		if (branch.size() != 2 && branch.size() != 4)
 			return false;
+	}
 
 	for (auto &branch : branches)
 	{
 		if (branch.size() == 2) //a branch from one colored edge, nothing to do
 			continue;
 
-		assert(branch.size() == 4);
 		//replace three edges with one (colored) -- "hiding" varinance
 		for (Edge* adj : graph.getColoredEdges(branch[0], branch[1]))
 		{
@@ -173,18 +165,12 @@ bool collapseBulge(BreakpointGraph& graph, const BranchSet& branches,
 		}
 
 		//cleaning up
+		assert(!graph.getEdges(branch[0], branch[1]).empty());
 		graph.removeEdges(branch[0], branch[1]);
 		graph.removeEdges(branch[2], branch[3]);
 
-		assert(graph.getEdges(branch[0], branch[1]).empty());
-		//graph.removeEdges(branch[1], branch[2]);
 		std::copy(branch.begin() + 1, branch.end() - 1,
 				  std::inserter(nodesToDel, nodesToDel.begin()));
-		//std::cout << branch[0] << " " << branch[1] << " " 
-		//		  << branch[2] << " " << branch[3] << "\n";
-		//nodesToDel.insert(branch[1]);
-		//nodesToDel.insert(branch[2]);
-		//nodesToDel.insert(branch[3]);
 	}
 
 	return true;
@@ -201,8 +187,7 @@ bool findBulge(BreakpointGraph& graph, int node, int maxGap, BranchSet& branches
 	}
 
 	//checking bulge structure: -<=>-
-	if (byEnd.size() != 2)
-		return false;
+	if (byEnd.size() != 2) return false;
 
 	EdgeVec leftFlank;
 	EdgeVec rightFlank;
@@ -214,10 +199,11 @@ bool findBulge(BreakpointGraph& graph, int node, int maxGap, BranchSet& branches
 		else
 			branches = endPair.second;
 	}
-	if (branches.empty() || leftFlank.empty())
-		return false;
+	if (branches.empty() || leftFlank.empty()) return false;
 
 	int pathEnd = branches.front().back();
+	if (pathEnd == node) return false;
+
 	std::vector<int> branchRepr;
 	for (auto branch : branches)
 		branchRepr.push_back(branch[branch.size()-2]);
@@ -252,7 +238,9 @@ int removeBulges(BreakpointGraph& graph, int maxGap)
 				++numCollapsed;
 	}
 	for (int node : nodesToDel)
+	{
 		graph.removeNode(node);
+	}
 
 	return numCollapsed;
 }
