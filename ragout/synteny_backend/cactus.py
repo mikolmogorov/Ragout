@@ -75,7 +75,7 @@ def _make_permutations(references, targets, tree, block_sizes,
             block_dir = os.path.join(work_dir, str(block_size))
             if not os.path.isdir(block_dir):
                 os.mkdir(block_dir)
-            m2s.get_synteny(maf_file, block_dir, block_size)
+            m2s.make_synteny(maf_file, block_dir, block_size)
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             files[block_size] = os.path.abspath(perm_file)
 
@@ -110,7 +110,7 @@ def _run_cactus(config_path, ref_genome, out_dir):
     #if not os.path.exists(CACTUS_DIR):
     #    raise Exception("progressiveCactus is not installed")
 
-    os.chdir(config.CACTUS_DIR)
+    os.chdir(CACTUS_INSTALL)
     devnull = open(os.devnull, "w")
     cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal]
     subprocess.check_call(cmdline, stdout=devnull)

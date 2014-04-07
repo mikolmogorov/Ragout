@@ -35,6 +35,15 @@ def draw_dot_plot(blocks, seq_files, out_dir):
     MATRIX = "matrices/edna.mat"
 
     for block_id, blocklist in blocks.iteritems():
+        allBlocks = open(os.path.join(out_dir, "blocks{0}.fasta".format(block_id)), "w")
+        for block in blocklist:
+            seq = seqs[block.chr_id][block.start : block.start + block.length]
+            if block.id < 0:
+                seq = seq.reverse_complement()
+            SeqIO.write(SeqRecord(seq, id=block.chr_id, description=""),
+                        allBlocks, "fasta")
+
+
         block1, block2 = blocklist[0:2]
 
         s1 = seqs[block1.chr_id]
@@ -58,7 +67,7 @@ def draw_dot_plot(blocks, seq_files, out_dir):
                                             .format(block_id, block1.chr_id, block2.chr_id))
 
         cmdline = [EXEC, "-seq1", file1, "-seq2", file2, "-outfile",
-                    out_dot, "-matrix", MATRIX, "-word", "15"]
+                    out_dot, "-matrix", MATRIX, "-word", "10"]
         subprocess.check_call(cmdline)
 
         os.remove(file1)

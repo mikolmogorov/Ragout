@@ -117,7 +117,7 @@ void renumerate(PermVec& permutations)
 }
 
 //the function merges two permutations in different scales.
-PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms, int minBlock)
+PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms)
 {
 	std::unordered_map<int, std::vector<int>> blockStarts;
 	std::unordered_map<int, std::vector<int>> blockEnds;
@@ -142,12 +142,6 @@ PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms, int minBlock)
 		bool inserting = true;
 		for (BlockPair& bp : indexPair.second)
 		{
-			if (bp.block->getLen() < minBlock) 
-			{
-				inserting = false;
-				break;
-			}
-
 			auto &endVec = blockEnds[bp.seqId];
 			int leftIns = std::upper_bound(endVec.begin(), endVec.end(),
 										   bp.block->start) - endVec.begin();
@@ -196,9 +190,12 @@ PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms, int minBlock)
 	return outPerms;
 }
 
-PermVec filterBySize(const PermVec& permutations, 
-					 const BlockGroups& blockGroups, int minBlock, int minFlank)
+PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
+					 int minBlock, bool requireAll)
 {
+	const float MIN_FLANK_RATE = 0.3;
+	const int minFlank = minBlock * MIN_FLANK_RATE;
+
 	PermVec outPerms;
 
 	std::unordered_map<int, std::unordered_map<int, int>> groupLen;
@@ -216,22 +213,31 @@ PermVec filterBySize(const PermVec& permutations,
 	}
 
 	std::unordered_set<int> shouldOutput;
-	for (const Permutation& perm : permutations)
+	auto blocksIndex = groupByBlockId(permutations);
+	for (auto &itBlocks : blocksIndex)
 	{
-		for (const Block& block : perm.blocks)
+		size_t numAccepted = 0;
+		for (BlockPair& bp : itBlocks.second)
 		{
-			if (block.getLen() >= minBlock)
+			if (bp.block->getLen() >= minBlock)
 			{
-				shouldOutput.insert(block.blockId);
+				++numAccepted;
 			}
 			else
 			{
-				auto groupId = blockGroups.find(block.blockId);
+				auto groupId = blockGroups.find(bp.block->blockId);
 				if (groupId != blockGroups.end() &&
-						groupLen[perm.seqId][groupId->second] >= minBlock &&
-						block.getLen() >= minFlank)
-					shouldOutput.insert(block.blockId);
+					groupLen[bp.seqId][groupId->second] >= minBlock &&
+					bp.block->getLen() >= minFlank)
+				{
+					++numAccepted;
+				}
 			}
+		}
+		if (numAccepted == itBlocks.second.size() ||
+			(numAccepted && !requireAll))
+		{
+			shouldOutput.insert(itBlocks.first);
 		}
 	}
 

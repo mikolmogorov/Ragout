@@ -1,23 +1,32 @@
-CFLAGS=-c -fPIC -Wall -O3 -I${PYTHON_INCLUDE}
-LDFLAGS=-shared
-OUT_DIR=..
+CPP := g++ -std=c++11
+CFLAGS := -Wall 
+LDFLAGS :=
+OUT_BIN := overlap
 
-.PHONY: all clean overlap_python
+.PHONY: all clean overlap_python debug pylib pyclean
 
+pylib: CFLAGS += -fPIC -I${PYTHON_INCLUDE} -DPYTHON_LIB
+pylib: LDFLAGS += -shared
+pylib: OUT_BIN := ../coverlap.so
+pylib: all
+
+all: CFLAGS += -O3 -DNDEBUG
 all: overlap_python
 
-overlap_python: overlap.o fasta.o overlap_python.o
-	$(CPP) $(LDFLAGS) overlap.o fasta.o overlap_python.o -o ${OUT_DIR}/coverlap.so
+debug: CFLAGS += -g -D_GLIBCXX_DEBUG -D_DEBUG
+debug: overlap_python
 
-overlap.o: overlap.cpp fasta.h overlap.h
-	$(CPP) $(CFLAGS) overlap.cpp -o overlap.o
+objects := ${patsubst %.cpp,%.o,${wildcard *.cpp}}
+overlap_python: ${objects}
+	${CPP} ${LDFLAGS} ${objects} -o ${OUT_BIN}
 
-overlap_python.o: overlap_python.cpp overlap.h
-	$(CPP) $(CFLAGS) overlap_python.cpp -o overlap_python.o 
+%.o: %.cpp *.h
+	${CPP} -c ${CFLAGS} $< -o $@
 
-fasta.o: fasta.h fasta.cpp
-	$(CPP) $(CFLAGS) fasta.cpp -o fasta.o
+pyclean:
+	rm *.o
+	rm ../coverlap.so
 
 clean:
 	rm *.o
-	rm ${OUT_DIR}/coverlap.so
+	rm overlap

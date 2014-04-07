@@ -86,6 +86,10 @@ def _build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
                     overlaps.append(other_ctg)
 
             if overlaps:
+                #ids = [heads.get(c, None) for c in overlaps]
+                #if len(set(ids)) > 1:
+                #    print ids
+
                 sample_ctg = overlaps[0]
                 if sample_ctg in heads:
                     cur_node = heads[sample_ctg]

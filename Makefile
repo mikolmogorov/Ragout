@@ -1,4 +1,5 @@
 OVLP_DIR := ragout/overlap/cpp_impl/
+SYNTENY_DIR := ragout/maf2synteny/cpp_impl/
 PYTHON_INCLUDE := /usr/include/python2.7
 
 ifneq ($(wildcard /usr/bin/clang),)
@@ -7,18 +8,22 @@ else
 	CPP := g++ -std=c++0x
 endif
 
-.PHONY: all overlap dependencies clean
+.PHONY: all overlap dependencies clean maf2synteny
 
 export PYTHON_INCLUDE
 export CPP
 
-all: overlap dependencies
+all: overlap maf2synteny dependencies
 
 overlap:
-	make -C ${OVLP_DIR}
+	make -C ${OVLP_DIR} pylib
+
+maf2synteny:
+	make -C ${SYNTENY_DIR} pylib
 
 dependencies:
 	scripts/install-deps.py
 
 clean:
-	make clean -C ${OVLP_DIR}
+	make -C ${OVLP_DIR} pyclean
+	make -C ${SYNTENY_DIR} pyclean

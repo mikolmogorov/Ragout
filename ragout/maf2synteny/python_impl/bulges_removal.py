@@ -1,8 +1,7 @@
 from itertools import combinations
 from collections import defaultdict
 
-import breakpoint_graph
-from graph_compress import extend_path
+from .graph_compress import extend_path
 
 def collapse_bulge(graph, branches):
     for branch in branches:

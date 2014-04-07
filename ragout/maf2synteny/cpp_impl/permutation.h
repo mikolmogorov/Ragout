@@ -69,6 +69,6 @@ void outputPermutation(const PermVec& permutations, const std::string& outFile);
 void outputCoords(PermVec& permutations, const std::string& outFile);
 void outputStatistics(PermVec& permutations, const std::string& outFile);
 void renumerate(PermVec& permutations);
-PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms, int minBlock);
-PermVec filterBySize(const PermVec& permutations, 
-					 const BlockGroups& blockGroups, int minBlock, int minFlank);
+PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms);
+PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
+					 int minBlock, bool requireAll);

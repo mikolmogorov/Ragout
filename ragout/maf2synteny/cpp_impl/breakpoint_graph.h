@@ -16,19 +16,20 @@ struct Edge
 {
 	Edge(int left, int right, int seqId): 
 		leftNode(left), rightNode(right), seqId(seqId),
-		prevEdge(nullptr), nextEdge(nullptr) {}
+		prevEdge(nullptr), nextEdge(nullptr), sign(1) {}
 	bool hasNode(int node) 	{return node == leftNode || node == rightNode;}
-	int  getLen() 			{return rightPos - leftPos;}
+	int  getLen() 		{return rightPos - leftPos;}
 
 	static const int BLACK = -1;
 
 	int leftNode;
 	int rightNode;
 	int seqId;
-	int leftPos;
-	int rightPos;
+	size_t leftPos;
+	size_t rightPos;
 	Edge* prevEdge;
 	Edge* nextEdge;
+	int sign;
 };
 
 struct Node

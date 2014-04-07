@@ -7,15 +7,13 @@
 #include <sstream>
 #include <iostream>
 
-std::vector<Permutation> mafToPermutations(const std::string& mafFile, 
-										   int minBlockLen)
+PermVec mafToPermutations(const std::string& mafFile, int minBlockLen)
 {
 	const float MAX_GAP_RATE = 0.3;
 
 	int blockId = 1;
 	std::unordered_map<std::string, Permutation> permBySeqId;
 	std::unordered_map<std::string, std::vector<Block>> newBlocks;
-	//bool newLcb = false;
 
 	auto updatePerms = [&permBySeqId, &newBlocks, &blockId] ()
 	{
@@ -53,6 +51,12 @@ std::vector<Permutation> mafToPermutations(const std::string& mafFile,
 			int srcLen = -1;
 			int ungappedLen = -1;
 			ss >> seqName >> start >> ungappedLen >> strand >> srcLen >> seq;
+
+			if (seqName.substr(0, 2) == "gi" && seqName.back() != '|')
+			{
+				//fix for progresiveCactus
+				seqName += "|";
+			}
 			
 			int absoluteStart = (strand == "+") ? start : 
 								srcLen - (start + ungappedLen);

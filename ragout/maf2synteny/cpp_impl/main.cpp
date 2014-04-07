@@ -1,10 +1,13 @@
+#ifdef PYTHON_LIB
+#include <Python.h>
+#endif
+#include <iostream>
+
 #include "breakpoint_graph.h"
 #include "compress_algorithms.h"
 #include "maf_tools.h"
 #include "permutation.h"
 #include "utility.h"
-
-#include <iostream>
 
 void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 				  BlockGroups& groupsOut)
@@ -15,16 +18,19 @@ void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 
 	int totalPaths = 0;
 	int totalBulges = 0;
+	int prevPaths = 0;
+	int prevBulges = 0;
 	while (true)
 	{
-		int paths = compressGraph(bg, maxGap);
-		DEBUG_PRINT(paths << " paths compressed");
-		int bulges = removeBulges(bg, maxGap);
-		DEBUG_PRINT(bulges << " bulges removed");
-		totalPaths += paths;
-		totalBulges += bulges;
-		if (paths + bulges == 0)
-			break;
+		prevPaths = compressGraph(bg, maxGap);
+		DEBUG_PRINT(prevPaths << " paths compressed");
+		totalPaths += prevPaths;
+		if (prevPaths + prevBulges == 0) break;
+
+		prevBulges = removeBulges(bg, maxGap);
+		DEBUG_PRINT(prevBulges << " bulges removed");
+		totalBulges += prevBulges;
+		if (prevPaths + prevBulges == 0) break;
 	}
 	DEBUG_PRINT("Done: " << totalPaths << " paths compressed, "
 			  	<< totalBulges << " bulges removed\n");
@@ -53,11 +59,10 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 	std::string coordsFile = outDir + "/blocks_coords.txt";
 	std::string statsFile = outDir + "/coverage_report.txt";
 
-
-	const int MIN_ALIGNMENT = 5;
-	const int MAX_ALIGNMENT_GAP = 5;
-	const float MIN_FLANK_RATE = 0.3;
-	const std::vector<ParamPair> PARAMS = {{30, 30}, {100, 100}, {500, 1000},
+	const int MIN_ALIGNMENT = 1;
+	const int MAX_ALIGNMENT_GAP = 0;
+	const auto EMPTY_GROUP = BlockGroups();
+	const std::vector<ParamPair> PARAMS = {{30, 10}, {100, 100}, {500, 1000},
 										  {1000, 5000}, {5000, 15000}};
 
 	BlockGroups blockGroups;
@@ -72,18 +77,23 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 		std::cerr << "Simplification with " << ppair.minBlock << " "
 				  << ppair.maxGap << std::endl;
 		PermVec inputBlocks = filterBySize(currentBlocks, BlockGroups(),
-										   ppair.minBlock, 0);
+										   ppair.minBlock, true);
 		PermVec outBlocks;
 		blockGroups.clear();
 		processGraph(inputBlocks, ppair.maxGap, outBlocks, blockGroups);
-		currentBlocks = mergePermutations(outBlocks, currentBlocks, minBlock);
+		if (ppair.minBlock > minBlock)
+		{
+			currentBlocks = mergePermutations(outBlocks, currentBlocks);
+		}
+		else
+		{
+			currentBlocks = outBlocks;
+		}
 	}
 
-	int flankLen = minBlock * MIN_FLANK_RATE;
 	PermVec outPerms = filterBySize(currentBlocks, blockGroups, 
-									minBlock, flankLen);
+									minBlock, true);
 	renumerate(outPerms);
-
 	outputPermutation(outPerms, permsFile);
 	outputCoords(outPerms, coordsFile);
 	outputStatistics(outPerms, statsFile);
@@ -112,3 +122,40 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+#ifdef PYTHON_LIB
+static PyObject* _make_synteny(PyObject* self, PyObject* args)
+{
+	const char* mafFile = 0;
+	const char* outDir = 0;
+	int blockSize = 0;
+
+	if (!PyArg_ParseTuple(args, "ssi", &mafFile, &outDir, &blockSize))
+	{
+		return Py_False;
+	}
+
+	try
+	{
+		doJob(mafFile, outDir, blockSize);
+	}
+	catch (std::runtime_error& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return Py_False;
+	}
+	return Py_True;
+}
+
+static PyMethodDef cmaf2syntenyMethods[] = 
+{
+	{"_make_synteny", _make_synteny,
+	 METH_VARARGS, "Make synteny blocks from maf alignment"},
+	{NULL, NULL, 0, NULL}
+};
+
+PyMODINIT_FUNC initcmaf2synteny()
+{
+	(void)Py_InitModule("cmaf2synteny", cmaf2syntenyMethods);
+}
+#endif

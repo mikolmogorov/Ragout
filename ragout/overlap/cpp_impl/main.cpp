@@ -1,8 +1,25 @@
+#ifdef PYTHON_LIB
 #include <Python.h>
+#endif
+
 #include <iostream>
+
 #include "overlap.h"
 
 
+int main(int argc, char** argv)
+{
+	if (argc != 5)
+	{
+		std::cerr 	<< "overlap: constructs overlap graph from input contigs\n"
+					<< "and outputs it in dot format\n"
+					<< "Usage: overlap <fasta_in> <dot_out> <min_k> <max_k>\n";
+		return 1;
+	}
+	return !makeOverlapGraph(argv[1], argv[2], atoi(argv[2]), atoi(argv[3]));
+}
+
+#ifdef PYTHON_LIB
 static PyObject*
 coverlap_build_overlap_graph(PyObject* self, PyObject* args)
 {
@@ -30,3 +47,4 @@ initcoverlap()
 {
 	(void)Py_InitModule("coverlap", coverlapMethods);
 }
+#endif

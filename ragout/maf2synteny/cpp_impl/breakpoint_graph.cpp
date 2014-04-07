@@ -16,8 +16,6 @@ BreakpointGraph::~BreakpointGraph()
 
 BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 {
-	DEBUG_PRINT("Constructing breakpoint graph");
-
 	for (auto &perm : permutations)
 	{
 		assert(!perm.blocks.empty());
@@ -28,7 +26,11 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 		for (auto &block : perm.blocks)
 		{
 			if (this->getBlackEdges(block.blockId, -block.blockId).empty())
-				this->addEdge(block.blockId, -block.blockId, Edge::BLACK);
+			{
+				Edge* e = this->addEdge(block.blockId, -block.blockId, 
+										Edge::BLACK);
+				e->sign = block.sign;
+			}
 		}
 
 		//chromosome ends
@@ -50,7 +52,7 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 			int rightPos = blockPair.second.start;
 
 			if (rightPos < leftPos)
-				std::cerr << "WRANING: overlapping blocks\n"
+				std::cerr << "WARNING: overlapping blocks\n"
 						  << blockPair.first.start << " " << blockPair.first.end
 						  << " " << blockPair.second.start << " "
 						  << blockPair.second.end << " | " << perm.seqId << "\n";
@@ -76,26 +78,27 @@ namespace
 {
 	std::unordered_map<Edge*, int> getConjunctionEdges(BreakpointGraph& bg)
 	{
-		DEBUG_PRINT("Finding conjunction edges");
-
 		std::unordered_map<Edge*, int> edgeToGroup;
 		std::unordered_map<Edge*, SetNode<int>*> setNodes;
 		int nextId = 1;
 		auto getSetNode = [&setNodes, &nextId] (Edge* e) 
 		{
 			if (!setNodes.count(e))
+			{
 				setNodes[e] = new SetNode<int>(nextId++);
+			}
 			return setNodes[e];
 		};
 
 		for (int node : bg.iterNodes())
 		{
-			if (!bg.isBifurcation(node))
-				continue;
+			if (!bg.isBifurcation(node)) continue;
 
 			NodeVec neighbors = bg.getNeighbors(node);
 			if (neighbors.size() != 3 || !contains(neighbors, bg.INFINUM))
+			{
 				continue;
+			}
 			neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), 
 										int(bg.INFINUM)), neighbors.end());
 			
@@ -105,9 +108,11 @@ namespace
 		}
 
 		for (auto &nodePair : setNodes)
+		{
 			edgeToGroup[nodePair.first] = findSet(nodePair.second)->data;
+		}
+		for (auto &nodePair : setNodes) delete nodePair.second;
 
-		DEBUG_PRINT("Finding conjunction edges - finished");
 		return edgeToGroup;
 	}
 }
@@ -139,10 +144,11 @@ void BreakpointGraph::getPermutations(PermVec& permutations,
 			assert(blackEdges.size() == 1);
 
 			int blockId = getEdgeId(blackEdges[0]);
-			int sign = (blackEdges[0]->rightNode == curEdge->leftNode) ? 1 : -1;
 			int start = prevEdge->rightPos;
 			int end = curEdge->leftPos;
 			assert(end >= start);
+			int sign = (blackEdges[0]->rightNode == curEdge->leftNode) ? 1 : -1;
+			//sign *= blackEdges[0]->sign;
 
 			permutations.back().blocks.push_back(Block(blockId, sign, 
 													   start, end));
@@ -156,5 +162,5 @@ void BreakpointGraph::getPermutations(PermVec& permutations,
 	for (auto &edgePair : edgeToGroup)
 		blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
 		
-	DEBUG_PRINT("Reading permutations from graph - finished");
+	//DEBUG_PRINT("Reading permutations from graph - finished");
 }

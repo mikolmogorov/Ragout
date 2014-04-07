@@ -7,6 +7,7 @@
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
 
 #include "fasta.h"
 
@@ -131,6 +132,8 @@ bool getContigs(const std::string& filename, std::vector<FastaRecord>& contigs)
 bool buildGraph(const std::string& filename, int minOverlap, 
 				int maxOverlap, std::list<Edge>& edges)
 {
+	//std::map<int, int> ovlpHist;
+
 	std::vector<FastaRecord> contigs;
 	if (!getContigs(filename, contigs)) return false;
 	
@@ -143,7 +146,7 @@ bool buildGraph(const std::string& filename, int minOverlap,
 
 	for (auto &contig : contigs)
 	{
-		if (visited.find(&contig) != visited.end()) continue;
+		if (visited.count(&contig)) continue;
 
 		dfsStack.push_back(std::make_pair(&contig, newNodeId()));
 		visited.insert(&contig);
@@ -161,7 +164,11 @@ bool buildGraph(const std::string& filename, int minOverlap,
 				if (curContig == &otherContig) continue;
 
 				int overlap = getOverlap(curContig, &otherContig, maxOverlap);
-				if (overlap >= minOverlap) overlaps.push_back(&otherContig);
+				if (overlap >= minOverlap)
+				{
+					overlaps.push_back(&otherContig);
+					//ovlpHist[overlap] += 1;
+				}
 			}
 
 			//processing them
@@ -205,6 +212,10 @@ bool buildGraph(const std::string& filename, int minOverlap,
 		}
 	}
 	std::cerr << std::endl;
+	//for (auto histPair : ovlpHist)
+	//{
+	//	std::cerr << histPair.first << " " << histPair.second << std::endl;
+	//}
 	return true;
 }
 
@@ -234,16 +245,4 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 	return true;
 }
 
-/*
-int main(int argc, char** argv)
-{
-	if (argc != 4)
-	{
-		std::cerr 	<< "overlap: constructs overlap graph from input contigs\n"
-					<< "and outputs it in dot format\n"
-					<< "Usage: overlap <fasta_file> <min_k> <max_k>\n";
-		return 1;
-	}
-	return !doJob(argv[1], atoi(argv[2]), atoi(argv[3]));
-}
-*/
+

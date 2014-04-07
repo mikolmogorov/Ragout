@@ -3,7 +3,7 @@ from collections import defaultdict
 from itertools import izip
 import sys
 
-from permutations import Block
+from .permutations import Block
 
 
 class Edge:

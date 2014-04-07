@@ -5,7 +5,7 @@
 //****************************************************************************
 
 #include "fasta.h"
-#include <boost/algorithm/string.hpp>
+#include <stdexcept>
 
 namespace
 {
@@ -55,9 +55,8 @@ size_t FastaReader::GetSequences(std::vector<FastaRecord> & record)
 	{
 		while(!inputStream_.eof())
 		{
-			std::getline(inputStream_, buffer);
-			boost::algorithm::trim(buffer);
-
+			std::getline(inputStream_, buffer, '\n');
+			if (buffer.back() == '\r') buffer.pop_back();
 			if (buffer.empty()) continue;
 
 			if (buffer[0] == '>')

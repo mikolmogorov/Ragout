@@ -13,7 +13,7 @@ void extendPath(BreakpointGraph& graph, int prevNode, int curNode,
 	outPath.push_back(curNode);
 	while(true)
 	{
-		//chack for bifurcation
+		//check for bifurcation
 		if (graph.isBifurcation(curNode) || graph.INFINUM == prevNode ||
 			graph.INFINUM == curNode)
 			break;
@@ -41,7 +41,6 @@ bool compressPath(BreakpointGraph& graph, std::deque<int>& path,
 				  std::unordered_set<int>& nodesToDel)
 {
 	if (path.size() <= 2) return false;
-	//std::deque<int> copy = path;
 
 	//ensure we start and end with black edges
 	if (graph.getBlackEdges(path[0], path[1]).empty())
@@ -57,11 +56,6 @@ bool compressPath(BreakpointGraph& graph, std::deque<int>& path,
 	std::copy(path.begin() + 1, path.end() - 1, 
 			  std::inserter(nodesToDel, nodesToDel.begin()));
 	graph.addEdge(path.front(), path.back(), Edge::BLACK);
-	//for (auto p : path)
-	//	std::cout << p << " ";
-	//std::cout << "\n\n";
-	//std::cout << path.front() << " " << path.back() 
-	//		  << " " << path.size() << std::endl;
 
 	//updating links
 	//for each colored edge in path

@@ -1,5 +1,3 @@
-import breakpoint_graph
-
 #extend non-branching paths
 def extend_path(graph, prev_node, cur_node, max_gap):
     path = [prev_node, cur_node]

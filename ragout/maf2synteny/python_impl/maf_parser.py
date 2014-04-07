@@ -1,7 +1,8 @@
 from collections import defaultdict, namedtuple
-from permutations import Block
 from itertools import izip
 import sys
+
+from .permutations import Block
 
 Hit = namedtuple("Column", ["seq_id", "start", "seq_len",
                             "len", "strand", "seq"])
