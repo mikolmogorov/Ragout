@@ -1,7 +1,13 @@
 #!/bin/bash 
 
+PYTHON="python2.7"
+if [ ! `which $PYTHON 2>/dev/null` ]; then
+	echo "Ragout requres python 2.7"
+	echo "Make sure that it is installed and executable \"python2.7\" exists in your PATH"
+	exit 1
+fi
+
 BIN_DIR=`pwd`/$(dirname $0)
-PYTHON="python"
 
 export RAGOUT_ROOT="$BIN_DIR/../ragout"
 export SIBELIA_INSTALL="$BIN_DIR/../lib/Sibelia"

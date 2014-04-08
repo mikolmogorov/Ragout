@@ -1,6 +1,4 @@
-#CPP := g++ -std=c++11
-CFLAGS := -Wall
-LDFLAGS := 
+CFLAGS += -Wall
 OUT_BIN := maf2synteny
 
 .PHONY: all clean debug pylib pyclean

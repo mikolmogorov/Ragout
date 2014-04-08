@@ -1,6 +1,4 @@
-#CPP := g++ -std=c++11
-CFLAGS := -Wall 
-LDFLAGS :=
+CFLAGS += -Wall 
 OUT_BIN := overlap
 
 .PHONY: all clean overlap_python debug pylib pyclean
