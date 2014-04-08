@@ -122,7 +122,7 @@ procedures for the phylogenetic tree.
 Useful scripts
 --------------
 
-Scripts are located in "bin" directory
+Scripts are located in "scripts" directory
 
 **verify-order.py:**
 

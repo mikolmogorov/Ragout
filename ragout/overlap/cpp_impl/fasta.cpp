@@ -56,7 +56,7 @@ size_t FastaReader::GetSequences(std::vector<FastaRecord> & record)
 		while(!inputStream_.eof())
 		{
 			std::getline(inputStream_, buffer, '\n');
-			if (buffer.back() == '\r') buffer.erase(buffer.size() - 1);
+			if (*buffer.rbegin() == '\r') buffer.erase(buffer.size() - 1);
 			if (buffer.empty()) continue;
 
 			if (buffer[0] == '>')
