@@ -6,7 +6,7 @@ from copy import copy
 Block = namedtuple("Block", ["id", "start", "length"])
 
 def output_permutations(permutations, stream):
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         stream.write(">{0}\n".format(seq_id))
         for block in blocks:
             sign = "+" if block.id > 0 else "-"
@@ -18,16 +18,16 @@ def output_blocks_coords(permutations, seq_length, stream):
     num_ids = dict(map(reversed, enumerate(permutations.keys())))
     by_block = defaultdict(list)
 
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         for block in blocks:
             by_block[abs(block.id)].append((block, num_ids[seq_id]))
 
     stream.write("Seq_id\tSize\tDescription\n")
-    for seq, id in num_ids.iteritems():
+    for seq, id in num_ids.items():
         stream.write("{0}\t{1}\t{2}\n".format(id, seq_length[seq], seq))
     stream.write("-" * 80 + "\n")
 
-    for block_id, blocklist in by_block.iteritems():
+    for block_id, blocklist in by_block.items():
         blocklist.sort(key=lambda b: b[1])
         stream.write("Block #{0}\nSeq_id\tStrand\tStart\tEnd\tLength\n"
                      .format(block_id))
@@ -49,7 +49,7 @@ def load_permutations(file):
             seq_id = line[1:]
         else:
             blocks = map(lambda i: Block(int(i), 0, 0), line.split(" ")[:-1])
-            permutations[seq_id] = blocks
+            permutations[seq_id] = list(blocks)
 
     return permutations
 
@@ -67,19 +67,19 @@ def renumerate(permutations):
     permutations = copy(permutations)
     new_block = lambda b: Block(new_id(b.id), b.start, b.length)
     for seq_id in permutations:
-        permutations[seq_id] = map(new_block, permutations[seq_id])
+        permutations[seq_id] = list(map(new_block, permutations[seq_id]))
     return permutations
 
 
 def filter_by_size(permutations, min_size, min_flank=0, block_groups={}):
     permutations = copy(permutations)
     block_to_group = defaultdict(lambda: None)
-    for group, blocks in block_groups.iteritems():
+    for group, blocks in block_groups.items():
         for block in blocks:
             block_to_group[block] = group
     group_len = defaultdict(int)
 
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         for block in blocks:
             group_id = block_to_group[abs(block.id)]
             if not group_id:
@@ -87,7 +87,7 @@ def filter_by_size(permutations, min_size, min_flank=0, block_groups={}):
             group_len[(group_id, seq_id)] += block.length
 
     should_output = set()
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         for block in blocks:
             group_id = block_to_group[abs(block.id)]
             if block.length >= min_size:
@@ -114,24 +114,24 @@ def output_statistics(permutations, seq_length, stream):
     by_block = defaultdict(list)
     covered = defaultdict(int)
 
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         for block in blocks:
             covered[seq_id] += block.length
             by_block[abs(block.id)].append((block, num_ids[seq_id]))
 
     stream.write("Seq_id\tSize\tDescription\n")
-    for seq, id in num_ids.iteritems():
+    for seq, id in num_ids.items():
         stream.write("{0}\t{1}\t{2}\n".format(id, seq_length[seq], seq))
     stream.write("-" * 80 + "\n")
 
-    for block_id, blocklist in by_block.iteritems():
+    for block_id, blocklist in by_block.items():
         multiplicity[len(blocklist)] += 1
 
-    for mul, num in sorted(multiplicity.iteritems()):
+    for mul, num in sorted(multiplicity.items()):
         stream.write("{0}\t{1}\n".format(mul, num))
     stream.write("-" * 80 + "\n")
 
-    for seq_id, cov in covered.iteritems():
+    for seq_id, cov in covered.items():
         stream.write("{0}\t{1:4.2f}%\n"
                       .format(seq_id, 100 * float(cov) / seq_length[seq_id]))
 
@@ -142,17 +142,17 @@ def merge_permutations(simplified_perms, initial_perms):
     starts, ends = defaultdict(list), defaultdict(list)
     next_id = 0
 
-    for seq_id, blocks in simplified_perms.iteritems():
-        starts[seq_id] = map(lambda b: b.start, blocks)
-        ends[seq_id] = map(lambda b: b.start + b.length, blocks)
+    for seq_id, blocks in simplified_perms.items():
+        starts[seq_id] = list(map(lambda b: b.start, blocks))
+        ends[seq_id] = list(map(lambda b: b.start + b.length, blocks))
 
-    for seq_id, blocks in initial_perms.iteritems():
+    for seq_id, blocks in initial_perms.items():
         for block in blocks:
             by_block[abs(block.id)].append((block, seq_id))
             next_id = max(next_id, abs(block.id))
     next_id += 1
 
-    for block_id, blocklist in by_block.iteritems():
+    for block_id, blocklist in by_block.items():
         inserted_blocks = []
         for block, seq_id in blocklist:
             left_i = bisect_right(ends[seq_id], block.start)

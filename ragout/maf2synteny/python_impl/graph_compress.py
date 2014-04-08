@@ -10,7 +10,7 @@ def extend_path(graph, prev_node, cur_node, max_gap):
         #check distance
         edges = graph.get_colored_edges(prev_node, cur_node)
         get_len = lambda e: abs(e.right_pos - e.left_pos)
-        gaps = map(get_len, edges)
+        gaps = list(map(get_len, edges))
         if gaps and max(gaps) > max_gap:
             break
 
@@ -51,8 +51,6 @@ def compress_path(graph, path):
         while not tail_adj.has_node(path[0]) and not tail_adj.has_node(path[-1]):
             tail_adj = tail_adj.prev_edge
 
-        if head_adj.seq_id != tail_adj.seq_id:
-            print head_adj.seq_id, tail_adj.seq_id
         assert head_adj.seq_id == tail_adj.seq_id
         head_adj.prev_edge = tail_adj
         tail_adj.next_edge = head_adj

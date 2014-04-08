@@ -3,8 +3,11 @@
 #####################################################
 
 import math
-from cStringIO import StringIO
 from collections import defaultdict
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from Bio import Phylo
 

@@ -1,5 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
+from __future__ import print_function
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import os, sys
@@ -11,10 +12,12 @@ SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 
 
 GEPARD_DIR = "/home/volrath/Bioinf/tools/gepard-1.30/"
+EXEC = "./gepardcmd.sh"
+MATRIX = "matrices/edna.mat"
 
 def main():
     if len(sys.argv) < 4:
-        print "Usage: dotplot.py <coords_file> <output_dir> <fasta_references>"
+        print("Usage: dotplot.py <coords_file> <output_dir> <fasta_references>")
         return
     coords_file = sys.argv[1]
     fasta = sys.argv[3:]
@@ -31,10 +34,8 @@ def draw_dot_plot(blocks, seq_files, out_dir):
 
     out_dir = os.path.abspath(out_dir)
     os.chdir(GEPARD_DIR)
-    EXEC = "./gepardcmd.sh"
-    MATRIX = "matrices/edna.mat"
 
-    for block_id, blocklist in blocks.iteritems():
+    for block_id, blocklist in blocks.items():
         allBlocks = open(os.path.join(out_dir, "blocks{0}.fasta".format(block_id)), "w")
         for block in blocklist:
             seq = seqs[block.chr_id][block.start : block.start + block.length]

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 from __future__ import print_function
 import sys
@@ -28,7 +28,7 @@ def gap_count(lst_1, lst_2):
     if not lst_1 or not lst_2:
         return 0
 
-    gaps = sys.maxint
+    gaps = sys.maxsize
     for i, j in product(lst_1, lst_2):
         gaps = min(gaps, abs(i.index - j.index) - 1)
     return gaps
@@ -86,16 +86,19 @@ def do_job(nucmer_coords, scaffolds_ord):
             #checking order
             if prev_aln:
                 if increasing is not None:
-                    if not agreement_ord(increasing, prev_aln, entry_ord[contig.name], chr_len):
+                    if not agreement_ord(increasing, prev_aln,
+                                         entry_ord[contig.name], chr_len):
                         increasing = None
                         breaks.append(contig.name)
                         total_breaks += 1
                         miss_ord = True
                 elif len(entry_ord[contig.name]) == 1 and len(prev_aln) == 1:
-                    increasing = entry_ord[contig.name][0].index > prev_aln[0].index
+                    increasing = (entry_ord[contig.name][0].index >
+                                  prev_aln[0].index)
 
             #checking strand
-            cur_strand = map(lambda h: h.sign * contig.sign, entry_ord[contig.name])
+            cur_strand = list(map(lambda h: h.sign * contig.sign,
+                                  entry_ord[contig.name]))
             if not miss_ord and prev_strand and cur_strand:
                 if not agreement_strands(prev_strand, cur_strand):
                     breaks.append(contig.name)
@@ -111,8 +114,10 @@ def do_job(nucmer_coords, scaffolds_ord):
 
             #output
             sign = "+" if contig.sign > 0 else "-"
-            print("{0}{1}\t{2}\t{3}".format(sign, contig.name, contig_len[contig.name],
-                                            map(str, entry_ord[contig.name])), end="")
+            pos_list = list(map(str, entry_ord[contig.name]))
+            print("{0}{1}\t{2}\t{3}".format(sign, contig.name,
+                                            contig_len[contig.name], pos_list),
+                                            end="")
             print("\t<<<order" if miss_ord else "", end="")
             print("\t<<<strand" if miss_strand else "", end="")
             print("")

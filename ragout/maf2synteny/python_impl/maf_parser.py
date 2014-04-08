@@ -1,5 +1,4 @@
 from collections import defaultdict, namedtuple
-from itertools import izip
 import sys
 
 from .permutations import Block
@@ -13,7 +12,7 @@ def extend_column(prev_col, next_col, max_ref_gap):
         return None
 
     new_column = []
-    for num, (prev_hit, next_hit) in enumerate(izip(prev_col, next_col)):
+    for num, (prev_hit, next_hit) in enumerate(zip(prev_col, next_col)):
         if prev_hit.seq_id != next_hit.seq_id:
             return None
         if prev_hit.strand != next_hit.strand:

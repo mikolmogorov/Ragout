@@ -1,8 +1,10 @@
 #!/bin/bash 
 
 BIN_DIR=`pwd`/$(dirname $0)
-PYTHON="python2"
+PYTHON="python"
 
 export RAGOUT_ROOT="$BIN_DIR/../ragout"
+DISTR_ROOT=$BIN_DIR/..
 
-$PYTHON $RAGOUT_ROOT/maf2synteny/maf2synteny.py "$@"
+cd $DISTR_ROOT
+$PYTHON -m ragout.maf2synteny.maf2synteny "$@"

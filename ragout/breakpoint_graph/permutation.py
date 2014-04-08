@@ -47,10 +47,10 @@ class PermutationContainer:
 
         logging.info("Reading permutation file")
         config = parser.parse_ragout_config(config_file)
-        for ref_id, ref_file in config.references.iteritems():
+        for ref_id, ref_file in config.references.items():
             self.ref_perms.extend(_parse_blocks_file(ref_id, ref_file))
 
-        for t_id, t_file in config.targets.iteritems():
+        for t_id, t_file in config.targets.items():
             self.target_perms.extend(_parse_blocks_file(t_id, t_file))
 
         self.target_blocks = set()
@@ -58,15 +58,15 @@ class PermutationContainer:
             self.target_blocks |= set(map(abs, perm.blocks))
 
         #filter dupilcated blocks
-        self.duplications = _find_duplications(self.ref_perms, self.target_perms)
+        self.duplications = _find_duplications(self.ref_perms,
+                                               self.target_perms)
         to_hold = self.target_blocks - self.duplications
         self.ref_perms_filtered = [_filter_perm(p, to_hold)
                                       for p in self.ref_perms]
         self.target_perms_filtered = [_filter_perm(p, to_hold)
                                          for p in self.target_perms]
-        #and possible empty contigs
-        self.target_perms_filtered = filter(lambda p: p.blocks,
-                                         self.target_perms_filtered)
+        self.target_perms_filtered = list(filter(lambda p: p.blocks,
+                                                 self.target_perms_filtered))
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -113,7 +113,8 @@ def _parse_blocks_file(ref_id, filename):
             name = line[1:]
         else:
             blocks = line.split(" ")[:-1]
-            permutations.append(Permutation(ref_id, name, chr_count, map(int, blocks)))
+            permutations.append(Permutation(ref_id, name, chr_count,
+                                list(map(int, blocks))))
             chr_count += 1
     return permutations
 

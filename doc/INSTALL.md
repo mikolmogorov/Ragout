@@ -36,13 +36,12 @@ packages:
 
 * argparse [https://pypi.python.org/pypi/argparse]
 
-Sibelia
+Installation
 -------
 
-Ragout uses *Sibelia* for decomposing genomes into synteny blocks.
-You may install it by running:
-
-	$ python bin/install-deps.py
+Just type
+ 
+	make
 
 Building process requires *Cmake* as well as some standard UNIX
 executables like *wget* or *tar*.

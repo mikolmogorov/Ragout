@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 
 from __future__ import print_function
 import sys, os
@@ -18,7 +18,7 @@ def verify_alignment(alignment, contigs):
         by_name[entry.contig_id].append(entry)
     for name in contigs:
         if len(by_name[name]) > 1:
-            hits = map(lambda e: (e.s_ref, e.len_qry), by_name[name])
+            hits = list(map(lambda e: (e.s_ref, e.len_qry), by_name[name]))
             print("WARNING: Duplicated contig", name, hits, file=sys.stderr)
             problematic_contigs.append(name)
         if not by_name[name]:
@@ -31,7 +31,7 @@ def get_true_adjacencies(alignment, contig_permutations, break_contigs, circular
     by_chr = group_by_chr(alignment)
     adjacencies = []
 
-    for chr_name, entries in by_chr.iteritems():
+    for chr_name, entries in by_chr.items():
         if circular:
             entries.append(entries[0])
 
@@ -46,7 +46,7 @@ def get_true_adjacencies(alignment, contig_permutations, break_contigs, circular
             #print(hit.contig_id, blocks)
 
             if sign < 0:
-                blocks = map(lambda x: -x, blocks)[::-1]
+                blocks = list(map(lambda x: -x, blocks))[::-1]
             if prev_block:
                 adjacencies.append((-prev_block, blocks[0]))
             prev_block = blocks[-1]
@@ -66,7 +66,7 @@ def get_contig_permutations(filename):
             name = line[1:]
         else:
             blocks = line.split(" ")[:-1]
-            contigs[name] = map(int, blocks)
+            contigs[name] = list(map(int, blocks))
     return contigs
 
 
@@ -137,7 +137,7 @@ def do_job(nucmer_coords, debug_dir, circular):
 
     contigs = get_contig_permutations(used_contigs)
     alignment = parse_nucmer_coords(nucmer_coords)
-    alignment = filter(lambda e: e.contig_id in contigs, alignment)
+    alignment = list(filter(lambda e: e.contig_id in contigs, alignment))
     #alignment = join_collinear(alignment)
     alignment = filter_by_coverage(alignment)
     alignment = join_collinear(alignment)

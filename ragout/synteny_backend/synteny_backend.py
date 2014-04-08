@@ -12,15 +12,16 @@ class SyntenyBackend:
         files = self.run_backend(config, output_dir, overwrite)
         assert sorted(files.keys()) == sorted(config.blocks)
 
-        for block_size, perm_file in files.iteritems():
+        for block_size, perm_file in files.items():
             block_dir = os.path.join(output_dir, str(block_size))
             if not os.path.isdir(block_dir):
                 os.mkdir(block_dir)
 
-            genomes = dict(config.references.items() + config.targets.items())
-            chr_to_gen = _get_chr_names(genomes)
+            all_genomes = dict(list(config.references.items()) +
+                               list(config.targets.items()))
+            chr_to_gen = _get_chr_names(all_genomes)
             _split_permutations(chr_to_gen, config.references,
-                               config.targets, perm_file, block_dir)
+                                config.targets, perm_file, block_dir)
 
     #runs backend and returns a dict with permutations files
     #indexed by block sizes
@@ -40,7 +41,7 @@ class SyntenyBackend:
 #Quickly get chromosome names
 def _get_chr_names(genomes):
     chr_to_id = {}
-    for seq_id, seq_file in genomes.iteritems():
+    for seq_id, seq_file in genomes.items():
         for line in open(seq_file, "r"):
             if line.startswith(">"):
                 contig_name = line.strip()[1:].split(" ")[0]
@@ -53,10 +54,10 @@ def _get_chr_names(genomes):
 def _split_permutations(chr_to_gen, references, targets, perm_file, out_dir):
     out_files = {}
     config = open(os.path.join(out_dir, "blocks.cfg"), "w")
-    genomes = dict(references.items() + targets.items())
+    all_genomes = dict(list(references.items()) + list(targets.items()))
 
     for gen_id in set(chr_to_gen.values()):
-        filename = genomes[gen_id]
+        filename = all_genomes[gen_id]
         base = os.path.splitext(os.path.basename(filename))[0]
         block_file_base = base + ".blocks"
         block_file = os.path.join(out_dir, block_file_base)
@@ -68,7 +69,11 @@ def _split_permutations(chr_to_gen, references, targets, perm_file, out_dir):
             assert gen_id in targets
             config.write("TARGET {0}={1}\n".format(gen_id, block_file_base))
 
-    for line in open(perm_file, "r").read().splitlines():
+    for line in open(perm_file, "r"):
+        line = line.strip()
+        if not line:
+            continue
+
         if line.startswith(">"):
             name = line[1:]
         else:

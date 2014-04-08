@@ -1,6 +1,5 @@
 from __future__ import print_function
 from collections import defaultdict
-from itertools import izip
 import sys
 
 from .permutations import Block
@@ -34,7 +33,7 @@ class BreakpointGraph:
     def __init__(self):
         self.origins = {}
         self.nodes = defaultdict(Node)
-        self.infinum = sys.maxint
+        self.infinum = sys.maxsize
 
     def add_edge(self, node1, node2, seq_id):
         edge = Edge(node1, node2, seq_id)
@@ -44,16 +43,16 @@ class BreakpointGraph:
 
     def get_edges(self, node1, node2):
         edges = self.nodes[node1].edges
-        return filter(lambda e: e.left_node == node2 or
-                      e.right_node == node2, edges)
+        return list(filter(lambda e: e.left_node == node2 or
+                           e.right_node == node2, edges))
 
     def get_black_edges(self, node1, node2):
         edges = self.get_edges(node1, node2)
-        return filter(lambda e: e.seq_id is None, edges)
+        return list(filter(lambda e: e.seq_id is None, edges))
 
     def get_colored_edges(self, node1, node2):
         edges = self.get_edges(node1, node2)
-        return filter(lambda e: e.seq_id is not None, edges)
+        return list(filter(lambda e: e.seq_id is not None, edges))
 
     def remove_edges(self, node1, node2):
         to_del = self.get_edges(node1, node2)
@@ -79,7 +78,7 @@ class BreakpointGraph:
         #all edges should be either black or colored
         for neighbor in neighbors:
             edges = self.get_edges(node, neighbor)
-            seq_ids = map(lambda e: e.seq_id, edges)
+            seq_ids = list(map(lambda e: e.seq_id, edges))
             if None in seq_ids and len(seq_ids) > 1:
                 return True
 
@@ -104,14 +103,14 @@ class BreakpointGraph:
             neighbors.remove(self.infinum)
 
             left_node, right_node = neighbors
-            left_black = filter(lambda e: e.seq_id is None,
-                                self.nodes[left_node].edges)[0]
-            right_black = filter(lambda e: e.seq_id is None,
-                                 self.nodes[right_node].edges)[0]
+            left_black = list(filter(lambda e: e.seq_id is None,
+                                     self.nodes[left_node].edges))[0]
+            right_black = list(filter(lambda e: e.seq_id is None,
+                                      self.nodes[right_node].edges))[0]
             Union(get_set_obj(left_black), get_set_obj(right_black))
 
         groups_dict = defaultdict(list)
-        for obj in set_objects.itervalues():
+        for obj in set_objects.values():
             groups_dict[Find(obj).obj].append(obj.obj)
         return groups_dict
 
@@ -127,7 +126,7 @@ class BreakpointGraph:
         ########
 
         permutations = {}
-        for seq_id, edge in self.origins.iteritems():
+        for seq_id, edge in self.origins.items():
             blocks = []
             prev = edge
             edge = edge.next_edge
@@ -150,15 +149,15 @@ class BreakpointGraph:
             permutations[seq_id] = blocks
 
         enum_groups = {}
-        for repr_edge, edges in self.get_fragmented_blocks().iteritems():
-            enum_groups[get_edge_id(repr_edge)] = map(get_edge_id, edges)
+        for repr_edge, edges in self.get_fragmented_blocks().items():
+            enum_groups[get_edge_id(repr_edge)] = list(map(get_edge_id, edges))
 
         return permutations, enum_groups
 
 
 def build_graph(permutations):
     graph = BreakpointGraph()
-    for seq_id, blocks in permutations.iteritems():
+    for seq_id, blocks in permutations.items():
         #black edges
         for block in blocks:
             abs_block = abs(block.id)
@@ -176,7 +175,7 @@ def build_graph(permutations):
         edge = head_edge
 
         #adjacencies
-        for block1, block2 in izip(blocks[:-1], blocks[1:]):
+        for block1, block2 in zip(blocks[:-1], blocks[1:]):
             left_pos = block1.start + block1.length
             right_pos = block2.start
             if right_pos < left_pos:

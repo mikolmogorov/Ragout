@@ -5,7 +5,6 @@ import networkx as nx
 import re
 import logging
 from collections import namedtuple
-from itertools import izip
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -52,7 +51,7 @@ def _load_dot(filename):
 
 #check if there is no multiedges along the path
 def _check_unique(graph, path):
-    for v1, v2 in izip(path[:-1], path[1:]):
+    for v1, v2 in zip(path[:-1], path[1:]):
         assert graph.has_edge(v1, v2)
         if len(graph[v1][v2]) > 1:
             return False
@@ -88,9 +87,9 @@ def _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
         return None
 
     path_edges = []
-    for p_start, p_end in izip(path[:-1], path[1:]):
+    for p_start, p_end in zip(path[:-1], path[1:]):
         found_edge = None
-        for edge_id, edge in edges.iteritems():
+        for edge_id, edge in edges.items():
             if edge == Edge(p_start, p_end):
                 found_edge = edge_id
                 break

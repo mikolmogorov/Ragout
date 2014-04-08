@@ -47,9 +47,9 @@ def parse_ragout_config(filename):
         m = block_matcher.match(line)
         if m:
             sizes = m.group(1).split(",")
-            block_size = map(int, sizes)
+            block_size = list(map(int, sizes))
             if len(block_size) != len(set(block_size)):
-                raise Exception("Synteny block sizes are not unique")
+                raise Exception("Synteny block are duplicated")
             continue
 
         else:

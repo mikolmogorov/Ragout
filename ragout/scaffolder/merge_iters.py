@@ -28,7 +28,7 @@ def merge(big_scaffolds, small_scaffolds):
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
             found_pair = False
             for small_scf in small_scaffolds:
-                names = map(lambda c: c.name, small_scf.contigs)
+                names = list(map(lambda c: c.name, small_scf.contigs))
                 try:
                     begin = names.index(prev_cont.name)
                     end = names.index(new_cont.name)
@@ -64,7 +64,8 @@ def merge(big_scaffolds, small_scaffolds):
             contigs = small_scf.contigs[begin + 1 : end]
             if not same_dir:
                 contigs = contigs[::-1]
-                contigs = map(lambda c: Contig(c.name, -c.sign, 0), contigs)
+                contigs = list(map(lambda c: Contig(c.name, -c.sign, 0),
+                                   contigs))
             result.extend(contigs)
 
         result.append(new_cont)

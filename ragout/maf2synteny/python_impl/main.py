@@ -28,7 +28,7 @@ def _make_synteny(maf_file, out_dir, min_block_out):
     for min_block, max_gap in PARAMS:
         print("Simplification with", min_block, max_gap, file=sys.stderr)
         big_blocks = perm.filter_by_size(blocks, min_block)
-        siml_blocks, block_groups = process_graph(big_blocks, max_gap)
+        siml_blocks, block_groups = _process_graph(big_blocks, max_gap)
         blocks = perm.merge_permutations(siml_blocks, blocks)
 
     flank_length = int(min_block_out * MIN_FLANK_RATE)

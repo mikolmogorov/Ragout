@@ -21,7 +21,7 @@ logger = logging.getLogger()
 def get_scaffolds(connections, perm_container):
     logger.info("Building scaffolds")
     scaffolds = _extend_scaffolds(connections, perm_container)
-    scaffolds = filter(lambda s: len(s.contigs) > 1, scaffolds)
+    scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
     return scaffolds
 
 
@@ -65,7 +65,7 @@ def output_fasta(target_dict, scaffolds, out_fasta):
         SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
 
     count = 0
-    for h, seq in contigs_fasta.iteritems():
+    for h, seq in contigs_fasta.items():
         if len(seq) > MIN_CONTIG_LEN and h not in used_contigs:
             count += 1
 

@@ -33,7 +33,7 @@ def get_order(alignment):
 
     by_chr = group_by_chr(alignment)
     entry_ord = defaultdict(list)
-    for chr_id, alignment in by_chr.iteritems():
+    for chr_id, alignment in by_chr.items():
         for i, e in enumerate(alignment):
             sign = 1 if e.e_qry > e.s_qry else -1
             entry_ord[e.contig_id].append(Hit(i, chr_id, e.s_ref, sign))
@@ -75,9 +75,9 @@ def parse_nucmer_coords(filename):
             continue
 
         vals = line.split(" | ")
-        s_ref, e_ref = map(int, vals[0].split())
-        s_qry, e_qry = map(int, vals[1].split())
-        len_ref, len_qry = map(int, vals[2].split())
+        s_ref, e_ref = list(map(int, vals[0].split()))
+        s_qry, e_qry = list(map(int, vals[1].split()))
+        len_ref, len_qry = list(map(int, vals[2].split()))
         ref_id, contig_id = vals[4].split("\t")
 
         if ref_id not in chr_alias:
@@ -95,12 +95,13 @@ def filter_by_coverage(alignment):
     for entry in alignment:
         by_name[entry.contig_id].append(entry)
 
+    len_filter = lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry
     for name in by_name:
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
-        by_name[name] = filter(lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry, by_name[name])
+        by_name[name] = list(filter(len_filter, by_name[name]))
 
     filtered_alignment = []
-    for ent_lst in by_name.itervalues():
+    for ent_lst in by_name.values():
         filtered_alignment.extend(ent_lst)
 
     return filtered_alignment

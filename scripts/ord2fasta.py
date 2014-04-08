@@ -1,5 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
+from __future__ import print_function
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -14,7 +15,8 @@ def main(ord_file, contigs_file):
     for line in open(ord_file, "r").read().splitlines():
         if line.startswith(">"):
             if len(scf):
-                SeqIO.write(SeqRecord(scf, id=scf_name, description=""), sys.stdout, "fasta")
+                SeqIO.write(SeqRecord(scf, id=scf_name, description=""),
+                            sys.stdout, "fasta")
             scf_name = line[1:]
             scf = Seq("")
         else:
@@ -26,10 +28,11 @@ def main(ord_file, contigs_file):
             else:
                 scf += seq.reverse_complement()
                 scf += Seq("N"  * 11)
-    SeqIO.write(SeqRecord(scf, id=scf_name, description=""), sys.stdout, "fasta")
+    SeqIO.write(SeqRecord(scf, id=scf_name, description=""),
+                sys.stdout, "fasta")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print "USAGE: ord2fasta.py ord_file contigs_file"
+        print("USAGE: ord2fasta.py ord_file contigs_file")
     else:
         main(sys.argv[1], sys.argv[2])

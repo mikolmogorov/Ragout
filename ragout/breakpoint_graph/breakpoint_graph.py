@@ -97,7 +97,8 @@ class BreakpointGraph:
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
                 continue
 
-            genome_ids = map(lambda e: e["genome_id"], graph[v1][v2].itervalues())
+            genome_ids = list(map(lambda e: e["genome_id"],
+                                  graph[v1][v2].values()))
             target_id = self.targets[0]
             if target_id in genome_ids:
                 trimmed_graph.remove_node(v1)
@@ -141,7 +142,7 @@ def _split_graph(graph):
 
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = []
-    for v1, v2 in edges.iteritems():
+    for v1, v2 in edges.items():
         if not (v2, v1) in unique_edges:
             unique_edges.append((v1, v2))
 

@@ -22,7 +22,8 @@ Edge = namedtuple("Edge", ["begin", "end", "label"])
 #builds assembly graph and outputs it in "dot" format
 def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
-    edges = _build_overlap_graph(targets.values()[0], dot_file,
+    contigs_file = list(targets.values())[0]
+    edges = _build_overlap_graph(contigs_file, dot_file,
                                  config.ASSEMBLY_MIN_OVERLAP,
                                  config.ASSEMBLY_MAX_OVERLAP)
 
@@ -42,7 +43,7 @@ def _get_contigs(files):
 def _find_overlap(str1, str2, min_ovlp, max_ovlp):
     max_k = min(max_ovlp, len(str1), len(str2))
     max_ovlp = 0
-    for i in xrange(min_ovlp, max_k + 1):
+    for i in range(min_ovlp, max_k + 1):
         if str(str1)[-i:] == str(str2)[:i]:
             max_ovlp = i
     return max_ovlp
@@ -82,7 +83,7 @@ def _build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
 
                 ovlp = _find_overlap(contigs[ctg], contigs[other_ctg],
                                     min_ovlp, max_ovlp)
-                if ovlp > min_ovlp:
+                if ovlp >= min_ovlp:
                     overlaps.append(other_ctg)
 
             if overlaps:
