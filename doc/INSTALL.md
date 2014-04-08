@@ -31,17 +31,16 @@ or using pip package manager:
 
 	$ pip install biopython networkx
 
-If you use Python 2.5 or 2.6, you need to install additional Python
-packages:
-
-* argparse [https://pypi.python.org/pypi/argparse]
-
 Installation
 -------
 
-Just type
+For bulding all necessary submoduled type
  
 	make
+
+You can also easily install Sibelia by running
+
+	python scripts/install-deps.py
 
 Building process requires *Cmake* as well as some standard UNIX
 executables like *wget* or *tar*.

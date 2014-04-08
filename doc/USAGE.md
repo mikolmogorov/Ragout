@@ -119,6 +119,17 @@ tree before performing any significant studies.
 In our future work we are planning to implement some assessment/correction
 procedures for the phylogenetic tree.
 
+Recovering synteny blocks from maf file
+---------------------------------------
+
+Ragout has a module which recovers synteny blocks from *MAF* multiple 
+alignment file inside Ragout's pipeline. This module can also be run
+as a standalone tool which allows you convert an arbitrary *MAF* file
+into synteny blocks. Output format is similar to one from *Sibelia*.
+To run this module, use:
+
+    bin/maf2synteny maf_file output_dir synteny_block_size
+
 Useful scripts
 --------------
 
