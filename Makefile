@@ -3,12 +3,19 @@ SYNTENY_DIR := ragout/maf2synteny/cpp_impl/
 PYTHON_INCLUDE := /usr/include/python2.7
 PYTHON_LIB := python2.7
 
-ifneq ($(wildcard /usr/bin/clang),) #for macos
-	CPP := clang++ -std=c++11 -stdlib=libc++
-	LDFLAGS := -l${PYTHON_LIB}
+
+UNAME := $(shell uname -s)
+ifneq ($(wildcard /usr/bin/clang),)
+	CPP := clang++ -std=c++11
+
+	ifeq ($(UNAME),Darwin) #for macos
+		CPP += -stdlib=libc++
+		LDFLAGS := -l${PYTHON_LIB}
+	endif
 else
 	CPP := g++ -std=c++11
 endif
+
 
 .PHONY: all overlap dependencies clean maf2synteny
 

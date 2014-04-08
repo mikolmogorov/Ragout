@@ -1,7 +1,9 @@
 Usage instructions for Ragout
 =============================
 
-    bin/ragout [-h] [-o OUTPUT_DIR] [-r] [-v] config_file
+    Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus}] [--refine]
+                  [--circular] [--overwrite] [--debug] [--version]
+                  config_file
     
 Supported arguments:
 
