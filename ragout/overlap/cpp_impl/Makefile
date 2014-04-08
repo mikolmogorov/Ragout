@@ -1,4 +1,4 @@
-CPP := g++ -std=c++11
+#CPP := g++ -std=c++11
 CFLAGS := -Wall 
 LDFLAGS :=
 OUT_BIN := overlap

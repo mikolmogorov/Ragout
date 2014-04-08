@@ -1,20 +1,26 @@
 Usage instructions for Ragout
 =============================
 
-    python ragout.py [-h] [-o OUTPUT_DIR] [-r] [-v] config_file
+    bin/ragout [-h] [-o OUTPUT_DIR] [-r] [-v] config_file
     
 Supported arguments:
 
-    config_file             path to the configuration file
+    positional arguments:
+      config_file           path to the configuration file
 
-    
-    -h, --help              show this help message and exit
-    -o OUTPUT_DIR, 
-    --outdir OUTPUT_DIR
-                            path to the working directory [default = ragout-out]
-    -r, --refine            refine with the assembly graph
-    -c, --circular          treat input references as circular
-    -v, --version           show program's version number and exit
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUTPUT_DIR, --outdir OUTPUT_DIR
+                            path to the working directory (default: ragout-out)
+      -s {sibelia,cactus}, --synteny {sibelia,cactus}
+                            which tool to use for synteny block decomposition.
+                            (default: sibelia)
+      --refine              refine with the assembly graph (default: False)
+      --circular            treat input references as circular (default: False)
+      --overwrite           overwrite existing Sibelia/Cactus results (default:
+                            False)
+      --debug               enable debug output (default: False)
+      --version             show program's version number and exit
 
 
 Examples
@@ -22,10 +28,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    python ragout.py examples/E.Coli/ecoli.cfg -o examples/E.Coli/out/ -r
-    python ragout.py examples/H.Pylori/helicobacter.cfg -o examples/H.Pylori/out/ -r
-    python ragout.py examples/S.Aureus/aureus.cfg -o examples/S.Aureus/out/ -r
-    python ragout.py examples/V.Cholerae/cholerae.cfg -o examples/V.Cholerae/out/ -r
+    bin/ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
+    bin/ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
+    bin/ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
+    bin/ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------
@@ -39,7 +45,7 @@ Next, Ragout assembles contigs into scaffolds using a breakpoint graph.
 
 This procedure is repeated multiple times with the different size
 of synteny block decomposition. Afterwards, an optional refinement
-step is performed (if -g was specified).
+step is performed (if --refine was specified).
 
 Input
 ------
@@ -85,8 +91,8 @@ After running Ragout, an output directory will contain:
 
 * "scaffolds.ord" with a resulting order of contigs
 * "scaffolds.fasta" with scaffold sequences (contigs are separated by 11 Ns)
-* "scaffolds_refined.ord" with a refined order contigs (if -r was specified)
-* "scaffolds_refined.fasta" with refined scaffold sequences (if -r was specified)
+* "scaffolds_refined.ord" with a refined order contigs (if --refine was specified)
+* "scaffolds_refined.fasta" with refined scaffold sequences (if --refine was specified)
 
 The parameters choice
 ---------------------
@@ -127,4 +133,4 @@ is available. First, contigs should be mapped on this reference using *nucmer* s
 
 Then run the script with the obtained "coords" file:
 
-    python verify-order.py nucmer_coords ord_file
+    scripts/verify-order.py nucmer_coords ord_file
