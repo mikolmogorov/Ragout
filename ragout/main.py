@@ -64,8 +64,9 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_colored_overlap = os.path.join(out_dir, "colored_contigs_overlap.dot")
-    out_refine_overlap = os.path.join(out_dir, "refine_contigs_overlap.dot")
+    out_distance_overlap = os.path.join(out_dir, "distance_contigs_overlap.dot")
     out_compress_overlap = os.path.join(out_dir, "compress_contigs_overlap.dot")
+    out_refine_overlap = os.path.join(out_dir, "refine_contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
 
@@ -106,7 +107,8 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     if assembly_refine:
         ovlp.make_overlap_graph(config.targets, out_overlap)
         asgraph.save_colored_overlap_graph(out_overlap, last_scaffolds, out_colored_overlap)
-        asgraph.save_distance_overlap_graph(out_overlap, last_scaffolds, out_compress_overlap)
+        asgraph.save_distance_overlap_graph(out_overlap, last_scaffolds, out_distance_overlap)
+        asgraph.save_compress_overlap_graph(out_overlap, last_scaffolds, out_compress_overlap)
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds, refined_scaffolds, out_refine_overlap)
         scfldr.output_order(refined_scaffolds, out_refined_order)

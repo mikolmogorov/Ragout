@@ -103,3 +103,48 @@ def save_distance_overlap_graph(graph_file, scaffolds_in, output_file):
                     fout.write("{0} -> {1} [label=\"{2}\"];\n".format(src, dst, len(path) - 1))
     fout.write("}")
     fout.close()
+
+def save_compress_overlap_graph(graph_file, scaffolds_in, output_file):
+    graph, edges = ar._load_dot(graph_file)
+    graph = nx.DiGraph(graph)
+
+    ordered_contigs = set()
+    all_contigs = set()
+    for scf in scaffolds_in:
+        for cont in scf.contigs:
+            ordered_contigs.add(str(cont))
+            all_contigs.add(cont.name)
+
+    fout = open(output_file, "w")
+    fout.write("digraph {\n")
+    is_change = True
+    while is_change:
+        is_change = False
+        for v1, v2, labels in graph.edges_iter(data=True):
+            if labels["label"] not in ordered_contigs and labels["label"][1:] not in all_contigs:
+                is_good = True
+
+                for y in graph.neighbors(v2):
+                    if graph[v2][y]["label"] in ordered_contigs or graph[v2][y]["label"][1:] in all_contigs or y == v1:
+                        is_good = False
+
+                if is_good:
+                    is_change = True
+                    graph.remove_edge(v1, v2)
+                    for y in graph.neighbors(v2):
+                        graph.add_edge(v1, y, label=graph[v2][y]["label"])
+                        graph.remove_edge(v2, y)
+
+                if is_change:
+                    break
+
+    for v1, v2, labels in graph.edges_iter(data=True):
+        if labels["label"] in ordered_contigs:
+            fout.write("{0} -> {1} [label=\"{2}\", color=\"red\"];\n".format(v1, v2, labels["label"]))
+        elif labels["label"][1:] in all_contigs:
+            fout.write("{0} -> {1} [label=\"{2}\", color=\"blue\"];\n".format(v1, v2, labels["label"]))
+        else:
+            fout.write("{0} -> {1};\n".format(v1, v2))
+    fout.write("}")
+    fout.close()
+
