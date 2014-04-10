@@ -70,7 +70,9 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    backends[backend].make_permutations(config, out_dir, overwrite)
+    if not backends[backend].make_permutations(config, out_dir, overwrite):
+        logger.error("There were problems with synteny backend, exiting.")
+        return
 
     last_scaffolds = None
     for block_size in config.blocks:

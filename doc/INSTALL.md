@@ -37,7 +37,7 @@ Installation
 Building procedure requires C++ compiler with C++11 support,
 such as GCC 4.7+ or proper version of clang.
 
-For bulding all necessary submoduled type:
+For bulding all necessary submodules type:
  
 	make
 

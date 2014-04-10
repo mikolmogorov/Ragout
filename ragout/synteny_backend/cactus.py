@@ -6,6 +6,7 @@ import os
 import sys
 import shutil
 import subprocess
+import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend
@@ -61,7 +62,7 @@ def _make_permutations(references, targets, tree, block_sizes,
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             if not os.path.isfile(perm_file):
                 logger.error("Exitsing results are incompatible with input config")
-                raise Exception
+                raise Exception("Cannot reuse results from previous run")
             files[block_size] = os.path.abspath(perm_file)
 
     else:
@@ -100,6 +101,7 @@ def _run_cactus(config_path, ref_genome, out_dir):
     CACTUS_OUT = "alignment.hal"
     HAL2MAF = "submodules/hal/bin/hal2maf"
     MAF_OUT = "cactus.maf"
+    MAX_THREADS = 10
 
     logger.info("Running progressiveCactus...")
     work_dir = os.path.abspath(out_dir)
@@ -110,14 +112,18 @@ def _run_cactus(config_path, ref_genome, out_dir):
     #if not os.path.exists(CACTUS_DIR):
     #    raise Exception("progressiveCactus is not installed")
 
+    num_proc = min(MAX_THREADS, multiprocessing.cpu_count())
+    threads_param = "--maxThreads=" + str(num_proc)
+
     os.chdir(CACTUS_INSTALL)
     devnull = open(os.devnull, "w")
-    cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal]
+    cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal, threads_param]
     subprocess.check_call(cmdline, stdout=devnull)
 
     #convert to maf
     logger.info("Converting HAL to MAF...")
-    cmdline = [HAL2MAF, out_hal, out_maf, "--noAncestors", "--refGenome", ref_genome]
+    cmdline = [HAL2MAF, out_hal, out_maf, "--noAncestors",
+               "--refGenome", ref_genome]
     subprocess.check_call(cmdline, stdout=devnull)
 
     os.chdir(prev_dir)
