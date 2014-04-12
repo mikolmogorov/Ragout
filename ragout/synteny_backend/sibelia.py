@@ -81,11 +81,13 @@ def _run_sibelia(fasta_files, block_size, out_dir):
         raise Exception("Sibelia is not installed")
 
     devnull = open(os.devnull, "w")
-    cmdline = [SIBELIA_EXEC, "-s", "loose", "-m", str(block_size), "-o", out_dir]
+    cmdline = [SIBELIA_EXEC, "-s", "fine", "-m", str(block_size), "-o", out_dir]
     cmdline.extend(fasta_files)
     subprocess.check_call(cmdline, stdout=devnull)
 
-    os.remove(os.path.join(out_dir, "coverage_report.txt"))
-    os.remove(os.path.join(out_dir, "blocks_coords.txt"))
+    #os.remove(os.path.join(out_dir, "coverage_report.txt"))
+    #os.remove(os.path.join(out_dir, "blocks_coords.txt"))
+    os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
+    shutil.rmtree(os.path.join(out_dir, "circos"))
 
     return os.path.join(out_dir, "genomes_permutations.txt")
