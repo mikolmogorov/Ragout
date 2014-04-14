@@ -10,7 +10,7 @@ import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend
-import maf2synteny.maf2synteny as m2s
+import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
@@ -30,7 +30,7 @@ class CactusBackend(SyntenyBackend):
 
     def run_backend(self, config, output_dir, overwrite):
         return _make_permutations(config.references, config.targets, config.tree,
-                                 config.blocks, output_dir, overwrite)
+                                  config.blocks, output_dir, overwrite)
 
 
 if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
@@ -76,7 +76,9 @@ def _make_permutations(references, targets, tree, block_sizes,
             block_dir = os.path.join(work_dir, str(block_size))
             if not os.path.isdir(block_dir):
                 os.mkdir(block_dir)
-            m2s.make_synteny(maf_file, block_dir, block_size)
+            if not m2s.make_synteny(maf_file, block_dir, block_size):
+                raise Exception("Something went wrong with maf2synteny")
+
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             files[block_size] = os.path.abspath(perm_file)
 

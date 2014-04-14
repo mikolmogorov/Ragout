@@ -10,11 +10,10 @@ import logging
 
 from Bio import SeqIO
 
-from shared import config
+from ragout.shared import config
 
 logger = logging.getLogger()
 Edge = namedtuple("Edge", ["begin", "end", "label"])
-
 
 #PUBLIC:
 #################################################
@@ -23,9 +22,11 @@ Edge = namedtuple("Edge", ["begin", "end", "label"])
 def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
     contigs_file = list(targets.values())[0]
-    edges = _build_overlap_graph(contigs_file, dot_file,
-                                 config.ASSEMBLY_MIN_OVERLAP,
-                                 config.ASSEMBLY_MAX_OVERLAP)
+    res = _build_overlap_graph(contigs_file, dot_file,
+                               config.ASSEMBLY_MIN_OVERLAP,
+                               config.ASSEMBLY_MAX_OVERLAP)
+    return res
+
 
 #PRIVATE:
 #################################################
@@ -110,6 +111,7 @@ def _build_overlap_graph(contigs_in, dot_out, min_ovlp, max_ovlp):
             edges.append(Edge(node_id, cur_node, ctg))
 
     _output_edges(edges, dot_out)
+    return True
 
 #outputs edges to file
 def _output_edges(edges, dot_file):
@@ -121,6 +123,6 @@ def _output_edges(edges, dot_file):
 
 #Try load fast c++ library
 try:
-    from .coverlap import _build_overlap_graph
+    from coverlap import _build_overlap_graph
 except ImportError:
     pass

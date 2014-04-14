@@ -102,7 +102,10 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     scfldr.output_fasta(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        ovlp.make_overlap_graph(config.targets, out_overlap)
+        if not ovlp.make_overlap_graph(config.targets, out_overlap):
+            logger.error("Error in overlap graph reconstruction, exiting")
+            return
+
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_fasta(config.targets, refined_scaffolds,
