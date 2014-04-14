@@ -1,49 +1,54 @@
 Installation instructions for Ragout
 ====================================
 
-Ragout is written in Python and does not require any preparations.
-However, there are some third-party dependencies described below
-which need to be installed.
 
-Quick dependencies
+Build requirements
 ------------------
+* Python 2.7
+* C++ compiler with C++11 support (gcc 4.7+ or proper version of Clang)
+* Cmake (for building Sibelia)
+* Some standard POSIX utilities, such as *wget* or *tar*
+
+
+Runtime depenencies
+-------------------
 
 * python 2.7
 * biopython [http://biopython.org]
 * networkx [http://networkx.github.io]
 * Sibelia [https://github.com/bioinf/Sibelia]
 
-Python
-------
 
-Ragout is written in python and requires version 2.7 to run.
-Also, there are third-party dependencies:
+Building and installing
+-----------------------
 
-* biopython [http://biopython.org]
-* networkx [http://networkx.github.io]
+Ragout is distributed as a Python package. Currently, only Python 2.7
+is supported. To build and install Ragout run:
 
-You can install them with your OS-specific package manager,
-e.g. in Ubuntu:
+	python2.7 setup.py install
 
-	$ sudo apt-get install python-biopython python-networkx
+This also will install all necessary python dependencies, if neded.
+Otherwise, you can install them manually using *pip* or your OS-specific
+package manager.
 
-or using pip package manager:
+You also can specify installation prefix:
 
-	$ pip install biopython networkx
+	python2.7 setup.py install --prefix=/usr/local
 
-Installation
--------
+Linux users would probably prefer to install to "~/.local". 
+In this case you may need to add "~/.local/bin" to your
+executable path (to run Ragout from any working directory):
 
-Building procedure requires C++ compiler with C++11 support,
-such as GCC 4.7+ or proper version of clang.
+	export PATH=$PATH:~/.local/bin
 
-For bulding all necessary submodules type:
- 
-	make
+Ragout requires Sibelia for synteny block decomposition.
+To instal it, run:
 
-You can also easily install Sibelia by running
+	scripts/install-deps.py --prefix=your_prefix
 
-	python scripts/install-deps.py
+Do not forget that "your_prefix/bin" also should be in your PATH.
+After installation process you can test your installation by running:
 
-Building process requires *Cmake* as well as some standard UNIX
-executables like *wget* or *tar*.
+	ragout --help
+
+If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)

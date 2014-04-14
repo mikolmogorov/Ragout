@@ -10,7 +10,7 @@ from collections import defaultdict
 import copy
 import logging
 
-from ragout.shared.datatypes import Contig, Scaffold
+from shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 

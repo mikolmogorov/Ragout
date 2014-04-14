@@ -6,7 +6,7 @@ from collections import namedtuple
 import sys
 import logging
 
-from ragout.shared.datatypes import Contig, Scaffold
+from shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 

@@ -21,23 +21,23 @@ setup(
     version = "0.2b",
     author = "Mikhail Kolmogorov",
     author_email = "fenderglass@gmail.com",
-    description = ("A tool for reference-assisted assembly"),
+    description = "A tool for reference-assisted assembly",
     license = "GPLv2",
     keywords = "bioinformatics",
     url = "http://github.com/fenderglass/Ragout",
-    #package_dir = {"ragout" : "ragout"},
-    packages = find_packages(),
+    package_dir = {"" : "ragout"},
+    packages = find_packages("ragout"),
     long_description = open("README.md", "r").read(),
     entry_points = {
         "console_scripts" : [
-            "ragout = ragout.main:main",
-            "maf2synteny = ragout.maf2synteny.maf2synteny:main"
+            "ragout = main:main",
+            "maf2synteny = maf2synteny.maf2synteny:main"
         ]
     },
-    package_data = {"" : glob("doc/*")},
-    #scripts = glob("scripts/*.py"),
     install_requires = ["biopython", "networkx"],
     ext_modules=[coverlap, cmaf2synteny]
+    #package_data = {"" : glob("doc/*")},
+    #scripts = glob("scripts/*.py"),
     #include_package_data=True
     #classifiers=[
     #    "Development Status :: 3 - Alpha",

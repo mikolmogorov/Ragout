@@ -3,3 +3,4 @@
 *.o
 *.so
 lib/
+*.egg-info
