@@ -96,6 +96,7 @@ After running Ragout, an output directory will contain:
 * "scaffolds_refined.ord" with a refined order contigs (if --refine was specified)
 * "scaffolds_refined.fasta" with refined scaffold sequences (if --refine was specified)
 
+
 The parameters choice
 ---------------------
 
@@ -115,11 +116,14 @@ describes your dataset.
 
 Running with multiple references, the output of Ragout may highly
 depend of the given phylogenetic tree and can be biased if
-the tree is incorrect. We recommend to carefully assess the
-tree before performing any significant studies.
+the tree is incorrect.
 
-In our future work we are planning to implement some assessment/correction
-procedures for the phylogenetic tree.
+If the phylogeny is unknown, you still can run Ragout assuming
+the star phylogeny and specifying the evolutionary distance between
+target and references (which is easier to recover).
+
+    TREE = (target, ref1:0.1, ref2:0.05, ref3:0.003)
+
 
 Recovering synteny blocks from maf file
 ---------------------------------------
@@ -131,6 +135,22 @@ into synteny blocks. Output format is similar to one from *Sibelia*.
 To run this module, use:
 
     maf2synteny maf_file output_dir synteny_block_size
+
+
+Experimental support of Progressive Cactus
+------------------------------------------
+As Sibelia was designed for bacterial species comparison, we are planning
+to use Progressive Cactus for recovering synteny blocks in bigger genomes.
+You already can try it, however this option is still quite unstable.
+Note, that repeats should be masked before running Ragout on big genomes
+(with RepeatMasker, for instance).
+
+First, download and build Progressive Cactus: https://github.com/glennhickey/progressiveCactus
+Then run Ragout with CACTUS_INSTALL pointing to cactus installation directory:
+
+    export CACTUS_INSTALL=your_cactus_dir
+    ragout -s cactus ...
+
 
 Useful scripts
 --------------

@@ -33,7 +33,7 @@ def install_sibelia(prefix):
 
     initial_dir = os.getcwd()
 
-    tmp_dir = os.path.join(initial_dir, "sibalia-build")
+    tmp_dir = os.path.join(initial_dir, "sibelia-build")
     if os.path.isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     os.mkdir(tmp_dir)

@@ -143,8 +143,8 @@ def main():
 
     backends = SyntenyBackend.get_available_backends()
     if args.synteny_backend not in backends:
-        sys.stderr.write(args.synteny_backend +
-                         " is not installed. Use \"bin/install-deps.py\" to install it.\n")
+        sys.stderr.write(args.synteny_backend + " is not installed."
+                         "Use \"scripts/install-deps.py\" to install it.\n")
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend,

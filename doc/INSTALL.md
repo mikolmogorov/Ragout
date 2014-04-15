@@ -5,7 +5,7 @@ Installation instructions for Ragout
 Build requirements
 ------------------
 * Python 2.7
-* C++ compiler with C++11 support (gcc 4.7+ or proper version of Clang)
+* C++ compiler with C++11 support (GCC 4.7+ or proper version of Clang)
 * Cmake (for building Sibelia)
 * Some standard POSIX utilities, such as *wget* or *tar*
 
@@ -20,7 +20,7 @@ Runtime depenencies
 
 
 You can install Ragout as a Python package, which is recommended.
-Alternatively, you can build and run it in a source directory.
+Alternatively, you can build and run it from a source directory.
 
 
 Package installation (recommended)
@@ -43,9 +43,9 @@ If you didn't install in the standard Python site-packages directory you will
 need to set your PYTHONPATH variable to the alternate location. 
 See http://docs.python.org/2/install/index.html#search-path for further details.
 
-After local installation you may need to add "bin" directory
-in the installation prefix to your executable path (to run Ragout 
-from any working directory). For example, if your prefix was "~/.local", run:
+After installation with custom prefix you may need to add the corresponding 
+"bin" directory to your executable path (to run Ragout from any working directory). 
+For example, if your prefix was "~/.local", run:
 
 	export PATH=$PATH:~/.local/bin
 
@@ -72,7 +72,7 @@ To build Ragout in source directory, run:
 	python2.7 setup.py inplace
 
 This will build all necessary modules and create "ragout_local" executable.
-In this case, you have to manually install all dependencies using *pip*
+In this case, you should manually install all dependencies using *pip*
 or your OS-specific package manager as it is written below.
 
 
