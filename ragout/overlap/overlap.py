@@ -10,7 +10,7 @@ import logging
 
 from Bio import SeqIO
 
-from shared import config
+from ragout.shared import config
 
 logger = logging.getLogger()
 Edge = namedtuple("Edge", ["begin", "end", "label"])

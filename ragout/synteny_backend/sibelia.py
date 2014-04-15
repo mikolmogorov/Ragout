@@ -8,7 +8,7 @@ import subprocess
 import copy
 import logging
 
-from shared import utils
+from ragout.shared import utils
 from .synteny_backend import SyntenyBackend
 
 logger = logging.getLogger()

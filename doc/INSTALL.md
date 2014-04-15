@@ -13,7 +13,7 @@ Build requirements
 Runtime depenencies
 -------------------
 
-* python 2.7
+* Python 2.7
 * biopython [http://biopython.org]
 * networkx [http://networkx.github.io]
 * Sibelia [https://github.com/bioinf/Sibelia]
@@ -27,19 +27,33 @@ is supported. To build and install Ragout run:
 
 	python2.7 setup.py install
 
-This also will install all necessary python dependencies, if neded.
-Otherwise, you can install them manually using *pip* or your OS-specific
-package manager.
+If you don't have permission to install software on your system, you can 
+install into another directory using the --user, --prefix, or --home flags to setup.py.
 
-You also can specify installation prefix:
+	python2.7 setup.py install --user
+	or
+	python2.7 setup.py install --prefix=~/.local
+	or
+	python2.7 setup.py install --home=~
 
-	python2.7 setup.py install --prefix=/usr/local
+If you didn't install in the standard Python site-packages directory you will 
+need to set your PYTHONPATH variable to the alternate location. 
+See http://docs.python.org/2/install/index.html#search-path for further details.
 
-Linux users would probably prefer to install to "~/.local". 
-In this case you may need to add "~/.local/bin" to your
-executable path (to run Ragout from any working directory):
+After local installation you may need to add "bin" directory
+in the installation prefix to your executable path (to run Ragout 
+from any working directory). For example, if your prefix was "~/.local", run:
 
 	export PATH=$PATH:~/.local/bin
+
+setup.py script also will install all necessary Python dependencies, if neded.
+Alternatively, you can install them manually using *pip* or your OS-specific
+package manager:
+
+	pip install biopython networkx
+	or
+	sudo apt-get install biopython networkx
+
 
 Ragout requires Sibelia for synteny block decomposition.
 To instal it, run:

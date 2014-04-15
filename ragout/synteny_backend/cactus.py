@@ -10,7 +10,7 @@ import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend
-import maf2synteny.maf2synteny as m2s
+import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"

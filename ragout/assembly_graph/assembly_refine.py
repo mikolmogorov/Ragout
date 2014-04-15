@@ -10,8 +10,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from shared import config
-from shared.datatypes import Contig, Scaffold
+from ragout.shared import config
+from ragout.shared.datatypes import Contig, Scaffold
 
 Edge = namedtuple("Edge", ["start", "end"])
 logger = logging.getLogger()

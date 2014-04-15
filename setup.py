@@ -3,8 +3,8 @@ from glob import glob
 from platform import uname
 
 compile_args = ["-std=c++11"]
-if uname()[0] == "Darwin":
-    compile_args.append("-stdlib=libc++")
+if uname()[0] == "Darwin":                 #a fix for buggy macos
+    compile_args.extend(["-stdlib=libc++", "-Qunused-arguments"])
 
 coverlap = Extension("coverlap",
                     define_macros = [("PYTHON_LIB", 1)],
@@ -25,17 +25,16 @@ setup(
     license = "GPLv2",
     keywords = "bioinformatics",
     url = "http://github.com/fenderglass/Ragout",
-    package_dir = {"" : "ragout"},
-    packages = find_packages("ragout"),
+    packages = find_packages(),
     long_description = open("README.md", "r").read(),
     entry_points = {
         "console_scripts" : [
-            "ragout = main:main",
-            "maf2synteny = maf2synteny.maf2synteny:main"
+            "ragout = ragout.main:main",
+            "maf2synteny = ragout.maf2synteny.maf2synteny:main"
         ]
     },
     install_requires = ["biopython", "networkx"],
-    ext_modules=[coverlap, cmaf2synteny]
+    ext_modules = [coverlap, cmaf2synteny],
     #package_data = {"" : glob("doc/*")},
     #scripts = glob("scripts/*.py"),
     #include_package_data=True

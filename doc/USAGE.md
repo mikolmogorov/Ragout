@@ -30,10 +30,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    bin/ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
-    bin/ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
-    bin/ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
-    bin/ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
+    ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
+    ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
+    ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
+    ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------
@@ -130,7 +130,7 @@ as a standalone tool which allows you convert an arbitrary *MAF* file
 into synteny blocks. Output format is similar to one from *Sibelia*.
 To run this module, use:
 
-    bin/maf2synteny maf_file output_dir synteny_block_size
+    maf2synteny maf_file output_dir synteny_block_size
 
 Useful scripts
 --------------
