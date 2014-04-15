@@ -1,15 +1,9 @@
 Ragout
 ======
 
-Version: 0.1 beta
+Version: 0.2 beta
 
-Release date: 14 Jan 2014
-
-ISMB 2014
----------
-
-Supplementary materials for ISMB submission could be found at:
-https://drive.google.com/file/d/0B1pUguR1yn7TcVR6cTFobFhkTkk/edit?usp=sharing
+Release date: 15 Apr 2014
 
 
        	         (
@@ -36,7 +30,7 @@ to assemble the target into the correct set of scaffolds. Enlarge your
 contigs with Ragout!
 
 The current version of Ragout is limited to genomes of bacterial size,
-but we are working on expanding it to mammalinan-scaled ones.
+but we are working on expanding it to mammalian-scaled ones.
 
 
 Install
@@ -60,6 +54,13 @@ Citation
 - Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
 "Ragout: A reference-assisted assemble tool for bacterial genomes" 
 (accepted to ISMB 2014)
+
+
+ISMB 2014 supplementary
+-----------------------
+
+Supplementary materials for ISMB submission could be found at:
+https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
 
 
 Contacts

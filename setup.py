@@ -48,13 +48,5 @@ setup(
         ]
     },
     install_requires = ["biopython", "networkx"],
-    ext_modules = [coverlap, cmaf2synteny],
-    #package_data = {"" : glob("doc/*")},
-    #scripts = glob("scripts/*.py"),
-    #include_package_data=True
-    #classifiers=[
-    #    "Development Status :: 3 - Alpha",
-    #    "Topic :: Utilities",
-    #    "License :: OSI Approved :: BSD License",
-    #],
+    ext_modules = [coverlap, cmaf2synteny]
 )
