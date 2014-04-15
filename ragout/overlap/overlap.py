@@ -123,6 +123,6 @@ def _output_edges(edges, dot_file):
 
 #Try load fast c++ library
 try:
-    from coverlap import _build_overlap_graph
+    from ragout.coverlap import _build_overlap_graph
 except ImportError:
     pass

@@ -7,7 +7,7 @@ def make_synteny(maf_file, out_dir, min_block):
     return _make_synteny(maf_file, out_dir, min_block)
 
 try:
-    from cmaf2synteny import _make_synteny
+    from ragout.cmaf2synteny import _make_synteny
 except ImportError:
     pass
 

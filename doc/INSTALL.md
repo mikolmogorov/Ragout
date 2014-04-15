@@ -19,11 +19,14 @@ Runtime depenencies
 * Sibelia [https://github.com/bioinf/Sibelia]
 
 
-Building and installing
------------------------
+You can install Ragout as a Python package, which is recommended.
+Alternatively, you can build and run it in a source directory.
 
-Ragout is distributed as a Python package. Currently, only Python 2.7
-is supported. To build and install Ragout run:
+
+Package installation (recommended)
+----------------------------------
+
+To install Ragout as a Python package
 
 	python2.7 setup.py install
 
@@ -54,6 +57,27 @@ package manager:
 	or
 	sudo apt-get install biopython networkx
 
+After installation process you can test your installation by running:
+
+	ragout --help
+
+If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
+
+
+Using without installation
+--------------------------
+
+To build Ragout in source directory, run:
+
+	python2.7 setup.py inplace
+
+This will build all necessary modules and create "ragout_local" executable.
+In this case, you have to manually install all dependencies using *pip*
+or your OS-specific package manager as it is written below.
+
+
+Sibelia
+-------
 
 Ragout requires Sibelia for synteny block decomposition.
 To instal it, run:
@@ -61,8 +85,3 @@ To instal it, run:
 	scripts/install-deps.py --prefix=your_prefix
 
 Do not forget that "your_prefix/bin" also should be in your PATH.
-After installation process you can test your installation by running:
-
-	ragout --help
-
-If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
