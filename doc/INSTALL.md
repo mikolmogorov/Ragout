@@ -5,6 +5,7 @@ Installation instructions for Ragout
 Build requirements
 ------------------
 * Python 2.7
+* setuptools [https://pypi.python.org/pypi/setuptools]
 * C++ compiler with C++11 support (GCC 4.7+ or proper version of Clang)
 * Cmake (for building Sibelia)
 * Some standard POSIX utilities, such as *wget* or *tar*
@@ -15,7 +16,7 @@ Runtime depenencies
 
 * Python 2.7
 * biopython [http://biopython.org]
-* networkx [http://networkx.github.io]
+* networkx 1.8+ [http://networkx.github.io]
 * Sibelia [https://github.com/bioinf/Sibelia]
 
 
@@ -26,7 +27,7 @@ Alternatively, you can build and run it from a source directory.
 Package installation (recommended)
 ----------------------------------
 
-To install Ragout as a Python package
+To install Ragout as a Python package, run:
 
 	python2.7 setup.py install
 
@@ -67,11 +68,10 @@ If it works, you can try Ragout on the provided examples (refer to USAGE.md for 
 Using without installation
 --------------------------
 
-To build Ragout in source directory, run:
+To build Ragout inside the source directory, run:
 
 	python2.7 setup.py inplace
 
-This will build all necessary modules and create "ragout_local" executable.
 In this case, you should manually install all dependencies using *pip*
 or your OS-specific package manager as it is written below.
 
@@ -85,3 +85,5 @@ To instal it, run:
 	scripts/install-deps.py --prefix=your_prefix
 
 Do not forget that "your_prefix/bin" also should be in your PATH.
+Alternatively, you can set SIBELIA_INSTALL variable to directory
+containing *Sibelia* excecutable.
