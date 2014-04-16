@@ -51,7 +51,8 @@ setup(
             "run-ragout = ragout.main:main"
         ]
     },
-    install_requires = ["biopython", "networkx>=1.8"],
+    setup_requires = ["biopython", "networkx>=1.8"],
+	install_requires = ["biopython", "networkx>=1.8"],
     ext_modules = [coverlap, cmaf2synteny],
     data_files = [("share/ragout/doc", glob("doc/*"))]
                   #("share/ragout/examples", get_files("examples"))]

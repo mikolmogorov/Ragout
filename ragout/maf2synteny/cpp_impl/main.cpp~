@@ -4,7 +4,6 @@
 #include <setjmp.h>
 #endif
 #include <iostream>
-#include <stdexcept>
 
 #include "breakpoint_graph.h"
 #include "compress_algorithms.h"
