@@ -1,7 +1,17 @@
 import sys, os, stat
-from setuptools import setup, find_packages, Extension
 from glob import glob
 from platform import uname
+
+
+if sys.version_info[:2] != (2, 7):
+    print("Error: Ragout requires Python version 2.7 (%d.%d detected)." %
+          sys.version_info[:2])
+    sys.exit(-1)
+
+
+from ez_setup import use_setuptools
+use_setuptools()
+from setuptools import setup, find_packages, Extension
 
 
 #extensions
@@ -54,6 +64,6 @@ setup(
     setup_requires = ["biopython", "networkx>=1.8"],
 	install_requires = ["biopython", "networkx>=1.8"],
     ext_modules = [coverlap, cmaf2synteny],
-    data_files = [("share/ragout/doc", glob("doc/*"))]
+    data_files = [("share/ragout/docs", glob("docs/*"))]
                   #("share/ragout/examples", get_files("examples"))]
 )

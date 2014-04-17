@@ -35,11 +35,11 @@ but we are working on expanding it to mammalian-scaled ones.
 
 Install
 -------
-See *doc/INSTALL.md* file.
+See *docs/INSTALL.md* file.
 
 Usage
 -----
-See *doc/USAGE.md* file.
+See *docs/USAGE.md* file.
 
 
 Authors

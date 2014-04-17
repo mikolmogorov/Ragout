@@ -4,17 +4,16 @@
 #A script which installs dependencies
 #####################################
 
+from __future__ import print_function
 import sys, os
 import subprocess
 import shutil
 import argparse
 
-import utils.utils as utils
-
 SIBELIA_LINK = "https://github.com/bioinf/Sibelia/archive/master.tar.gz"
 
 def install_deps(prefix):
-    if utils.which("Sibelia"):
+    if which("Sibelia"):
         sys.stdout.write("Sibelia is already installed\n")
         return True
     else:
@@ -57,23 +56,30 @@ def install_sibelia(prefix):
     return True
 
 
+#Mimics UNIX "which" command
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+
 def test_tools():
-    if not utils.which("cmake"):
-        sys.stdout.write("ERROR: Building process requires Cmake\n")
-        return False
-
-    if not utils.which("wget"):
-        sys.stdout.write("ERROR: Building process requires wget\n")
-        return False
-
-    if not utils.which("make"):
-        sys.stdout.write("ERROR: Building process requires make\n")
-        return False
-
-    if not utils.which("tar"):
-        sys.stdout.write("ERROR: Building process requires tar\n")
-        return False
-
+    for tool in ["cmake", "wget", "make", "tar"]:
+        if not which(tool):
+            print("ERROR: building Sibelia requires " + tool, file=sys.stderr)
+            return False
     return True
 
 
@@ -83,8 +89,8 @@ def main():
     parser.add_argument("--prefix", dest="prefix",
                         help="installation prefix", default="/usr/local")
     args = parser.parse_args()
-    install_deps(args.prefix)
+    return int(not install_deps(args.prefix))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
