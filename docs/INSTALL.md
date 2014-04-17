@@ -115,7 +115,8 @@ To instal it, run:
 Or, if you have installed Ragout with *pip* and do not have
 "scripts" directory:
 
-	curl <path> -o - | [sudo] python2.7 [- --prefix=your_prefix]
+	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
+	 -o - | [sudo] python2.7 [- --prefix=your_prefix]
 
 Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
