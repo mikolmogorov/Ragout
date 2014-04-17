@@ -4,7 +4,7 @@ Installation instructions for Ragout
 
 Availability
 ------------
-Ragout is tested under Mac Os and Linux. While it *should* work
+Ragout is tested under Mac OS and Linux. While it *should* work
 under Windows, we do not provide official support yet.
 
 
