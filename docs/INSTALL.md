@@ -33,23 +33,30 @@ separate from the main package in some OS. For instance, Ubuntu
 users should check that package "python-dev" is installed.
 
 
-Installation from PyPI
-----------------------
+Installation from PyPI (recommended)
+------------------------------------
 
 The easies way to install Ragout is to use Python package index database:
 
-	pip install ragout
+	pip install ragout --pre
 
 Note, that this may require superuser privileges:
 
-	sudo pip install ragout
+	sudo pip install ragout --pre
 
 If you do not have *pip* installed, you can install it from here:
-http://www.pip-installer.org/ 
+http://www.pip-installer.org/
 
 
-Package installation (recommended)
-----------------------------------
+Binary packages
+---------------
+
+Pre-compiled binary packages for Linux and Mac Os are available at:
+https://pypi.python.org/pypi/ragout
+
+
+Installation from repository
+----------------------------
 
 To install Ragout as a Python package, run:
 
@@ -103,13 +110,13 @@ Sibelia
 Ragout requires Sibelia for synteny block decomposition.
 To instal it, run:
 
-	scripts/install-sibelia.py --prefix=your_prefix
+	[sudo] scripts/install-sibelia.py [--prefix=your_prefix]
 
 Or, if you have installed Ragout with *pip* and do not have
 "scripts" directory:
 
-	curl <path> -o - | [sudo] python2.7
+	curl <path> -o - | [sudo] python2.7 [- --prefix=your_prefix]
 
-Do not forget that "your_prefix/bin" also should be in your PATH.
+Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
 containing *Sibelia* excecutable.
