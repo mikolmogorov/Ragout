@@ -5,7 +5,7 @@ include README.md
 
 recursive-include scripts *.py
 recursive-include docs *.md
-recursive-include ragout *.h
+recursive-include ragout *.h *.cpp
 
 global-exclude *.pyc
 global-exclude *.git

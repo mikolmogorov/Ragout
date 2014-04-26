@@ -5,13 +5,13 @@ Installation instructions for Ragout
 Availability
 ------------
 Ragout is tested under Mac OS and Linux. While it *should* work
-under Windows, we do not provide official support yet.
+under Windows, we currently do not provide an official support.
 
 
 Build requirements
 ------------------
 * Python 2.7 (with developer headers)
-* C++ compiler with C++0x support (GCC 4.6+ or proper version of Clang)
+* C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)
 * Cmake (for building Sibelia)
 * Some standard POSIX utilities, such as *wget* or *tar*
 
@@ -44,19 +44,21 @@ Note, that this may require superuser privileges:
 
 	sudo pip install ragout --pre
 
-If you do not have *pip* installed, you can install it from here:
+If you do not have *pip* installed, you can get it from here:
 http://www.pip-installer.org/
 
 
 Binary packages
 ---------------
 
-Pre-compiled binary packages for Linux and Mac Os are available at:
-https://pypi.python.org/pypi/ragout
+Pre-compiled binary packages for Linux and Mac OS are available at:
+https://pypi.python.org/pypi/ragout as binary *eggs*.
+You can install them via *easy_install*:
+http://pythonhosted.org/setuptools/easy_install.html
 
 
-Installation from repository
-----------------------------
+Installing from source
+----------------------
 
 To install Ragout as a Python package, run:
 
@@ -108,11 +110,13 @@ Sibelia
 -------
 
 Ragout requires Sibelia for synteny block decomposition.
-To instal it, run:
+You can download and install it from the website: https://github.com/bioinf/Sibelia
+
+Otherwise, you can use our script for a quick installation:
 
 	[sudo] scripts/install-sibelia.py [--prefix=your_prefix]
 
-Or, if you have installed Ragout with *pip* and do not have
+Alternatively, if you have installed Ragout with *pip* and do not have
 "scripts" directory:
 
 	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
@@ -121,3 +125,21 @@ Or, if you have installed Ragout with *pip* and do not have
 Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
 containing *Sibelia* excecutable.
+
+
+Troubleshooting
+---------------
+
+Q: I get compilation error "Python.h: No such file or directory":
+
+A: You do not have Python developmnet headers installed. On some
+systems/distributions you have to install them manually, i.e. in Ubuntu:
+	
+	sudo apt-get install python-dev
+
+
+Q: Multiple errors during compilation, possible with 
+"unrecognized command line option '-std=c++0x'" message:
+
+A: Probably your compiler is too old and does not support C++0x. Minimum
+versions of GCC and Clang are mentioned above.

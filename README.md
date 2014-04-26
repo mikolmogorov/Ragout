@@ -55,7 +55,7 @@ Sciences)
 Citation
 --------
 - Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
-"Ragout: A reference-assisted assemble tool for bacterial genomes" 
+"Ragout: A reference-assisted assembly tool for bacterial genomes" 
 (accepted to ISMB 2014)
 
 
