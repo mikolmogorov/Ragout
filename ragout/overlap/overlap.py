@@ -19,7 +19,9 @@ logger = logging.getLogger()
 def make_overlap_graph(targets, dot_file):
     logger.info("Building overlap graph...")
     contigs_file = list(targets.values())[0]
+    filterByKmer = True
     res = _build_overlap_graph(contigs_file, dot_file,
                                config.ASSEMBLY_MIN_OVERLAP,
-                               config.ASSEMBLY_MAX_OVERLAP)
+                               config.ASSEMBLY_MAX_OVERLAP,
+                               filterByKmer)
     return res

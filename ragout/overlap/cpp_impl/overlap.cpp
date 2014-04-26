@@ -2,15 +2,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <cassert>
 #include <utility>
-#include <list>
 #include <unordered_map>
 #include <unordered_set>
-#include <map>
+#include <algorithm>
 #include <stdexcept>
 
 #include "fasta.h"
+#include "disjoint_set.h"
 
 namespace
 {
@@ -22,6 +21,16 @@ struct Edge
 	int begin;
 	int end;
 	std::string contigId;
+};
+
+struct Overlap
+{
+	Overlap(FastaRecord* prevContig, FastaRecord* nextContig, int size):
+		prevContig(prevContig), nextContig(nextContig), size(size) {}
+
+	FastaRecord* prevContig;
+	FastaRecord* nextContig;
+	int size;
 };
 
 void makePrefixFunction(const std::string& str, std::vector<int>& table)
@@ -130,110 +139,121 @@ bool getContigs(const std::string& filename, std::vector<FastaRecord>& contigs)
 	return true;
 }
 
-bool buildGraph(const std::string& filename, int minOverlap, 
-				int maxOverlap, std::list<Edge>& edges)
-{
-	//std::map<int, int> ovlpHist;
 
-	std::vector<FastaRecord> contigs;
-	if (!getContigs(filename, contigs)) return false;
-	
-	std::unordered_map<FastaRecord*, int> contigNodes;
-	std::unordered_set<FastaRecord*> visited;
-	std::vector<std::pair<FastaRecord*, int>> dfsStack;
+std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs, 
+								int minOverlap, int maxOverlap)
+{
+	std::vector<Overlap> overlaps;
 
 	int prevProgress = 0;
+	int contigCounter = 0;
 	std::cerr << "Progress: ";
 
-	for (auto &contig : contigs)
+	for (auto &headContig : contigs)
 	{
-		if (visited.count(&contig)) continue;
-
-		dfsStack.push_back(std::make_pair(&contig, newNodeId()));
-		visited.insert(&contig);
-		while(!dfsStack.empty())
+		for (auto &tailContig : contigs)
 		{
-			FastaRecord* curContig = dfsStack.back().first;
-			int leftNodeId = dfsStack.back().second;
-			dfsStack.pop_back();
-			contigNodes[curContig] = leftNodeId;
-
-			//finding overlaps
-			std::list<FastaRecord*> overlaps;
-			for (auto &otherContig : contigs)
+			if (&headContig == &tailContig) continue;
+			
+			int overlapLen = getOverlap(&headContig, &tailContig, maxOverlap);
+			if (overlapLen >= minOverlap)
 			{
-				if (curContig == &otherContig) continue;
-
-				int overlap = getOverlap(curContig, &otherContig, maxOverlap);
-				if (overlap >= minOverlap)
-				{
-					overlaps.push_back(&otherContig);
-					//ovlpHist[overlap] += 1;
-				}
+				overlaps.push_back(Overlap(&headContig, &tailContig, 
+										   overlapLen));
 			}
-
-			//processing them
-			int rightNodeId = -1;
-			if (!overlaps.empty())
-			{
-				FastaRecord* sampleContig = overlaps.front();
-				auto foundNode = contigNodes.find(sampleContig);
-				if (foundNode != contigNodes.end())
-				{
-					rightNodeId = foundNode->second;
-				}
-				else
-				{
-					rightNodeId = newNodeId();
-					for (auto ovlp : overlaps) contigNodes[ovlp] = rightNodeId;
-				}
-
-				for (auto ovlp : overlaps)
-				{
-					if (visited.find(ovlp) == visited.end())
-					{
-						dfsStack.push_back(std::make_pair(ovlp, rightNodeId));
-						visited.insert(ovlp);
-					}
-				}
-			}
-			else
-			{
-				rightNodeId = newNodeId();
-			}
-
-			edges.push_back(Edge(leftNodeId, rightNodeId, curContig->description_));
-
-			int progress = edges.size() * 100 / contigs.size();
-			if (progress / 10 > prevProgress / 10)
-			{
-				std::cerr << progress << " ";
-				prevProgress = progress;
-			}
+		}
+		
+		++contigCounter;
+		int progress = contigCounter * 100 / contigs.size();
+		if (progress / 10 > prevProgress / 10)
+		{
+			std::cerr << progress << " ";
+			prevProgress = progress;
 		}
 	}
 	std::cerr << std::endl;
-	//for (auto histPair : ovlpHist)
-	//{
-	//	std::cerr << histPair.first << " " << histPair.second << std::endl;
-	//}
-	return true;
+
+	return overlaps;
+}
+
+std::vector<Edge> buildGraph(std::vector<FastaRecord>& contigs, 
+							 std::vector<Overlap>& overlaps)
+{
+	std::unordered_map<FastaRecord*, SetNode<int>*> leftNodes;
+	std::unordered_map<FastaRecord*, SetNode<int>*> rightNodes;
+
+	int counter = 0;
+	for (auto &contig : contigs)
+	{
+		leftNodes[&contig] = new SetNode<int>(counter++);
+		rightNodes[&contig] = new SetNode<int>(counter++);
+	}
+
+	for (auto &overlap : overlaps)
+	{
+		unionSet(rightNodes[overlap.prevContig], 
+				 leftNodes[overlap.nextContig]);
+	}
+
+	std::vector<Edge> edges;
+	for (auto &contig : contigs)
+	{
+		int leftId = findSet(leftNodes[&contig])->data;
+		int rightId = findSet(rightNodes[&contig])->data;
+
+		edges.push_back(Edge(leftId, rightId, contig.description_));
+	}
+
+	for (auto nodePair : leftNodes) delete nodePair.second;
+	for (auto nodePair : rightNodes) delete nodePair.second;
+
+	return edges;
+}
+
+std::vector<Overlap> filterByKmer(std::vector<Overlap>& overlapsIn)
+{
+	std::vector<Overlap> overlapsOut;
+	std::unordered_map<int, int> overlapHist;
+	
+	int mostFrequent = -1;
+	int frequency = 0;
+	for (auto &ovlp : overlapsIn) ++overlapHist[ovlp.size];
+	for (auto &histPair : overlapHist)
+	{
+		if (histPair.second > frequency)
+		{
+			mostFrequent = histPair.first;
+			frequency = histPair.second;
+		}
+	}
+	std::cerr << "Kmer size is set to " << mostFrequent << std::endl;
+
+	std::copy_if(overlapsIn.begin(), overlapsIn.end(),
+				 std::back_inserter(overlapsOut),
+				 [&] (const Overlap& o) {return o.size == mostFrequent;});
+	return overlapsOut;
 }
 
 }	//end anonymous namespace
 
 bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
-		  			  int minOverlap, int maxOverlap)
+		  			  int minOverlap, int maxOverlap, bool filterKmer)
 {
-	std::list<Edge> edges;
-	if (!buildGraph(fileIn, minOverlap, maxOverlap, edges)) return false;
-	
+	std::vector<FastaRecord> contigs;
 	std::ofstream streamOut(fileOut);
 	if (!streamOut)
 	{
 		std::cerr << "Cannot open: " << fileOut << std::endl;
 		return false;
 	}
+	if (!getContigs(fileIn, contigs)) return false;
+
+	std::vector<Overlap> overlaps = overlapAll(contigs, minOverlap, maxOverlap);
+	if (filterKmer)
+	{
+		overlaps = filterByKmer(overlaps);
+	}
+	std::vector<Edge> edges = buildGraph(contigs, overlaps);
 
 	streamOut << "digraph {\n";
 	for (auto edge : edges)
@@ -245,5 +265,3 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 
 	return true;
 }
-
-

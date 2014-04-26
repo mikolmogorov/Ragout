@@ -18,7 +18,8 @@ int main(int argc, char** argv)
 					<< "Usage: overlap <fasta_in> <dot_out> <min_k> <max_k>\n";
 		return 1;
 	}
-	return !makeOverlapGraph(argv[1], argv[2], atoi(argv[2]), atoi(argv[3]));
+	return !makeOverlapGraph(argv[1], argv[2], atoi(argv[3]),
+							 atoi(argv[4]), true);
 }
 
 #ifdef PYTHON_LIB
@@ -39,9 +40,10 @@ coverlap_build_overlap_graph(PyObject* self, PyObject* args)
 	int minOverlap = 0;
 	int maxOverlap = 0;
 	int terminate = -1;
+	bool filterKmer = true;
 
-	if (!PyArg_ParseTuple(args, "ssii", &fileIn, &fileOut,
-						  &minOverlap, &maxOverlap))
+	if (!PyArg_ParseTuple(args, "ssiib", &fileIn, &fileOut,
+						  &minOverlap, &maxOverlap, &filterKmer))
 	{
 		return Py_False;
 	}
@@ -54,7 +56,8 @@ coverlap_build_overlap_graph(PyObject* self, PyObject* args)
 	terminate = setjmp(g_jumpEnv);
 	if (!terminate)
 	{
-		result = makeOverlapGraph(fileIn, fileOut, minOverlap, maxOverlap);
+		result = makeOverlapGraph(fileIn, fileOut, minOverlap,
+								  maxOverlap, filterKmer);
 	}
 	else
 	{
