@@ -28,8 +28,8 @@ Runtime depenencies
 You can install Ragout as a Python package, which is recommended.
 Alternatively, you can build and run it from a source directory.
 
-Buildng Ragout requires Python headers, which are distributed
-separate from the main package in some OS. For instance, Ubuntu
+Buildng Ragout requires Python headers, which should be
+explicitly installed on some OS. For instance, Ubuntu
 users should check that package "python-dev" is installed.
 
 
@@ -62,7 +62,7 @@ Installing from source
 
 To install Ragout as a Python package, run:
 
-	[sudo] python2.7 setup.py install
+	python2.7 setup.py install
 
 If you don't have permission to install software on your system, you can 
 install into another directory using the --user, --prefix, or --home flags to setup.py.
@@ -114,13 +114,20 @@ You can download and install it from the website: https://github.com/bioinf/Sibe
 
 Otherwise, you can use our script for a quick installation:
 
-	[sudo] scripts/install-sibelia.py [--prefix=your_prefix]
+	sudo scripts/install-sibelia.py
+	or
+	scripts/install-sibelia.py --prefix=your_prefix
 
 Alternatively, if you have installed Ragout with *pip* and do not have
 "scripts" directory:
 
 	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
-	 -o - | [sudo] python2.7 [- --prefix=your_prefix]
+	 -o - | sudo python2.7
+
+	 or
+
+	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
+	 -o - | python2.7 - --prefix=your_prefix
 
 Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
@@ -132,13 +139,13 @@ Troubleshooting
 
 Q: I get compilation error "Python.h: No such file or directory":
 
-A: You do not have Python developmnet headers installed. On some
-systems/distributions you have to install them manually, i.e. in Ubuntu:
+A: You do not have Python developer headers installed. On some
+systems/distributions you have to install them explicitly, i.e. in Ubuntu:
 	
 	sudo apt-get install python-dev
 
 
-Q: Multiple errors during compilation, possible with 
+Q: Multiple errors during compilation, possibly with 
 "unrecognized command line option '-std=c++0x'" message:
 
 A: Probably your compiler is too old and does not support C++0x. Minimum
