@@ -75,7 +75,7 @@ def _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
         logger.debug("no path {0} -- {1}".format(prev_cont, new_cont))
         return None
 
-    paths = [p for p in nx.all_shortest_paths(graph, src, dst)]
+    paths = list(nx.all_shortest_paths(graph, src, dst))
     if len(paths) > 1 or not _check_unique(graph, paths[0]):
         logger.debug("multiple paths {0} -- {1}".format(prev_cont, new_cont))
         return None
