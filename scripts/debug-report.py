@@ -113,23 +113,11 @@ def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
         agraph.draw(comp_file)
 
 
-"""
-def read_scaffold_file(file):
-    scaffold = set()
-    with open(file, "r") as input:
-        for line in input:
-            temp = line.strip('\n ')
-            if temp[0] != '>':
-                scaffold.add(temp)
-    return scaffold
-"""
-
 def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
                                      predicted_dot, true_edges, output_dir):
     contigs = get_contig_permutations(contigs_file)
     contig_begins = {}
     contig_ends = {}
-    #scaffold = read_scaffold_file(scaffold_file)
     for name, blocks in contigs.items():
         contig_begins[blocks[0]] = "+" + name
         contig_begins[-blocks[-1]] = "-" + name
@@ -151,7 +139,6 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         out_graph.add_edge(v1, v2, color=color)
 
 
-    subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
     for v1, v2 in combinations(breakpoint_graph.nodes(), 2):
         v1, v2 = int(v1), int(v2)
 
@@ -165,7 +152,7 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
             continue
 
         if src == dst:
-            out_graph.add_edge(str(v1), str(v2), label=0)
+            out_graph.add_edge(str(v1), str(v2), label=0, weight=0.1)
 
         if src != dst and nx.has_path(overlap_graph, src, dst):
             paths = list(nx.all_shortest_paths(overlap_graph, src, dst))
@@ -182,7 +169,8 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
                         is_good = False
                         break
                 if is_good:
-                    out_graph.add_edge(str(v1), str(v2), label=len_path)
+                    out_graph.add_edge(str(v1), str(v2), label=len_path,
+                                       weight=0.1)
                     break
 
     predicted_edges = nx.read_dot(predicted_dot)
@@ -197,6 +185,7 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
             continue
         comp_file = os.path.join(output_dir, "comp_we{0}-bg.png".format(comp_id))
         agraph = nx.to_agraph(subgr)
+        #agraph.layout(prog="neato", args="-Goverlap=scale -Gsplines=true")
         agraph.layout(prog="dot")
         agraph.draw(comp_file)
 

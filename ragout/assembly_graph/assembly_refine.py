@@ -13,7 +13,6 @@ from Bio.SeqRecord import SeqRecord
 from ragout.shared import config
 from ragout.shared.datatypes import Contig, Scaffold
 
-Edge = namedtuple("Edge", ["start", "end"])
 logger = logging.getLogger()
 
 #PUBLIC:
@@ -35,13 +34,13 @@ def refine_scaffolds(graph_file, scaffolds):
 def _load_dot(filename):
     graph = nx.MultiDiGraph()
     edges = {}
-    pattern = re.compile("([0-9]+)\s*\->\s*([0-9]+)\s*\[.*=.*\"(.+)\".*\];")
+    pattern = re.compile("\"(.+)\"\s*\->\s*\"(.+)\"\s*\[.*=.*\"(.+)\".*\];")
     for line in open(filename, "r").read().splitlines():
         m = pattern.match(line)
         if not m:
             continue
 
-        v1, v2 = int(m.group(1)), int(m.group(2))
+        v1, v2 = m.group(1), m.group(2)
         graph.add_node(v1)
         graph.add_node(v2)
         graph.add_edge(v1, v2, label=m.group(3))
@@ -49,57 +48,37 @@ def _load_dot(filename):
     return graph, edges
 
 
-#check if there is no multiedges along the path
-def _check_unique(graph, path):
-    for v1, v2 in zip(path[:-1], path[1:]):
-        assert graph.has_edge(v1, v2)
-        if len(graph[v1][v2]) > 1:
-            return False
-    return True
-
-
 #finds a unique path between two nodes in graph
-def _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len):
-    try:
-        src = edges[str(prev_cont)].end
-        dst = edges[str(new_cont)].start
-    except KeyError:
+def _get_unique_path(graph, edges, prev_cont, next_cont, max_path_len):
+    src, dst = str(prev_cont), str(next_cont)
+    if not (graph.has_node(src) and graph.has_node(dst)):
         logger.debug("contigs are not in the graph")
         return None
 
-    if src == dst:
-        logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, new_cont))
+    if graph.has_edge(src, dst):
+        logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
         return None
 
     if not nx.has_path(graph, src, dst):
-        logger.debug("no path {0} -- {1}".format(prev_cont, new_cont))
+        logger.debug("no path {0} -- {1}".format(prev_cont, next_cont))
         return None
 
     paths = list(nx.all_shortest_paths(graph, src, dst))
-    if len(paths) > 1 or not _check_unique(graph, paths[0]):
-        logger.debug("multiple paths {0} -- {1}".format(prev_cont, new_cont))
+    if len(paths) > 1:
+        logger.debug("multiple paths {0} -- {1}".format(prev_cont, next_cont))
         return None
 
     path = paths[0]
     if len(path) > max_path_len:
         logger.debug("too long path {0} -- {1} of length {2}"
-                       .format(prev_cont, new_cont, len(path)))
+                       .format(prev_cont, next_cont, len(path)))
         return None
 
-    path_edges = []
-    for p_start, p_end in zip(path[:-1], path[1:]):
-        found_edge = None
-        for edge_id, edge in edges.items():
-            if edge == Edge(p_start, p_end):
-                found_edge = edge_id
-                break
-        assert found_edge
-        path_edges.append(found_edge)
-
+    path_nodes = list(map(str, path[1:-1]))
     logger.debug("unique path {0} -- {1} of length {2}"
-                 .format(prev_cont, new_cont, len(path)))
+                 .format(prev_cont, next_cont, len(path_nodes)))
 
-    return path_edges
+    return path_nodes
 
 
 #inserts contigs from the assembly graph into scaffolds
@@ -118,26 +97,25 @@ def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
             new_scaffolds[-1].contigs.append(prev_cont)
 
             #find unique path
-            path_edges = _get_unique_path(graph, edges, prev_cont, new_cont, max_path_len)
-            if path_edges is None:
+            path_nodes = _get_unique_path(graph, edges, prev_cont,
+                                          new_cont, max_path_len)
+            if not path_nodes:
                 continue
 
             #check path consistency
             consistent = True
-            for edge in path_edges:
-                if edge[1:] in ordered_contigs:
+            for node in path_nodes:
+                if node[1:] in ordered_contigs:
                     logger.debug("Path inconsistency {0} -- {1}: {2}"
-                                 .format(prev_cont, new_cont, edge))
+                                 .format(prev_cont, new_cont, node))
                     consistent = False
                     break
             if not consistent:
                 continue
 
             #insert contigs along the path
-            for edge in path_edges:
-                new_scaffolds[-1].contigs[-1].gap = 0
-                new_scaffolds[-1].contigs.append(Contig.from_sting(edge))
-                new_scaffolds[-1].contigs[-1].gap = 0
+            for node in path_nodes:
+                new_scaffolds[-1].contigs.append(Contig.from_sting(node))
 
         new_scaffolds[-1].contigs.append(new_cont)
     return new_scaffolds

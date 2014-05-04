@@ -16,11 +16,11 @@ namespace
 
 struct Edge
 {
-	Edge(int begin, int end, const std::string& contigId):
-		begin(begin), end(end), contigId(contigId) {}
-	int begin;
-	int end;
-	std::string contigId;
+	Edge(const std::string& begin, const std::string& end, 
+		 const std::string& label): begin(begin), end(end), label(label) {}
+	std::string begin;
+	std::string end;
+	std::string label;
 };
 
 struct Overlap
@@ -113,11 +113,6 @@ int getOverlap(FastaRecord* headContig, FastaRecord* tailContig, size_t maxOvlp)
 	return kmpOverlap(strHead, strTail, pfun);
 }
 
-int newNodeId()
-{
-	static int nodeId = 0;
-	return nodeId++;
-}
 
 bool getContigs(const std::string& filename, std::vector<FastaRecord>& contigs)
 {
@@ -176,8 +171,10 @@ std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs,
 	return overlaps;
 }
 
-std::vector<Edge> buildGraph(std::vector<FastaRecord>& contigs, 
-							 std::vector<Overlap>& overlaps)
+
+/*
+void buildDebrujinGraph(std::vector<FastaRecord>& contigs,
+						std::vector<Overlap>& overlaps, std::ostream& streamOut)
 {
 	std::unordered_map<FastaRecord*, SetNode<int>*> leftNodes;
 	std::unordered_map<FastaRecord*, SetNode<int>*> rightNodes;
@@ -201,13 +198,48 @@ std::vector<Edge> buildGraph(std::vector<FastaRecord>& contigs,
 		int leftId = findSet(leftNodes[&contig])->data;
 		int rightId = findSet(rightNodes[&contig])->data;
 
-		edges.push_back(Edge(leftId, rightId, contig.description_));
+		edges.push_back(Edge(std::to_string(leftId), std::to_string(rightId),
+							 contig.description_));
 	}
 
 	for (auto nodePair : leftNodes) delete nodePair.second;
 	for (auto nodePair : rightNodes) delete nodePair.second;
 
-	return edges;
+	streamOut << "digraph {\n";
+	for (auto edge : edges)
+	{
+		streamOut << edge.begin << " -> " << edge.end 
+				  << " [label=\"" << edge.label << "\"];\n";
+	}
+	streamOut << "}\n";
+}
+*/
+
+void buildAssemblyGraph(std::vector<FastaRecord>& contigs,
+						std::vector<Overlap>& overlaps, std::ostream& streamOut)
+{
+	//std::unordered_set<FastaRecord*> usedContigs;
+
+	streamOut << "digraph {\n";
+	for (Overlap& ovlp : overlaps)
+	{
+		//usedContigs.insert(ovlp.prevContig);
+		//usedContigs.insert(ovlp.nextContig);
+
+		streamOut << "\"" << ovlp.prevContig->description_ << "\" -> \""
+				  << ovlp.nextContig->description_ 
+				  << "\" [label=\"" << ovlp.size << "\"];\n";
+	}
+
+	//for (FastaRecord& rec : contigs)
+	//{
+	//	if (!usedContigs.count(&rec))
+	//	{
+	//		streamOut << "\"" << rec.description_ << "\"\n";
+	//	}
+	//}
+
+	streamOut << "}\n";
 }
 
 std::vector<Overlap> filterByKmer(std::vector<Overlap>& overlapsIn)
@@ -253,15 +285,8 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 	{
 		overlaps = filterByKmer(overlaps);
 	}
-	std::vector<Edge> edges = buildGraph(contigs, overlaps);
 
-	streamOut << "digraph {\n";
-	for (auto edge : edges)
-	{
-		streamOut << edge.begin << " -> " << edge.end 
-				  << " [label=\"" << edge.contigId << "\"];\n";
-	}
-	streamOut << "}\n";
-
+	//buildDebrujinGraph(contigs, overlaps, streamOut);
+	buildAssemblyGraph(contigs, overlaps, streamOut);
 	return true;
 }
