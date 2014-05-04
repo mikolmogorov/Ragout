@@ -33,7 +33,6 @@ def refine_scaffolds(graph_file, scaffolds):
 #ignore heavy python-graphviz
 def _load_dot(filename):
     graph = nx.MultiDiGraph()
-    edges = {}
     pattern = re.compile("\"(.+)\"\s*\->\s*\"(.+)\"\s*\[.*=.*\"(.+)\".*\];")
     for line in open(filename, "r").read().splitlines():
         m = pattern.match(line)
@@ -44,12 +43,11 @@ def _load_dot(filename):
         graph.add_node(v1)
         graph.add_node(v2)
         graph.add_edge(v1, v2, label=m.group(3))
-        edges[m.group(3)] = Edge(v1, v2)
-    return graph, edges
+    return graph
 
 
 #finds a unique path between two nodes in graph
-def _get_unique_path(graph, edges, prev_cont, next_cont, max_path_len):
+def _get_unique_path(graph, prev_cont, next_cont, max_path_len):
     src, dst = str(prev_cont), str(next_cont)
     if not (graph.has_node(src) and graph.has_node(dst)):
         logger.debug("contigs are not in the graph")
@@ -84,7 +82,7 @@ def _get_unique_path(graph, edges, prev_cont, next_cont, max_path_len):
 #inserts contigs from the assembly graph into scaffolds
 def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
     new_scaffolds = []
-    graph, edges = _load_dot(graph_file)
+    graph = _load_dot(graph_file)
 
     ordered_contigs = set()
     for scf in scaffolds_in:
@@ -97,8 +95,8 @@ def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
             new_scaffolds[-1].contigs.append(prev_cont)
 
             #find unique path
-            path_nodes = _get_unique_path(graph, edges, prev_cont,
-                                          new_cont, max_path_len)
+            path_nodes = _get_unique_path(graph, prev_cont, new_cont,
+                                          max_path_len)
             if not path_nodes:
                 continue
 

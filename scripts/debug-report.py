@@ -127,10 +127,6 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
     breakpoint_graph = nx.read_dot(base_dot)
     overlap_graph = nx.read_dot(overlap_dot)
 
-    edges = {}
-    for v1, v2, data in overlap_graph.edges_iter(data=True):
-        edges[data["label"]] = Edge(v1, v2)
-
     out_graph = nx.MultiGraph()
     for v1, v2, params in breakpoint_graph.edges_iter(data=True):
         out_graph.add_node(v1)
@@ -143,31 +139,28 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         v1, v2 = int(v1), int(v2)
 
         if v1 in contig_ends and v2 in contig_begins:
-            src = edges[contig_ends[v1]].end
-            dst = edges[contig_begins[v2]].start
+            src = contig_ends[v1]
+            dst = contig_begins[v2]
         elif v2 in contig_ends and v1 in contig_begins:
-            src = edges[contig_ends[v2]].end
-            dst = edges[contig_begins[v1]].start
+            src = contig_ends[v2]
+            dst = contig_begins[v1]
         else:
             continue
 
-        if src == dst:
-            out_graph.add_edge(str(v1), str(v2), label=0, weight=0.1)
+        if not (overlap_graph.has_node(src) and overlap_graph.has_node(dst)):
+            continue
 
-        if src != dst and nx.has_path(overlap_graph, src, dst):
+        if nx.has_path(overlap_graph, src, dst):
             paths = list(nx.all_shortest_paths(overlap_graph, src, dst))
             for path in paths:
                 is_good = True
                 len_path = 0
-                for p_start, p_end in zip(path[:-1], path[1:]):
-                    found_edge = overlap_graph.edge[p_start][p_end][0]['label']
-                    if found_edge[0] == '-' or found_edge[0] == '+':
-                        len_path += 1
-                    else:
-                        len_path += int(found_edge)
-                    if found_edge[1:] in contigs:
+                for p in path[1:-1]:
+                    len_path += 1
+                    if p[1:] in contigs:
                         is_good = False
                         break
+
                 if is_good:
                     out_graph.add_edge(str(v1), str(v2), label=len_path,
                                        weight=0.1)
