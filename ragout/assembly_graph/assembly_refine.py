@@ -50,28 +50,24 @@ def _load_dot(filename):
 def _get_unique_path(graph, prev_cont, next_cont, max_path_len):
     src, dst = str(prev_cont), str(next_cont)
     if not (graph.has_node(src) and graph.has_node(dst)):
-        logger.debug("contigs are not in the graph")
+        logger.debug("contigs {0} / {1} are not in the graph"
+                     .format(prev_cont, next_cont))
         return None
 
     if graph.has_edge(src, dst):
         logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
         return None
 
-    if not nx.has_path(graph, src, dst):
-        logger.debug("no path {0} -- {1}".format(prev_cont, next_cont))
+    paths = list(nx.all_simple_paths(graph, src, dst, max_path_len))
+    if not paths:
+        logger.debug("no path between {0} -- {1}".format(prev_cont, next_cont))
         return None
 
-    paths = list(nx.all_shortest_paths(graph, src, dst))
     if len(paths) > 1:
         logger.debug("multiple paths {0} -- {1}".format(prev_cont, next_cont))
         return None
 
     path = paths[0]
-    if len(path) > max_path_len:
-        logger.debug("too long path {0} -- {1} of length {2}"
-                       .format(prev_cont, next_cont, len(path)))
-        return None
-
     path_nodes = list(map(str, path[1:-1]))
     logger.debug("unique path {0} -- {1} of length {2}"
                  .format(prev_cont, next_cont, len(path_nodes)))

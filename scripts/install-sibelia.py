@@ -9,20 +9,24 @@ import sys, os
 import subprocess
 import shutil
 import argparse
+try:
+    from urllib import urlretrieve
+except ImportError:
+    from urllib.request import urlretrieve
 
 SIBELIA_LINK = "https://github.com/bioinf/Sibelia/archive/master.tar.gz"
 
 def install_deps(prefix):
     if which("Sibelia"):
-        sys.stdout.write("Sibelia is already installed\n")
+        print("Sibelia is already installed", file=sys.stderr)
         return True
     else:
-        sys.stdout.write("Installing Sibelia\n")
+        print("Installing Sibelia", file=sys.stderr)
         try:
             return install_sibelia(prefix)
         except OSError as e:
-            sys.stdout.write("Error while installing - exiting\n")
-            sys.stderr.write(str(e) + "\n")
+            print("Error while installing - exiting", file=sys.stderr)
+            print(e, file=sys.stderr)
             return False
 
 
@@ -36,9 +40,10 @@ def install_sibelia(prefix):
     if os.path.isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     os.mkdir(tmp_dir)
-
     os.chdir(tmp_dir)
-    subprocess.check_call(["wget", SIBELIA_LINK])
+    #subprocess.check_call(["wget", SIBELIA_LINK])
+    print("Downloading source...", file=sys.stderr)
+    urlretrieve(SIBELIA_LINK, "master.tar.gz")
     subprocess.check_call(["tar", "-xf", "master.tar.gz"])
 
     os.chdir("Sibelia-master/build")
@@ -76,7 +81,7 @@ def which(program):
 
 
 def test_tools():
-    for tool in ["cmake", "wget", "make", "tar"]:
+    for tool in ["cmake", "make", "tar"]:
         if not which(tool):
             print("ERROR: building Sibelia requires " + tool, file=sys.stderr)
             return False

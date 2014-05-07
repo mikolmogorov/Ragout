@@ -135,22 +135,27 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         out_graph.add_edge(v1, v2, color=color)
 
 
-    for v1, v2 in combinations(breakpoint_graph.nodes(), 2):
-        v1, v2 = int(v1), int(v2)
+    subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
+    for subgr in subgraphs:
+        for v1, v2 in combinations(subgr.nodes(), 2):
+            v1, v2 = int(v1), int(v2)
 
-        if v1 in contig_ends and v2 in contig_begins:
-            src = contig_ends[v1]
-            dst = contig_begins[v2]
-        elif v2 in contig_ends and v1 in contig_begins:
-            src = contig_ends[v2]
-            dst = contig_begins[v1]
-        else:
-            continue
+            if v1 in contig_ends and v2 in contig_begins:
+                src = contig_ends[v1]
+                dst = contig_begins[v2]
+            elif v2 in contig_ends and v1 in contig_begins:
+                src = contig_ends[v2]
+                dst = contig_begins[v1]
+            else:
+                continue
 
-        if not (overlap_graph.has_node(src) and overlap_graph.has_node(dst)):
-            continue
+            if not (overlap_graph.has_node(src) and
+                    overlap_graph.has_node(dst)):
+                continue
 
-        if nx.has_path(overlap_graph, src, dst):
+            if not nx.has_path(overlap_graph, src, dst):
+                continue
+
             paths = list(nx.all_shortest_paths(overlap_graph, src, dst))
             for path in paths:
                 is_good = True

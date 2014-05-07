@@ -125,18 +125,6 @@ target and references (which is easier to recover).
     TREE = (target, ref1:0.1, ref2:0.05, ref3:0.003)
 
 
-Recovering synteny blocks from maf file
----------------------------------------
-
-Ragout has a module which recovers synteny blocks from *MAF* multiple 
-alignment file inside Ragout's pipeline. This module can also be run
-as a standalone tool which allows you convert an arbitrary *MAF* file
-into synteny blocks. Output format is similar to one from *Sibelia*.
-To run this module, use:
-
-    maf2synteny maf_file output_dir synteny_block_size
-
-
 Experimental support of Progressive Cactus
 ------------------------------------------
 As Sibelia was designed for bacterial species comparison, we are planning

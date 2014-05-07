@@ -12,8 +12,7 @@ Build requirements
 ------------------
 * Python 2.7 (with developer headers)
 * C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)
-* Cmake (for building Sibelia)
-* Some standard POSIX utilities, such as *wget* or *tar*
+* GNU make / Cmake (for building Sibelia)
 
 
 Runtime depenencies
