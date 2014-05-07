@@ -1,9 +1,9 @@
 Usage instructions for Ragout
 =============================
 
-    Usage: run-ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus}] [--refine]
-                      [--circular] [--overwrite] [--debug] [--version]
-                      config_file
+    Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus}] [--refine]
+                  [--circular] [--overwrite] [--debug] [--version]
+                  config_file
     
 Supported arguments:
 
@@ -30,10 +30,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    run-ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
-    run-ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
-    run-ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
-    run-ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
+    ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
+    ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
+    ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
+    ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------

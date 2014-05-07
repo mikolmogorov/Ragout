@@ -85,7 +85,7 @@ For example, if your prefix was "~/.local", run:
 setup.py script also will install all necessary Python dependencies, if neded.
 After installation process you can test your installation by running:
 
-	run-ragout --help
+	ragout --help
 
 If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
 

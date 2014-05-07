@@ -39,7 +39,7 @@ cmaf2synteny = Extension("ragout.cmaf2synteny",
 
 #local installation feature
 script_args = sys.argv[1:]
-INPLACE_EXEC = "run-ragout"
+INPLACE_EXEC = "ragout-local"
 if "inplace" in script_args:
     script_args = ["build_ext", "--inplace"]
     open(INPLACE_EXEC, "w").write("#!" + sys.executable + "\n"
@@ -62,7 +62,7 @@ setup(
     long_description = open("README.md", "r").read(),
     entry_points = {
         "console_scripts" : [
-            "run-ragout = ragout.main:main"
+            "ragout = ragout.main:main"
         ]
     },
     setup_requires = ["biopython", "networkx>=1.8"],
