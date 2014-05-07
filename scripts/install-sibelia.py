@@ -41,7 +41,7 @@ def install_sibelia(prefix):
         shutil.rmtree(tmp_dir)
     os.mkdir(tmp_dir)
     os.chdir(tmp_dir)
-    #subprocess.check_call(["wget", SIBELIA_LINK])
+
     print("Downloading source...", file=sys.stderr)
     urlretrieve(SIBELIA_LINK, "master.tar.gz")
     subprocess.check_call(["tar", "-xf", "master.tar.gz"])

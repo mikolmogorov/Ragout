@@ -149,3 +149,8 @@ Q: Multiple errors during compilation, possibly with
 
 A: Probably your compiler is too old and does not support C++0x. Minimum
 versions of GCC and Clang are mentioned above.
+
+Q: clang error: unknown argument: '-mno-fused-madd'
+
+A: This is a python/clang issue on Mac OS. To resolve it, update
+your Python 2.7 to the most recent version.

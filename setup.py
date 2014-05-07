@@ -15,6 +15,7 @@ except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
     from setuptools import setup, find_packages, Extension
+    pass
 
 
 #extensions
@@ -65,7 +66,7 @@ setup(
         ]
     },
     setup_requires = ["biopython", "networkx>=1.8"],
-	install_requires = ["biopython", "networkx>=1.8"],
+    install_requires = ["biopython", "networkx>=1.8"],
     ext_modules = [coverlap, cmaf2synteny],
     data_files = [("share/ragout/docs", glob("docs/*"))],
     classifiers = [
