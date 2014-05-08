@@ -74,6 +74,73 @@ def _get_unique_path(graph, prev_cont, next_cont, max_path_len):
 
     return path_nodes
 
+def _get_unigue_path_experiment(graph, prev_cont, next_cont, max_path_len, ordered_contigs):
+    src, dst =  str(prev_cont), str(next_cont)
+
+    if not (graph.has_node(src) and graph.has_node(dst)):
+        logger.debug("contigs {0} / {1} are not in the graph"
+                     .format(prev_cont, next_cont))
+        return None
+
+    if graph.has_edge(src, dst):
+        logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
+        return None
+
+    paths = list(nx.all_simple_paths(graph, src, dst, max_path_len))
+
+    if not paths:
+        logger.debug("no path between {0} -- {1}".format(prev_cont, next_cont))
+        return None
+
+    path_nodes = None
+    for path in paths:
+        p_nodes = list(map(str, path[1:-1]))
+        consistent = True
+        for node in p_nodes:
+            if node[1:] in ordered_contigs:
+                consistent = False
+                break
+
+        if consistent:
+            if not path_nodes:
+                path_nodes = p_nodes
+            else:
+                for node in path_nodes:
+                    if p_nodes.count(node) == 0:
+                        path_nodes.remove(node)
+
+    if path_nodes:
+        logger.debug("unique path {0} -- {1} of length {2}"
+                 .format(prev_cont, next_cont, len(path_nodes)))
+
+    return path_nodes
+
+def _insert_from_graph_experement(graph_file, scaffolds_in, max_path_len):
+    new_scaffolds = []
+    graph = _load_dot(graph_file)
+
+    ordered_contigs = set()
+    for scf in scaffolds_in:
+        ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
+
+    for scf in scaffolds_in:
+        new_scaffolds.append(Scaffold(scf.name))
+
+        for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
+            new_scaffolds[-1].contigs.append(prev_cont)
+
+            #find unique path
+            path_nodes = _get_unigue_path_experiment(graph, prev_cont, new_cont, max_path_len, ordered_contigs)
+
+            if not path_nodes:
+                continue
+
+            #insert contigs along the path
+            for node in path_nodes:
+                new_scaffolds[-1].contigs.append(Contig.from_sting(node))
+
+        new_scaffolds[-1].contigs.append(new_cont)
+    return new_scaffolds
 
 #inserts contigs from the assembly graph into scaffolds
 def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
@@ -91,8 +158,8 @@ def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
             new_scaffolds[-1].contigs.append(prev_cont)
 
             #find unique path
-            path_nodes = _get_unique_path(graph, prev_cont, new_cont,
-                                          max_path_len)
+            path_nodes = _get_unique_path(graph, prev_cont, new_cont, max_path_len)
+
             if not path_nodes:
                 continue
 
