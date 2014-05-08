@@ -3,10 +3,12 @@
 from __future__ import print_function
 import sys, os
 from collections import namedtuple, defaultdict
+from cStringIO import StringIO
+from itertools import combinations
+
 import networkx as nx
 import pylab
 from Bio import Phylo
-from cStringIO import StringIO
 
 from utils.nucmer_parser import *
 
@@ -28,7 +30,8 @@ def verify_alignment(alignment, contigs):
     return problematic_contigs
 
 
-def get_true_adjacencies(alignment, contig_permutations, break_contigs, circular):
+def get_true_adjacencies(alignment, contig_permutations,
+                         break_contigs, circular):
     by_chr = group_by_chr(alignment)
     adjacencies = []
 
@@ -118,25 +121,19 @@ def read_scaffold_file(file):
                 scaffold.add(temp)
     return scaffold
 
-
-def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file, predicted_dot, true_edges, scaffold_file, output_dir):
+def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
+                                     predicted_dot, true_edges, output_dir):
     contigs = get_contig_permutations(contigs_file)
-
-    block2contig = {}
-    scaffold = read_scaffold_file(scaffold_file)
-    for name, ls in contigs.iteritems():
-        if "-" + name in scaffold:
-            block2contig[-int(ls[-1])] = "-" + name
-        if "+" + name in scaffold:
-            block2contig[int(ls[-1])] = "+" + name
+    contig_begins = {}
+    contig_ends = {}
+    for name, blocks in contigs.items():
+        contig_begins[blocks[0]] = "+" + name
+        contig_begins[-blocks[-1]] = "-" + name
+        contig_ends[-blocks[-1]] = "+" + name
+        contig_ends[blocks[0]] = "-" + name
 
     breakpoint_graph = nx.read_dot(base_dot)
     overlap_graph = nx.read_dot(overlap_dot)
-
-    edges = {}
-    for v1, v2, params in overlap_graph.edges_iter(data=True):
-        if params["label"][0] == '-' or params["label"][0] == '+':
-            edges[params["label"]] = Edge(v1, v2)
 
     out_graph = nx.MultiGraph()
     for v1, v2, params in breakpoint_graph.edges_iter(data=True):
@@ -145,34 +142,41 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file, predic
         color = g2c(params["genome_id"])
         out_graph.add_edge(v1, v2, color=color)
 
-    for v1 in breakpoint_graph.nodes():
-        for v2 in breakpoint_graph.nodes():
-            try:
-                if block2contig[int(v1)] == block2contig[int(v2)]:
-                    continue
-                src = edges[block2contig[int(v1)]].end
-                dst = edges[block2contig[int(v2)]].start
-            except KeyError:
+    subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
+    for subgr in subgraphs:
+        for v1, v2 in combinations(subgr.nodes(), 2):
+            v1, v2 = int(v1), int(v2)
+
+            if v1 in contig_ends and v2 in contig_begins:
+                src = contig_ends[v1]
+                dst = contig_begins[v2]
+            elif v2 in contig_ends and v1 in contig_begins:
+                src = contig_ends[v2]
+                dst = contig_begins[v1]
+            else:
                 continue
 
-            if src != dst and nx.has_path(overlap_graph, src, dst):
-                paths = [p for p in nx.all_shortest_paths(overlap_graph, src, dst)]
+            if not (overlap_graph.has_node(src) and
+                    overlap_graph.has_node(dst)):
+                continue
 
-                for path in paths:
-                    is_good = True
-                    len_path = 0
-                    for p_start, p_end in zip(path[:-1], path[1:]):
-                        found_edge = overlap_graph.edge[p_start][p_end][0]['label']
-                        if found_edge[0] == '-' or found_edge[0] == '+':
-                            len_path += 1
-                        else:
-                            len_path += int(found_edge)
-                        if found_edge in scaffold and found_edge != block2contig[int(v1)] and block2contig[int(v2)] != found_edge:
-                            is_good = False
-                            break
-                    if is_good:
-                        out_graph.add_edge(v1, v2, label=str(len_path))
+            if not nx.has_path(overlap_graph, src, dst):
+                continue
+
+            paths = list(nx.all_shortest_paths(overlap_graph, src, dst))
+            for path in paths:
+                is_good = True
+                len_path = 0
+                for p in path[1:-1]:
+                    len_path += 1
+                    if p[1:] in contigs:
+                        is_good = False
                         break
+
+                if is_good:
+                    out_graph.add_edge(str(v1), str(v2), label=len_path,
+                                       weight=0.1)
+                    break
 
     predicted_edges = nx.read_dot(predicted_dot)
     for v1, v2 in predicted_edges.edges_iter():
@@ -186,60 +190,10 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file, predic
             continue
         comp_file = os.path.join(output_dir, "comp_we{0}-bg.png".format(comp_id))
         agraph = nx.to_agraph(subgr)
+        #agraph.layout(prog="neato", args="-Goverlap=scale -Gsplines=true")
         agraph.layout(prog="dot")
         agraph.draw(comp_file)
 
-            #print(str(v1) + " " + str(v2))
-    '''edges = {}
-    for v1, v2, param in overlap_graph.edges_iter(data=True):
-        if param["label"][0] == '-' or param["label"][0] == '+':
-            output = []
-            for u1, u2, param2 in overlap_graph.out_edges(v2, data=True):
-                if param2["label"][0] == '-' or param2["label"][0] == '+':
-                    if param2["label"] in block2contig:
-                        output.append(block2contig[param2["label"]])
-                else:
-                    for x1, x2, param3 in overlap_graph.out_edges(u2, data=True):
-                        if param3["label"][0] == '-' or param3["label"][0] == '+':
-                            if param3["label"] in block2contig:
-                                output.append(block2contig[param3["label"]])
-
-            edges[param["label"]] = output
-    '''
-    '''for name, ls in edges.iteritems():
-        print(name)
-        print(ls)
-
-    out_graph = nx.MultiGraph()
-    subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
-    for subgr in subgraphs:
-        for v1, v2, data in subgr.edges_iter(data=True):
-            color = g2c(data["genome_id"])
-            out_graph.add_edge(v1, v2, color=color)
-            #if int(v2) in block2contig:
-                #print(block2contig[int(v2)])
-                #if (block2contig[int(v2)] in overlap_graph.edges()):
-                #    print(block2contig[int(v2)])
-                #if (block2contig[int(v2)] in overlap_graph.edges()[(block2contig[int(v2)])]:
-                #    print("negate")
-                #elif ("+" + block2contig[int(v2)]) in edges:
-                #    ptint("plus")'''
-    '''
-    predicted_edges = nx.read_dot(predicted_dot)
-    for v1, v2 in predicted_edges.edges_iter():
-        out_graph.add_edge(v1, v2, color="red", style="dashed")
-    for (v1, v2) in true_edges:
-        out_graph.add_edge(str(v1), str(v2), color="red", style="bold")
-
-    subgraphs = nx.connected_component_subgraphs(out_graph)
-    for comp_id, subgr in enumerate(subgraphs):
-        if len(subgr) == 2:
-            continue
-        comp_file = os.path.join(out_dir, "comp_we{0}-bg.png".format(comp_id))
-        agraph = nx.to_agraph(subgr)
-        agraph.layout(prog="dot")
-        agraph.draw(comp_file)
-    '''
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
     g2c.table[target_name] = "red"
@@ -260,8 +214,12 @@ def do_job(nucmer_coords, debug_dir, circular):
     used_contigs = os.path.join(debug_dir, "used_contigs.txt")
     true_adj_out = os.path.join(debug_dir, "true_edges.dot")
     base_dot = os.path.join(debug_dir, "breakpoint_graph.dot")
+<<<<<<< HEAD
     overlap_dot = os.path.join(debug_dir, "../../distance_contigs_overlap.dot")
     scaffold_file = os.path.join(debug_dir, "../../scaffolds_refined.ord")
+=======
+    overlap_dot = os.path.join(debug_dir, "../../contigs_overlap.dot")
+>>>>>>> pavel_devel1
     predicted_dot = os.path.join(debug_dir, "predicted_edges.dot")
     phylogeny_in = os.path.join(debug_dir, "phylogeny.txt")
     phylogeny_out = os.path.join(debug_dir, "phylogeny.png")
@@ -279,7 +237,12 @@ def do_job(nucmer_coords, debug_dir, circular):
     true_adj = get_true_adjacencies(alignment, contigs, break_contigs, circular)
     output_edges(true_adj, true_adj_out)
     draw_breakpoint_graph(base_dot, predicted_dot, true_adj, debug_dir)
+<<<<<<< HEAD
     draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs, predicted_dot, true_adj, scaffold_file, debug_dir)
+=======
+    draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
+                                     predicted_dot, true_adj, debug_dir)
+>>>>>>> pavel_devel1
     #print(g2c.table)
 
 

@@ -1,15 +1,16 @@
+CPP = g++ -std=c++0x
 CFLAGS += -Wall 
 OUT_BIN := overlap
 
 .PHONY: all clean overlap_python debug pylib pyclean
 
+all: CFLAGS += -O2 -DNDEBUG
+all: overlap_python
+
 pylib: CFLAGS += -fPIC -I${PYTHON_INCLUDE} -DPYTHON_LIB
 pylib: LDFLAGS += -shared
 pylib: OUT_BIN := ../coverlap.so
 pylib: all
-
-all: CFLAGS += -O3 -DNDEBUG
-all: overlap_python
 
 debug: CFLAGS += -g -D_GLIBCXX_DEBUG -D_DEBUG
 debug: overlap_python

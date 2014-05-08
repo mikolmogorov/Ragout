@@ -1,7 +1,10 @@
 #ifdef PYTHON_LIB
 #include <Python.h>
+#include <signal.h>
+#include <setjmp.h>
 #endif
 #include <iostream>
+#include <stdexcept>
 
 #include "breakpoint_graph.h"
 #include "compress_algorithms.h"
@@ -43,7 +46,9 @@ void compressPaths(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 {
 	BreakpointGraph bg(permsIn);
 	int paths = compressGraph(bg, maxGap);
-	std::cerr << "Initial compression: " << paths << " paths\n";
+
+	DEBUG_PRINT("Initial compression: " << paths << " paths");
+	(void) paths;	//remove warning
 	bg.getPermutations(permsOut, groupsOut);
 }
 
@@ -124,27 +129,42 @@ int main(int argc, char** argv)
 }
 
 #ifdef PYTHON_LIB
+static jmp_buf g_jmpEnv;
+void sigintHandler(int s)
+{
+	longjmp(g_jmpEnv, 1);
+}
+
 static PyObject* _make_synteny(PyObject* self, PyObject* args)
 {
 	const char* mafFile = 0;
 	const char* outDir = 0;
 	int blockSize = 0;
-
+	int terminate = -1;
+	
 	if (!PyArg_ParseTuple(args, "ssi", &mafFile, &outDir, &blockSize))
 	{
 		return Py_False;
 	}
 
+	struct sigaction pythonSig;
+	sigaction(SIGINT, NULL, &pythonSig);
+	signal(SIGINT, sigintHandler);
+
+	bool result = true;
 	try
 	{
+		terminate = setjmp(g_jmpEnv);
+		if (terminate) throw std::runtime_error("SIGINT catched, exiting");
 		doJob(mafFile, outDir, blockSize);
 	}
 	catch (std::runtime_error& e)
 	{
 		std::cerr << e.what() << std::endl;
-		return Py_False;
+		result = false;
 	}
-	return Py_True;
+	signal(SIGINT, pythonSig.sa_handler);
+	return PyBool_FromLong((long)result);
 }
 
 static PyMethodDef cmaf2syntenyMethods[] = 

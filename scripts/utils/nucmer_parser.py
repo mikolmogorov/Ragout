@@ -33,10 +33,16 @@ def get_order(alignment):
 
     by_chr = group_by_chr(alignment)
     entry_ord = defaultdict(list)
+
+    contig_pos = 1
+    prev_start = None
     for chr_id, alignment in by_chr.items():
-        for i, e in enumerate(alignment):
+        for e in alignment:
+            if prev_start is not None and e.s_ref > prev_start:
+                    contig_pos += 1
+            prev_start = e.s_ref
             sign = 1 if e.e_qry > e.s_qry else -1
-            entry_ord[e.contig_id].append(Hit(i, chr_id, e.s_ref, sign))
+            entry_ord[e.contig_id].append(Hit(contig_pos, chr_id, e.s_ref, sign))
 
     return entry_ord, chr_len, contig_len
 
@@ -95,10 +101,11 @@ def filter_by_coverage(alignment):
     for entry in alignment:
         by_name[entry.contig_id].append(entry)
 
-    len_filter = lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry
     for name in by_name:
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
+        len_filter = lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry
         by_name[name] = list(filter(len_filter, by_name[name]))
+        #print(by_name[name])
 
     filtered_alignment = []
     for ent_lst in by_name.values():

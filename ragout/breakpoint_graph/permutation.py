@@ -7,8 +7,8 @@ from collections import defaultdict
 import logging
 import os
 
-from shared.debug import DebugConfig
-import parsers.config_parser as parser
+from ragout.shared.debug import DebugConfig
+import ragout.parsers.config_parser as parser
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

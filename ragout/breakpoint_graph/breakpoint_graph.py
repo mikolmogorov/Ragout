@@ -10,7 +10,7 @@ import logging
 
 import networkx as nx
 
-from shared.debug import DebugConfig
+from ragout.shared.debug import DebugConfig
 
 Connection = namedtuple("Connection", ["start", "end"])
 logger = logging.getLogger()

@@ -106,6 +106,9 @@ def do_job(nucmer_coords, scaffolds_ord):
                     miss_strand = True
                     prev_strand = None
 
+            if gap_count(prev_aln, entry_ord[contig.name]) > 0:
+                total_gaps += 1
+
             #only if this contig has alignments
             if entry_ord[contig.name]:
                 prev_aln = entry_ord[contig.name]
@@ -122,8 +125,6 @@ def do_job(nucmer_coords, scaffolds_ord):
             print("\t<<<strand" if miss_strand else "", end="")
             print("")
             total_contigs += 1
-            if gap_count(prev_aln, entry_ord[contig.name]) > 0:
-                total_gaps += 1
             ###
         print("\tmiss-ordered: ", len(breaks))
 

@@ -1,15 +1,12 @@
 Ragout
 ======
 
-Version: 0.1 beta
+Version: 0.2 beta
+Release date: 15 Apr 2014
 
-Release date: 14 Jan 2014
+Github: https://github.com/fenderglass/Ragout
 
-ISMB 2014
----------
-
-Supplementary materials for ISMB submission could be found at:
-https://drive.google.com/file/d/0B1pUguR1yn7TcVR6cTFobFhkTkk/edit?usp=sharing
+PyPI: https://pypi.python.org/pypi/ragout
 
 
        	         (
@@ -23,7 +20,6 @@ https://drive.google.com/file/d/0B1pUguR1yn7TcVR6cTFobFhkTkk/edit?usp=sharing
 
 Description
 -----------
-
 Ragout (Reference-Assisted Genome Ordering UTility) is a tool for
 assisted assembly using multiple references. It takes a short read
 assembly (a set of contigs), a set of related references
@@ -37,17 +33,17 @@ to assemble the target into the correct set of scaffolds. Enlarge your
 contigs with Ragout!
 
 The current version of Ragout is limited to genomes of bacterial size,
-but we are working on expanding it to mammalinan-scaled ones.
+but we are working on expanding it to mammalian-scaled ones.
+
 
 Install
 -------
-
-See *doc/INSTALL.md* file.
+See *docs/INSTALL.md* file.
 
 Usage
 -----
+See *docs/USAGE.md* file.
 
-See *doc/USAGE.md* file.
 
 Authors
 -------
@@ -55,21 +51,35 @@ Authors
 Sciences)
 - Son Pham (University of California, San Diego)
 
+
 Citation
 --------
-
 - Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
-"Complete Assembly of Common Bacterial Genomes Using Only Short Reads" 
-(submitted to ISMB 2014)
+"Ragout: A reference-assisted assembly tool for bacterial genomes" 
+(accepted to ISMB 2014)
+
+
+ISMB 2014 supplementary
+-----------------------
+
+Supplementary materials for ISMB submission could be found at:
+https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
+
 
 Contacts
 --------
 Please report any bugs directly to the issue tracker of this project.
 Also, you can send your feedback at fenderglass@gmail.com
 
+
 Acknowledgements
 ----------------
-The work was supported by V-P Foundation.
+The work was supported by VP Foundation.
+
+We would like to thank:
+- Nikolay Vyahhi (testing and some useful suggestions)
+- Aleksey Gurevich (testing)
+
 
 Licence
 -------

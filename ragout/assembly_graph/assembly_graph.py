@@ -4,14 +4,14 @@ import re
 import logging
 from collections import namedtuple
 
-from shared import config
+from ragout.shared import config
 import assembly_refine as ar
 
 Edge = namedtuple("Edge", ["start", "end"])
 logger = logging.getLogger()
 
 def save_colored_overlap_graph(graph_file, scaffolds, out_file):
-    graph, edges = ar._load_dot(graph_file)
+    graph = ar._load_dot(graph_file)
     fout = open(out_file, "w")
 
     main_strand = set()
@@ -22,25 +22,27 @@ def save_colored_overlap_graph(graph_file, scaffolds, out_file):
         all_contigs.add(cont.name)
 
     fout.write("digraph {\n")
-    for edge_id, edge in edges.iteritems():
-        if edge_id in main_strand:
-            fout.write("{0} -> {1} [label=\"{2}\", color=\"red\"];\n".format(edge.start, edge.end, edge_id))
-        elif edge_id[1:] in all_contigs:
-            fout.write("{0} -> {1} [label=\"{2}\", color=\"blue\"];\n".format(edge.start, edge.end, edge_id))
-        else:
-            fout.write("{0} -> {1} [label=\"{2}\"];\n".format(edge.start, edge.end, edge_id))
+    for node in graph.nodes_iter():
+        if str(node) in main_strand:
+            fout.write("\"{0}\" [style=filled, fillcolor=red];\n".format(node))
+        elif str(node)[1:] in all_contigs:
+            fout.write("\"{0}\" [style=filled, fillcolor=blue];\n".format(node))
+
+    for u, v in graph.edges_iter():
+        fout.write("\"{0}\" -> \"{1}\";\n".format(u, v))
+
     fout.write("}")
+    fout.close()
 
 def save_colored_insert_overlap_graph(graph_file, scaffolds, scaffolds_refine, out_file):
-    graph, edges = ar._load_dot(graph_file)
+    graph = ar._load_dot(graph_file)
     fout = open(out_file, "w")
 
     main_strand = set()
     all_contigs = set()
     for scf in scaffolds:
-      for cont in scf.contigs:
-        main_strand.add(str(cont))
-        all_contigs.add(cont.name)
+        main_strand |= set(map(lambda s: str(s), scf.contigs))
+        all_contigs |= set(map(lambda s: s.name, scf.contigs))
 
     refine_contigs = set()
     for scf in scaffolds_refine:
@@ -49,16 +51,19 @@ def save_colored_insert_overlap_graph(graph_file, scaffolds, scaffolds_refine, o
             refine_contigs.add(str(cont))
 
     fout.write("digraph {\n")
-    for edge_id, edge in edges.iteritems():
-        if edge_id in main_strand:
-            fout.write("{0} -> {1} [label=\"{2}\", color=\"red\"];\n".format(edge.start, edge.end, edge_id))
-        elif edge_id[1:] in all_contigs:
-            fout.write("{0} -> {1} [label=\"{2}\", color=\"blue\"];\n".format(edge.start, edge.end, edge_id))
-        elif edge_id in refine_contigs:
-            fout.write("{0} -> {1} [label=\"{2}\", color=\"green\"];\n".format(edge.start, edge.end, edge_id))
-        else:
-            fout.write("{0} -> {1} [label=\"{2}\"];\n".format(edge.start, edge.end, edge_id))
+    for node in graph.nodes_iter():
+        if str(node) in main_strand:
+            fout.write("\"{0}\" [style=filled, fillcolor=red];\n".format(node))
+        elif str(node)[1:] in all_contigs:
+            fout.write("\"{0}\" [style=filled, fillcolor=blue];\n".format(node))
+        elif str(node) in refine_contigs:
+            fout.write("\"{0}\" [style=filled, fillcolor=yellow];\n".format(node))
+
+    for u, v in graph.edges_iter():
+        fout.write("\"{0}\" -> \"{1}\";\n".format(u, v))
+
     fout.write("}")
+    fout.close()
 
 def save_distance_overlap_graph(graph_file, scaffolds_in, output_file):
     max_path_len = 2 * config.ASSEMBLY_MAX_PATH_LEN
@@ -147,4 +152,3 @@ def save_compress_overlap_graph(graph_file, scaffolds_in, output_file):
             fout.write("{0} -> {1};\n".format(v1, v2))
     fout.write("}")
     fout.close()
-

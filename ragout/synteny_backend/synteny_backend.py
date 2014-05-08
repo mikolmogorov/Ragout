@@ -2,6 +2,8 @@ import logging
 import os
 from collections import namedtuple, defaultdict
 
+logger = logging.getLogger()
+
 class SyntenyBackend:
     backends = {}
     def __init__(self):
@@ -9,7 +11,11 @@ class SyntenyBackend:
 
     #runs backend and then prepare data for futher processing
     def make_permutations(self, config, output_dir, overwrite):
-        files = self.run_backend(config, output_dir, overwrite)
+        try:
+            files = self.run_backend(config, output_dir, overwrite)
+        except Exception as e:
+            logger.debug(e)
+            return False
         assert sorted(files.keys()) == sorted(config.blocks)
 
         for block_size, perm_file in files.items():
@@ -22,6 +28,7 @@ class SyntenyBackend:
             chr_to_gen = _get_chr_names(all_genomes)
             _split_permutations(chr_to_gen, config.references,
                                 config.targets, perm_file, block_dir)
+        return True
 
     #runs backend and returns a dict with permutations files
     #indexed by block sizes

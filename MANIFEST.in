@@ -1,0 +1,11 @@
+include MANIFEST.in
+include ez_setup.py
+include setup.py
+include README.md
+
+recursive-include scripts *.py
+recursive-include docs *.md
+recursive-include ragout *.h *.cpp
+
+global-exclude *.pyc
+global-exclude *.git

@@ -3,3 +3,7 @@
 *.o
 *.so
 lib/
+dist/
+build/
+*.egg-info
+run-ragout

@@ -64,9 +64,7 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_colored_overlap = os.path.join(out_dir, "colored_contigs_overlap.dot")
-    out_distance_overlap = os.path.join(out_dir, "distance_contigs_overlap.dot")
     out_compress_overlap = os.path.join(out_dir, "compress_contigs_overlap.dot")
-    out_refine_overlap = os.path.join(out_dir, "refine_contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
 
@@ -75,7 +73,9 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    backends[backend].make_permutations(config, out_dir, overwrite)
+    if not backends[backend].make_permutations(config, out_dir, overwrite):
+        logger.error("There were problems with synteny backend, exiting.")
+        return
 
     last_scaffolds = None
     for block_size in config.blocks:
@@ -105,12 +105,11 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     scfldr.output_fasta(config.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        ovlp.make_overlap_graph(config.targets, out_overlap)
-        asgraph.save_colored_overlap_graph(out_overlap, last_scaffolds, out_colored_overlap)
-        asgraph.save_distance_overlap_graph(out_overlap, last_scaffolds, out_distance_overlap)
-        asgraph.save_compress_overlap_graph(out_overlap, last_scaffolds, out_compress_overlap)
+        if not ovlp.make_overlap_graph(config.targets, out_overlap):
+            logger.error("Error in overlap graph reconstruction, exiting")
+            return
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
-        asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds, refined_scaffolds, out_refine_overlap)
+        asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds, refined_scaffolds, out_colored_overlap)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_fasta(config.targets, refined_scaffolds, out_refined_scaffolds)
 
@@ -141,13 +140,13 @@ def main():
     parser.add_argument("--debug", action="store_const",
                         dest="debug", default=False, const=True,
                         help="enable debug output")
-    parser.add_argument("--version", action="version", version="Ragout v0.1b")
+    parser.add_argument("--version", action="version", version="Ragout v0.2b")
     args = parser.parse_args()
 
     backends = SyntenyBackend.get_available_backends()
     if args.synteny_backend not in backends:
-        sys.stderr.write(args.synteny_backend +
-                         " is not installed. Use \"bin/install-deps.py\" to install it.\n")
+        sys.stderr.write(args.synteny_backend + " is not installed."
+                         "Use \"scripts/install-deps.py\" to install it.\n")
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend,
