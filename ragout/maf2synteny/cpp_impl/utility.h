@@ -3,12 +3,22 @@
 #include <iterator>
 #include <utility>
 #include <iostream>
+#include <ctime>
 
 #ifdef _DEBUG
-#define DEBUG_PRINT(x) do {std::cerr << x << std::endl;} while(0)
+#define DEBUG_PRINT(x) do {std::cerr << timestamp() << " " << x << std::endl;} \
+					   while(0)
 #else
 #define DEBUG_PRINT(x)
 #endif
+
+inline std::string timestamp(const char* format = "[%H:%M:%S]")
+{
+	std::time_t t = std::time(0);
+	char cstr[128];
+	std::strftime(cstr, sizeof(cstr), format, std::localtime(&t));
+	return cstr;
+}
 
 //taken from http://stackoverflow.com/questions/14826893
 template <typename FwdIt> class adjacent_iterator 

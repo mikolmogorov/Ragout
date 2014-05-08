@@ -70,28 +70,29 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    if not backends[backend].make_permutations(config, out_dir, overwrite):
+    perm_files = backends[backend].make_permutations(config, out_dir, overwrite)
+    if not perm_files:
         logger.error("There were problems with synteny backend, exiting.")
         return
 
     last_scaffolds = None
     for block_size in config.blocks:
         logger.info("Running Ragout with the block size {0}".format(block_size))
-        block_dir = os.path.join(out_dir, str(block_size))
-        block_config = os.path.join(block_dir, "blocks.cfg")
-        block_order = os.path.join(block_dir, "scaffolds.ord")
 
         if debug:
             debug_dir = os.path.join(core_debug, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        perm_container = PermutationContainer(block_config)
+        perm_container = PermutationContainer(perm_files[block_size], config)
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, circular_refs)
 
         connections = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(connections, perm_container)
-        scfldr.output_order(scaffolds, block_order)
+
+        if debug:
+            ord_path = os.path.join(debug_dir, "scaffolds.ord")
+            scfldr.output_order(scaffolds, ord_path)
 
         if last_scaffolds:
             last_scaffolds = merge.merge(last_scaffolds, scaffolds)
@@ -122,19 +123,20 @@ def main():
     parser.add_argument("config", metavar="config_file",
                         help="path to the configuration file")
     parser.add_argument("-o", "--outdir", dest="output_dir",
-                        help="path to the working directory", default="ragout-out")
-    parser.add_argument("-s", "--synteny", dest="synteny_backend", default="sibelia",
-                        help="which tool to use for synteny block decomposition.",
-                        choices=["sibelia", "cactus"])
+                        help="path to the working directory",
+                        default="ragout-out")
+    parser.add_argument("-s", "--synteny", dest="synteny_backend",
+                        default="sibelia", choices=["sibelia", "cactus"],
+                        help="tool for synteny block decomposition")
     parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
-                        help="refine with the assembly graph")
+                        help="enable refinement with assembly graph")
     parser.add_argument("--circular", action="store_const",
                         dest="circular_refs", default=False, const=True,
                         help="treat input references as circular")
     parser.add_argument("--overwrite", action="store_const",
                         dest="overwrite", default=False, const=True,
-                        help="overwrite existing Sibelia/Cactus results")
+                        help="overwrite existing synteny blocks")
     parser.add_argument("--debug", action="store_const",
                         dest="debug", default=False, const=True,
                         help="enable debug output")
@@ -143,8 +145,8 @@ def main():
 
     backends = SyntenyBackend.get_available_backends()
     if args.synteny_backend not in backends:
-        sys.stderr.write(args.synteny_backend + " is not installed."
-                         "Use \"scripts/install-deps.py\" to install it.\n")
+        sys.stderr.write(args.synteny_backend + " is not installed. "
+                         "You can use provided scripts to install it.\n")
         return
 
     do_job(args.config, args.output_dir, args.synteny_backend,

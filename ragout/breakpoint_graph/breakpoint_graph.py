@@ -32,16 +32,17 @@ class BreakpointGraph:
         logger.info("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
-            if perm.ref_id not in self.references:
-                self.references.append(perm.ref_id)
+            if perm.genome_id not in self.references:
+                self.references.append(perm.genome_id)
 
         for perm in perm_container.target_perms_filtered:
-            if perm.ref_id not in self.targets:
-                self.targets.append(perm.ref_id)
+            if perm.genome_id not in self.targets:
+                self.targets.append(perm.genome_id)
 
         for perm in chain(perm_container.ref_perms_filtered,
                           perm_container.target_perms_filtered):
-            circular = circular_refs if perm.ref_id in self.references else False
+            circular = (circular_refs if perm.genome_id in self.references
+                                      else False)
 
             prev_block = None
             for block in perm.iter_blocks(circular):
@@ -51,7 +52,8 @@ class BreakpointGraph:
 
                 self.bp_graph.add_node(-prev_block)
                 self.bp_graph.add_node(block)
-                self.bp_graph.add_edge(-prev_block, block, genome_id=perm.ref_id)
+                self.bp_graph.add_edge(-prev_block, block,
+                                       genome_id=perm.genome_id)
                 prev_block = block
 
     #infers missing adjacencies (the main Ragout part)

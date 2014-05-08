@@ -37,11 +37,11 @@ Installation from PyPI (recommended)
 
 The easies way to install Ragout is to use Python package index database:
 
-	pip install ragout --pre
+	pip install ragout
 
 Note, that this may require superuser privileges:
 
-	sudo pip install ragout --pre
+	sudo pip install ragout
 
 If you do not have *pip* installed, you can get it from here:
 http://www.pip-installer.org/
@@ -120,13 +120,11 @@ Otherwise, you can use our script for a quick installation:
 Alternatively, if you have installed Ragout with *pip* and do not have
 "scripts" directory:
 
-	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
-	 -o - | sudo python2.7
+	curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | python
 
-	 or
+	or, if you want more control:
 
-	curl https://raw.githubusercontent.com/fenderglass/Ragout/master/scripts/install-sibelia.py \
-	 -o - | python2.7 - --prefix=your_prefix
+	curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | [sudo] python [- --prefix=your_prefix]
 
 Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
@@ -153,4 +151,4 @@ versions of GCC and Clang are mentioned above.
 Q: clang error: unknown argument: '-mno-fused-madd'
 
 A: This is a python/clang issue on Mac OS. To resolve it, update
-your Python 2.7 to the most recent version.
+your Python to version 2.7.6+ 

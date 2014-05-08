@@ -17,15 +17,11 @@ debugger = DebugConfig.get_instance()
 ########################################################
 
 class Permutation:
-    def __init__(self, ref_id, chr_id, chr_num, blocks):
-        self.ref_id = ref_id
+    def __init__(self, genome_id, chr_id, chr_num, blocks):
+        self.genome_id = genome_id
         self.chr_id = chr_id
         self.chr_num = chr_num
         self.blocks = blocks
-        self.target_perms = []
-        self.ref_perms = []
-        self.ref_perms_filtered = []
-        self.target_perms_filtered = []
 
     #iterates over synteny blocks in permutation
     def iter_blocks(self, circular=False):
@@ -41,17 +37,20 @@ class Permutation:
 
 class PermutationContainer:
     #parses permutation files referenced from config and filters duplications
-    def __init__(self, config_file):
+    def __init__(self, permutations_file, config):
         self.ref_perms = []
         self.target_perms = []
 
         logging.info("Reading permutation file")
-        config = parser.parse_ragout_config(config_file)
-        for ref_id, ref_file in config.references.items():
-            self.ref_perms.extend(_parse_blocks_file(ref_id, ref_file))
+        permutations = _parse_blocks_file(permutations_file)
+        if not permutations:
+            raise Exception("Error reading permutations")
 
-        for t_id, t_file in config.targets.items():
-            self.target_perms.extend(_parse_blocks_file(t_id, t_file))
+        for p in permutations:
+            if p.genome_id in config.references:
+                self.ref_perms.append(p)
+            elif p.genome_id in config.targets:
+                self.target_perms.append(p)
 
         self.target_blocks = set()
         for perm in self.target_perms:
@@ -82,17 +81,17 @@ def _find_duplications(ref_perms, target_perms):
     duplications = set()
     for perm in ref_perms + target_perms:
         for block in map(abs, perm.blocks):
-            if perm.ref_id in index[block]:
+            if perm.genome_id in index[block]:
                 duplications.add(block)
             else:
-                index[block].add(perm.ref_id)
+                index[block].add(perm.genome_id)
 
     return duplications
 
 
 #filters duplications
 def _filter_perm(perm, to_hold):
-    new_perm = Permutation(perm.ref_id, perm.chr_id, perm.chr_num, [])
+    new_perm = Permutation(perm.genome_id, perm.chr_id, perm.chr_num, [])
     for block in perm.blocks:
         if abs(block) in to_hold:
             new_perm.blocks.append(block)
@@ -100,22 +99,30 @@ def _filter_perm(perm, to_hold):
 
 
 #parses config file
-def _parse_blocks_file(ref_id, filename):
-    name = ""
+def _parse_blocks_file(filename):
     permutations = []
     chr_count = 0
-    for line in open(filename, "r").read().splitlines():
-        line = line.strip()
-        if not line:
-            continue
+    #chr_name = ""
+    with open(filename, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
 
-        if line.startswith(">"):
-            name = line[1:]
-        else:
-            blocks = line.split(" ")[:-1]
-            permutations.append(Permutation(ref_id, name, chr_count,
-                                list(map(int, blocks))))
-            chr_count += 1
+            if line.startswith(">"):
+                tokens = line[1:].split(".")
+                if len(tokens) < 2:
+                    logger.error("permutation ids in " + filename + " do not "
+                                 "follow naming convention: genome.chromosome")
+                    return None
+
+                genome_name = tokens[0]
+                chr_name = "".join(tokens[1:])
+            else:
+                blocks = line.split(" ")[:-1]
+                permutations.append(Permutation(genome_name, chr_name,
+                                    chr_count, list(map(int, blocks))))
+                chr_count += 1
     return permutations
 
 

@@ -9,7 +9,7 @@ import subprocess
 import multiprocessing
 import logging
 
-from .synteny_backend import SyntenyBackend
+from .synteny_backend import SyntenyBackend, BackendException
 import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
@@ -62,7 +62,7 @@ def _make_permutations(references, targets, tree, block_sizes,
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             if not os.path.isfile(perm_file):
                 logger.error("Exitsing results are incompatible with input config")
-                raise Exception("Cannot reuse results from previous run")
+                raise BackendException("Cannot reuse results from previous run")
             files[block_size] = os.path.abspath(perm_file)
 
     else:
@@ -76,8 +76,10 @@ def _make_permutations(references, targets, tree, block_sizes,
             block_dir = os.path.join(work_dir, str(block_size))
             if not os.path.isdir(block_dir):
                 os.mkdir(block_dir)
+
+            logger.info("Converting maf to synteny")
             if not m2s.make_synteny(maf_file, block_dir, block_size):
-                raise Exception("Something went wrong with maf2synteny")
+                raise BackendException("Something went wrong with maf2synteny")
 
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             files[block_size] = os.path.abspath(perm_file)
@@ -111,8 +113,6 @@ def _run_cactus(config_path, ref_genome, out_dir):
     out_maf = os.path.join(work_dir, MAF_OUT)
     config_file = os.path.abspath(config_path)
     prev_dir = os.getcwd()
-    #if not os.path.exists(CACTUS_DIR):
-    #    raise Exception("progressiveCactus is not installed")
 
     num_proc = min(MAX_THREADS, multiprocessing.cpu_count())
     threads_param = "--maxThreads=" + str(num_proc)
@@ -120,12 +120,15 @@ def _run_cactus(config_path, ref_genome, out_dir):
     os.chdir(CACTUS_INSTALL)
     devnull = open(os.devnull, "w")
     cmdline = [CACTUS_EXEC, config_file, work_dir, out_hal, threads_param]
-    subprocess.check_call(cmdline, stdout=devnull)
+    try:
+        subprocess.check_call(cmdline, stdout=devnull)
+    except subprocess.CalledProcessError:
+        raise BackendException()
 
     #convert to maf
     logger.info("Converting HAL to MAF...")
     cmdline = [HAL2MAF, out_hal, out_maf, "--noAncestors",
-               "--refGenome", ref_genome]
+               "--refGenome", ref_genome, "--ucscNames"]
     subprocess.check_call(cmdline, stdout=devnull)
 
     os.chdir(prev_dir)

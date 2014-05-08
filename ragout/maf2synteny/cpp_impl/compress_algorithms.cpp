@@ -79,6 +79,7 @@ bool compressPath(BreakpointGraph& graph, std::deque<int>& path,
 
 int compressGraph(BreakpointGraph& graph, int maxGap)
 {
+	DEBUG_PRINT("Started compression");
 	int numCompressed = 0;
 	std::unordered_set<int> nodesToDel;
 
@@ -105,6 +106,7 @@ int compressGraph(BreakpointGraph& graph, int maxGap)
 		graph.removeNode(node);
 	}
 	
+	DEBUG_PRINT("Finished compression");
 	return numCompressed;
 }
 
@@ -219,6 +221,7 @@ bool findBulge(BreakpointGraph& graph, int node, int maxGap, BranchSet& branches
 
 int removeBulges(BreakpointGraph& graph, int maxGap)
 {
+	DEBUG_PRINT("Removing bulges");
 	int numCollapsed = 0;
 	std::unordered_set<int> nodesToDel;
 	for (int node : graph.iterNodes())
@@ -236,5 +239,6 @@ int removeBulges(BreakpointGraph& graph, int maxGap)
 		graph.removeNode(node);
 	}
 
+	DEBUG_PRINT("Removing bulges - done");
 	return numCollapsed;
 }

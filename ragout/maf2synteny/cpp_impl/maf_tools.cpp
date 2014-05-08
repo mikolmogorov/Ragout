@@ -9,6 +9,7 @@
 
 PermVec mafToPermutations(const std::string& mafFile, int minBlockLen)
 {
+	DEBUG_PRINT("Reading maf file");
 	const float MAX_GAP_RATE = 0.3;
 
 	int blockId = 1;
@@ -52,11 +53,15 @@ PermVec mafToPermutations(const std::string& mafFile, int minBlockLen)
 			int ungappedLen = -1;
 			ss >> seqName >> start >> ungappedLen >> strand >> srcLen >> seq;
 
-			if (seqName.substr(0, 2) == "gi" && seqName.back() != '|')
+			//adhoc fix for progressiveCactus
+			size_t dotPos = seqName.find('.');
+			std::string chrName = (dotPos != seqName.npos) ? 
+								  seqName.substr(dotPos + 1) : seqName;
+			if (chrName.substr(0, 2) == "gi" && seqName.back() != '|')
 			{
-				//fix for progresiveCactus
 				seqName += "|";
 			}
+			//
 			
 			int absoluteStart = (strand == "+") ? start : 
 								srcLen - (start + ungappedLen);
@@ -87,5 +92,6 @@ PermVec mafToPermutations(const std::string& mafFile, int minBlockLen)
 					  permutations.back().blocks.end(), cmp);
 		}
 	}
+	DEBUG_PRINT("Finished reading");
 	return permutations;
 }
