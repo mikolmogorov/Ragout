@@ -5,12 +5,12 @@ from collections import namedtuple
 import re
 import os
 
-ConfigParams = namedtuple("ConfigParams", ["references", "targets", "tree", "blocks"])
+RecipeParams = namedtuple("RecipeParams", ["references", "targets", "tree", "blocks"])
 
 #PUBLIC:
 #############################################
 
-def parse_ragout_config(filename):
+def parse_ragout_recipe(filename):
     prefix = os.path.dirname(filename)
     references = {}
     target = {}
@@ -55,4 +55,4 @@ def parse_ragout_config(filename):
         else:
             raise Exception("Error parsing {0} on line {1}".format(filename, lineno + 1))
 
-    return ConfigParams(references, target, tree_str, block_size)
+    return RecipeParams(references, target, tree_str, block_size)

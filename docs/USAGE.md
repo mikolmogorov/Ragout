@@ -3,12 +3,12 @@ Usage instructions for Ragout
 
     Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus}] [--refine]
                   [--circular] [--overwrite] [--debug] [--version]
-                  config_file
+                  recipe_file
     
 Supported arguments:
 
     positional arguments:
-      config_file           path to the configuration file
+      recipe_file           path to recipe file
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -30,10 +30,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    ragout examples/E.Coli/ecoli.cfg --outdir examples/E.Coli/out/ --refine
-    ragout examples/H.Pylori/helicobacter.cfg --outdir examples/H.Pylori/out/ --refine
-    ragout examples/S.Aureus/aureus.cfg --outdir examples/S.Aureus/out/ --refine
-    ragout examples/V.Cholerea/cholerea.cfg --outdir examples/V.Cholerae/out/ --refine
+    ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------
@@ -59,13 +59,13 @@ Ragout takes as input:
 - Phylogenetic tree for both reference and target genomes in "newick" format
 - Minimum synteny block size (in multiple scales)
 
-All these parameters should be described in a single configuration file.
+All these parameters should be described in a single recipe file.
 See the example of such file below.
 
-Configuration file
-------------------
+Recipe file
+-----------
 
-Here is an example of Ragout configuration file:
+Here is an example of Ragout recipe file:
 
     REF col=references/COL.fasta
     REF jkd=references/JKD6008.fasta

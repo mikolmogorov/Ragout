@@ -8,7 +8,6 @@ import logging
 import os
 
 from ragout.shared.debug import DebugConfig
-import ragout.parsers.config_parser as parser
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

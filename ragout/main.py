@@ -17,7 +17,7 @@ from breakpoint_graph.permutation import PermutationContainer
 import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
-import parsers.config_parser as cparser
+import parsers.recipe_parser as rparser
 from shared.debug import DebugConfig
 
 #register backends
@@ -46,7 +46,7 @@ def enable_logging(log_file):
 
 
 #top-level logic of program
-def do_job(config_file, out_dir, backend, assembly_refine,
+def do_job(recipe_file, out_dir, backend, assembly_refine,
            circular_refs, overwrite, debug):
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
@@ -55,8 +55,8 @@ def do_job(config_file, out_dir, backend, assembly_refine,
         core_debug = os.path.join(out_dir, "debug")
         debugger.set_debug_dir(core_debug)
 
-    config = cparser.parse_ragout_config(config_file)
-    phylogeny = Phylogeny(config.tree)
+    recipe = rparser.parse_ragout_recipe(recipe_file)
+    phylogeny = Phylogeny(recipe.tree)
 
     out_log = os.path.join(out_dir, "ragout.log")
     out_order = os.path.join(out_dir, "scaffolds.ord")
@@ -70,20 +70,20 @@ def do_job(config_file, out_dir, backend, assembly_refine,
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    perm_files = backends[backend].make_permutations(config, out_dir, overwrite)
+    perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
     if not perm_files:
         logger.error("There were problems with synteny backend, exiting.")
         return
 
     last_scaffolds = None
-    for block_size in config.blocks:
+    for block_size in recipe.blocks:
         logger.info("Running Ragout with the block size {0}".format(block_size))
 
         if debug:
             debug_dir = os.path.join(core_debug, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        perm_container = PermutationContainer(perm_files[block_size], config)
+        perm_container = PermutationContainer(perm_files[block_size], recipe)
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, circular_refs)
 
@@ -100,16 +100,16 @@ def do_job(config_file, out_dir, backend, assembly_refine,
             last_scaffolds = scaffolds
 
     scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_fasta(config.targets, last_scaffolds, out_scaffolds)
+    scfldr.output_fasta(recipe.targets, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        if not ovlp.make_overlap_graph(config.targets, out_overlap):
+        if not ovlp.make_overlap_graph(recipe.targets, out_overlap):
             logger.error("Error in overlap graph reconstruction, exiting")
             return
 
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_fasta(config.targets, refined_scaffolds,
+        scfldr.output_fasta(recipe.targets, refined_scaffolds,
                                 out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")
@@ -120,8 +120,8 @@ def main():
                                                  " using multiple references",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("config", metavar="config_file",
-                        help="path to the configuration file")
+    parser.add_argument("recipe", metavar="recipe_file",
+                        help="path to recipe file")
     parser.add_argument("-o", "--outdir", dest="output_dir",
                         help="path to the working directory",
                         default="ragout-out")
@@ -149,7 +149,7 @@ def main():
                          "You can use provided scripts to install it.\n")
         return
 
-    do_job(args.config, args.output_dir, args.synteny_backend,
+    do_job(args.recipe, args.output_dir, args.synteny_backend,
            args.assembly_refine, args.circular_refs, args.overwrite, args.debug)
 
 if __name__ == "__main__":
