@@ -14,17 +14,24 @@ from Bio import Phylo
 #PUBLIC:
 ####################################################
 
+class PhyloException(Exception):
+    pass
+
 #Represents phylogenetic tree and scores it with 
 #given half-breakpoint states
 class Phylogeny:
-    def __init__(self, newick_string):
-        self.tree = Phylo.read(StringIO(newick_string), "newick")
-        self.validate_tree()
-        self.tree_string = newick_string
-
-    #TODO
-    def validate_tree(self):
+    def __init__(self, recipe):
+        self.tree = Phylo.read(StringIO(recipe.tree), "newick")
         self.tree.clade.branch_length = 0
+        self.tree_string = recipe.tree
+        genomes = dict(recipe.references.items() + recipe.targets.items())
+        self.validate_tree(genomes)
+
+    def validate_tree(self, recipe_genomes):
+        tree_genomes = set(map(lambda n: n.name, self.tree.get_terminals()))
+        if tree_genomes != set(recipe_genomes.keys()):
+            raise PhyloException("Some genomes are missing "
+                                 "from the tree/description")
 
     def estimate_tree(self, adjacencies):
         return _tree_score(self.tree, adjacencies)

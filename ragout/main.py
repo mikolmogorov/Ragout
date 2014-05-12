@@ -12,7 +12,7 @@ import argparse
 import overlap.overlap as ovlp
 import assembly_graph.assembly_refine as asref
 import breakpoint_graph.breakpoint_graph as bg
-from breakpoint_graph.phylogeny import Phylogeny
+from breakpoint_graph.phylogeny import Phylogeny, PhyloException
 from breakpoint_graph.permutation import PermutationContainer
 import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
@@ -28,14 +28,15 @@ logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
 
-def enable_logging(log_file):
+def enable_logging(log_file, debug):
     log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: "
                                       "%(message)s", "%H:%M:%S")
     console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: "
                                           "%(message)s", "%H:%M:%S")
     console_log = logging.StreamHandler()
-    console_log.setLevel(logging.INFO)
     console_log.setFormatter(console_formatter)
+    if not debug:
+        console_log.setLevel(logging.INFO)
 
     file_handler = logging.FileHandler(log_file, mode="w")
     file_handler.setFormatter(log_formatter)
@@ -50,14 +51,6 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
            circular_refs, overwrite, debug):
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
-
-    if debug:
-        core_debug = os.path.join(out_dir, "debug")
-        debugger.set_debug_dir(core_debug)
-
-    recipe = rparser.parse_ragout_recipe(recipe_file)
-    phylogeny = Phylogeny(recipe.tree)
-
     out_log = os.path.join(out_dir, "ragout.log")
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
@@ -65,11 +58,22 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
 
-    enable_logging(out_log)
+    if debug:
+        core_debug = os.path.join(out_dir, "debug")
+        debugger.set_debug_dir(core_debug)
 
+    enable_logging(out_log, debug)
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
+    recipe = rparser.parse_ragout_recipe(recipe_file)
+
+    try:
+        phylogeny = Phylogeny(recipe)
+    except PhyloException as e:
+        logger.error(e)
+        return
+
     perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
     if not perm_files:
         logger.error("There were problems with synteny backend, exiting.")

@@ -21,7 +21,7 @@ class SyntenyBackend:
         try:
             files = self.run_backend(config, output_dir, overwrite)
         except BackendException as e:
-            logger.debug(e)
+            logger.error(e)
             return False
         assert sorted(files.keys()) == sorted(config.blocks)
         return files
