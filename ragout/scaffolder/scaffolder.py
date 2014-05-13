@@ -57,12 +57,12 @@ def output_fasta(target_dict, scaffolds, out_fasta):
                 cont_seq = cont_seq.reverse_complement()
 
             if not first:
-                scf_seqs.append(Seq("N" * 11))
+                scf_seqs.append("N" * 11)
             first = False
-            scf_seqs.append(cont_seq)
+            scf_seqs.append(str(cont_seq))
 
-        scf_seq = sum(scf_seqs, Seq(""))
-        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""),
+        scf_seq = "".join(scf_seqs)
+        SeqIO.write(SeqRecord(Seq(scf_seq), id=scf.name, description=""),
                     out_stream, "fasta")
 
     count = 0
