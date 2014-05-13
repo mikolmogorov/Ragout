@@ -12,6 +12,9 @@ from ragout.shared.debug import DebugConfig
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
+class PermException(Exception):
+    pass
+
 #PUBLIC:
 ########################################################
 
@@ -43,7 +46,7 @@ class PermutationContainer:
         logging.info("Reading permutation file")
         permutations = _parse_blocks_file(permutations_file)
         if not permutations:
-            raise Exception("Error reading permutations")
+            raise PermException("Error reading permutations")
 
         for p in permutations:
             if p.genome_id in config.references:
@@ -97,7 +100,7 @@ def _filter_perm(perm, to_hold):
     return new_perm
 
 
-#parses config file
+#parses synteny blocks file
 def _parse_blocks_file(filename):
     permutations = []
     chr_count = 0
@@ -125,7 +128,7 @@ def _parse_blocks_file(filename):
     return permutations
 
 
-#iutputs permutations to stream
+#outputs permutations
 def _write_permutations(permutations, out_stream):
     for perm in permutations:
         out_stream.write(">" + perm.chr_id + "\n")

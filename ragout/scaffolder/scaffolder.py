@@ -36,8 +36,7 @@ def output_order(scaffolds, out_order):
 
 #Outputs scaffodls to file in "fasta" format
 def output_fasta(target_dict, scaffolds, out_fasta):
-    MIN_CONTIG_LEN = 0
-
+    logger.info("Generating FASTA output")
     contigs_fasta = {}
     for target_file in target_dict.values():
         for seq in SeqIO.parse(target_file, "fasta"):
@@ -47,7 +46,7 @@ def output_fasta(target_dict, scaffolds, out_fasta):
     used_contigs = set()
 
     for scf in scaffolds:
-        scf_seq = Seq("")
+        scf_seqs = []
         first = True
 
         for contig in scf.contigs:
@@ -58,15 +57,17 @@ def output_fasta(target_dict, scaffolds, out_fasta):
                 cont_seq = cont_seq.reverse_complement()
 
             if not first:
-                scf_seq += Seq("N" * 11)
+                scf_seqs.append(Seq("N" * 11))
             first = False
-            scf_seq += cont_seq
+            scf_seqs.append(cont_seq)
 
-        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""), out_stream, "fasta")
+        scf_seq = sum(scf_seqs, Seq(""))
+        SeqIO.write(SeqRecord(scf_seq, id=scf.name, description=""),
+                    out_stream, "fasta")
 
     count = 0
-    for h, seq in contigs_fasta.items():
-        if len(seq) > MIN_CONTIG_LEN and h not in used_contigs:
+    for h in contigs_fasta:
+        if h not in used_contigs:
             count += 1
 
 

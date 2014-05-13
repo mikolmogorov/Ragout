@@ -79,6 +79,7 @@ def _get_unique_path(graph, prev_cont, next_cont, max_path_len):
 def _insert_from_graph(graph_file, scaffolds_in, max_path_len):
     new_scaffolds = []
     graph = _load_dot(graph_file)
+    logger.debug("Loaded overlap graph with {0} nodes".format(len(graph)))
 
     ordered_contigs = set()
     for scf in scaffolds_in:

@@ -56,14 +56,17 @@ class BreakpointGraph:
                                        genome_id=perm.genome_id)
                 prev_block = block
 
+        logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
+
     #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
         logger.info("Resolving breakpoint graph")
         chosen_edges = []
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+        logger.debug("Found {0} connected components".format(len(subgraphs)))
 
         for comp_id, subgraph in enumerate(subgraphs):
-            trimmed_graph = self.trim_known_edges(subgraph)
+            trimmed_graph = self._trim_known_edges(subgraph)
 
             if len(trimmed_graph) < 2:
                 continue
@@ -73,7 +76,7 @@ class BreakpointGraph:
                 chosen_edges.append((node_1, node_2))
                 continue
 
-            weighted_graph = self.make_weighted(trimmed_graph, phylogeny)
+            weighted_graph = self._make_weighted(trimmed_graph, phylogeny)
             matching_edges = _split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
 
@@ -92,8 +95,8 @@ class BreakpointGraph:
 
         return adjacencies
 
-    #removes edges with known target's adjacencies
-    def trim_known_edges(self, graph):
+    #removes edges with known adjacencies in target (red edges from paper)
+    def _trim_known_edges(self, graph):
         trimmed_graph = graph.copy()
         for v1, v2, data in graph.edges_iter(data=True):
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
@@ -108,8 +111,8 @@ class BreakpointGraph:
 
         return trimmed_graph
 
-    #converts breakpoint graph into weighted graph
-    def make_weighted(self, graph, phylogeny):
+    #converts breakpoint graph into a weighted graph
+    def _make_weighted(self, graph, phylogeny):
         assert len(graph) > 2
         g = nx.Graph()
         g.add_nodes_from(graph.nodes())
@@ -138,10 +141,13 @@ class BreakpointGraph:
 ###########################################################################
 
 
+#finds a perfect matching with minimum weight
 def _split_graph(graph):
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
 
+    logger.debug("Finding perfect matching for a component of "
+                 "size {0}".format(len(graph)))
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = []
     for v1, v2 in edges.items():

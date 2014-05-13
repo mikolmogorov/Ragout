@@ -13,7 +13,7 @@ import overlap.overlap as ovlp
 import assembly_graph.assembly_refine as asref
 import breakpoint_graph.breakpoint_graph as bg
 from breakpoint_graph.phylogeny import Phylogeny, PhyloException
-from breakpoint_graph.permutation import PermutationContainer
+from breakpoint_graph.permutation import PermutationContainer, PermException
 import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
@@ -87,7 +87,13 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             debug_dir = os.path.join(core_debug, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        perm_container = PermutationContainer(perm_files[block_size], recipe)
+        try:
+            perm_container = PermutationContainer(perm_files[block_size],
+                                                  recipe)
+        except PermException as e:
+            logger.error(e)
+            return
+
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, circular_refs)
 
