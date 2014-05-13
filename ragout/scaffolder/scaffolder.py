@@ -192,7 +192,7 @@ def _calc_n50(scaffolds_lengths, assembly_len):
     sum_len = 0
     for l in sorted(scaffolds_lengths, reverse=True):
         sum_len += l
-        if l > assembly_len / 2:
+        if sum_len > assembly_len / 2:
             n50 = l
             break
     return n50
