@@ -17,7 +17,7 @@ from breakpoint_graph.permutation import PermutationContainer, PermException
 import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
-import parsers.recipe_parser as rparser
+from parsers.recipe_parser import parse_ragout_recipe, RecipeException
 from shared.debug import DebugConfig
 
 #register backends
@@ -66,7 +66,13 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     logger.info("Cooking Ragout...")
 
     backends = SyntenyBackend.get_available_backends()
-    recipe = rparser.parse_ragout_recipe(recipe_file)
+
+    try:
+        recipe = parse_ragout_recipe(recipe_file)
+    except RecipeException as e:
+        logger.error("Error parsing recipe")
+        logger.error(e)
+        return
 
     try:
         phylogeny = Phylogeny(recipe)

@@ -7,6 +7,9 @@ import os
 
 RecipeParams = namedtuple("RecipeParams", ["references", "targets", "tree", "blocks"])
 
+class RecipeException(Exception):
+    pass
+
 #PUBLIC:
 #############################################
 
@@ -22,6 +25,8 @@ def parse_ragout_recipe(filename):
     tree_matcher = re.compile("TREE\s*=\s*([^\s]+)$")
     block_matcher = re.compile("BLOCK\s*=\s*([\d,]+)$")
 
+    tree_str = None
+    block_size = None
     for lineno, line in enumerate(open(filename, "r").read().splitlines()):
         line = line.strip()
         if not line or line.startswith("#"):
@@ -49,10 +54,19 @@ def parse_ragout_recipe(filename):
             sizes = m.group(1).split(",")
             block_size = list(map(int, sizes))
             if len(block_size) != len(set(block_size)):
-                raise Exception("Synteny block are duplicated")
+                raise RecipeException("Synteny block are duplicated")
             continue
 
         else:
-            raise Exception("Error parsing {0} on line {1}".format(filename, lineno + 1))
+            raise RecipeException("Error parsing {0} on line {1}"
+                                    .format(filename, lineno + 1))
 
+    if not len(references):
+        raise RecipeException("No references specified")
+    if not len(target):
+        raise RecipeException("No targets specified")
+    if not tree_str:
+        raise RecipeException("Tree is not specified")
+    if not block_size:
+        raise RecipeException("Blocks size are not specified")
     return RecipeParams(references, target, tree_str, block_size)

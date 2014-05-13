@@ -43,6 +43,10 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
 
+        if set(config.references).intersection(set(config.targets)):
+            raise PermException("Some genomes are labeled both as reference "
+                                "and target")
+
         logging.info("Reading permutation file")
         permutations = _parse_blocks_file(permutations_file)
         if not permutations:
@@ -53,6 +57,17 @@ class PermutationContainer:
                 self.ref_perms.append(p)
             elif p.genome_id in config.targets:
                 self.target_perms.append(p)
+
+        logger.debug("Read {0} reference sequences"
+                     .format(len(self.ref_perms)))
+        if not len(self.ref_perms):
+            raise PermException("No synteny blocks found in "
+                                "reference sequences")
+        logger.debug("Read {0} target sequences"
+                     .format(len(self.target_perms)))
+        if not len(self.target_perms):
+            raise PermException("No synteny blocks found in "
+                                "target sequences")
 
         self.target_blocks = set()
         for perm in self.target_perms:
@@ -104,7 +119,6 @@ def _filter_perm(perm, to_hold):
 def _parse_blocks_file(filename):
     permutations = []
     chr_count = 0
-    #chr_name = ""
     with open(filename, "r") as f:
         for line in f:
             line = line.strip()
