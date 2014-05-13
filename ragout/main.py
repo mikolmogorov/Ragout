@@ -126,7 +126,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_fasta(recipe.targets, refined_scaffolds,
-                                out_refined_scaffolds)
+                            out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")
 

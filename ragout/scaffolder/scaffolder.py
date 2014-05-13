@@ -45,6 +45,7 @@ def output_fasta(target_dict, scaffolds, out_fasta):
     out_stream = open(out_fasta, "w")
     used_contigs = set()
 
+    scf_length = []
     for scf in scaffolds:
         scf_seqs = []
         first = True
@@ -62,13 +63,36 @@ def output_fasta(target_dict, scaffolds, out_fasta):
             scf_seqs.append(str(cont_seq))
 
         scf_seq = "".join(scf_seqs)
+        scf_length.append(len(scf_seq))
         SeqIO.write(SeqRecord(Seq(scf_seq), id=scf.name, description=""),
                     out_stream, "fasta")
 
-    count = 0
+    #add some statistics
+    used_count = 0
+    used_len = 0
+    unused_count = 0
+    unused_len = 0
     for h in contigs_fasta:
-        if h not in used_contigs:
-            count += 1
+        if h in used_contigs:
+            used_count += 1
+            used_len += len(contigs_fasta[h])
+        else:
+            unused_count += 1
+            unused_len += len(contigs_fasta[h])
+    assembly_len = unused_len + used_len
+    used_perc = 100 * float(used_len) / assembly_len
+    unused_perc = 100 * float(unused_len) / assembly_len
+
+    logger.info("Assembly statistics:\n\n"
+                "\tScaffolds count:\t{0}\n"
+                "\tUsed contigs count:\t{1}\n"
+                "\tUsed contigs length:\t{2} ({3:2.4}%)\n"
+                "\tUnused contigs count:\t{4}\n"
+                "\tUnused contigs length:\t{5} ({6:2.4}%)\n"
+                "\tScaffolds N50:\t\t{7}\n"
+                .format(len(scaffolds), used_count, used_len, used_perc,
+                        unused_count, unused_len, unused_perc,
+                        _calc_n50(scf_length, unused_len + used_len)))
 
 
 #PRIVATE:
@@ -161,3 +185,14 @@ def _make_contigs(perm_container):
             index[abs(block)].append(contigs[-1])
 
     return contigs, index
+
+
+def _calc_n50(scaffolds_lengths, assembly_len):
+    n50 = 0
+    sum_len = 0
+    for l in sorted(scaffolds_lengths, reverse=True):
+        sum_len += l
+        if l > assembly_len / 2:
+            n50 = l
+            break
+    return n50
