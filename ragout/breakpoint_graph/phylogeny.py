@@ -36,7 +36,7 @@ class Phylogeny:
     def estimate_tree(self, adjacencies):
         return _tree_score(self.tree, adjacencies)
 
-    #PRIVATE:
+#PRIVATE:
 ####################################################
 
 #scoring with DP (see algorithm description in the paper)
@@ -55,7 +55,8 @@ def _tree_score(tree, leaf_states):
     #recursive
     def rec_helper(root):
         if root.is_terminal():
-            leaf_score = lambda s: 0.0 if s == leaf_states[root.name] else float("inf")
+            leaf_score = (lambda s: 0.0 if s == leaf_states[root.name]
+                                        else float("inf"))
             return {s : leaf_score(s) for s in all_states}
 
         nodes_scores = {}
@@ -68,7 +69,8 @@ def _tree_score(tree, leaf_states):
                 min_score = float("inf")
                 for child_state in all_states:
                     score = (nodes_scores[node][child_state] +
-                            branch_score(root_state, child_state, node.branch_length))
+                            branch_score(root_state, child_state,
+                                         node.branch_length))
                     min_score = min(min_score, score)
                 root_scores[root_state] += min_score
 

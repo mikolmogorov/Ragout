@@ -61,22 +61,23 @@ class BreakpointGraph:
     #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
         logger.info("Resolving breakpoint graph")
-        chosen_edges = []
-        subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+
+        trimmed_graph = self._trim_known_edges(self.bp_graph)
+        subgraphs = nx.connected_component_subgraphs(trimmed_graph)
         logger.debug("Found {0} connected components".format(len(subgraphs)))
 
+        chosen_edges = []
         for comp_id, subgraph in enumerate(subgraphs):
-            trimmed_graph = self._trim_known_edges(subgraph)
-
-            if len(trimmed_graph) < 2:
+            #trimmed_graph = self._trim_known_edges(subgraph)
+            if len(subgraph) < 2:
                 continue
 
-            if len(trimmed_graph) == 2:
-                node_1, node_2 = trimmed_graph.nodes()
+            if len(subgraph) == 2:
+                node_1, node_2 = subgraph.nodes()
                 chosen_edges.append((node_1, node_2))
                 continue
 
-            weighted_graph = self._make_weighted(trimmed_graph, phylogeny)
+            weighted_graph = self._make_weighted(subgraph, phylogeny)
             matching_edges = _split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
 

@@ -95,11 +95,15 @@ def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
     base_graph = nx.read_dot(base_dot)
     predicted_edges = nx.read_dot(predicted_dot)
     out_graph = nx.MultiGraph()
+    nodes_with_predicted = set()
+
     for v1, v2, data in base_graph.edges_iter(data=True):
         color = g2c(data["genome_id"])
         out_graph.add_edge(v1, v2, color=color)
     for v1, v2 in predicted_edges.edges_iter():
         out_graph.add_edge(v1, v2, color="red", style="dashed")
+        nodes_with_predicted.add(v1)
+        nodes_with_predicted.add(v2)
     for (v1, v2) in true_edges:
         out_graph.add_edge(str(v1), str(v2), color="red", style="bold")
 
@@ -107,6 +111,14 @@ def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
     for comp_id, subgr in enumerate(subgraphs):
         if len(subgr) == 2:
             continue
+        to_show = False
+        for node in subgr.nodes():
+            if node in nodes_with_predicted:
+                to_show = True
+                break
+        if not to_show:
+            continue
+
         comp_file = os.path.join(out_dir, "comp{0}-bg.png".format(comp_id))
         agraph = nx.to_agraph(subgr)
         agraph.layout(prog="dot")
@@ -216,19 +228,23 @@ def do_job(nucmer_coords, debug_dir, circular):
     draw_phylogeny(phylogeny_in, phylogeny_out)
 
     contigs = get_contig_permutations(used_contigs)
-    alignment = parse_nucmer_coords(nucmer_coords)
-    alignment = list(filter(lambda e: e.contig_id in contigs, alignment))
-    #alignment = join_collinear(alignment)
-    alignment = filter_by_coverage(alignment)
-    alignment = join_collinear(alignment)
-    break_contigs = verify_alignment(alignment, contigs)
+    if nucmer_coords != "-":
+        alignment = parse_nucmer_coords(nucmer_coords)
+        alignment = list(filter(lambda e: e.contig_id in contigs, alignment))
+        #alignment = join_collinear(alignment)
+        alignment = filter_by_coverage(alignment)
+        alignment = join_collinear(alignment)
+        break_contigs = verify_alignment(alignment, contigs)
+        true_adj = get_true_adjacencies(alignment, contigs,
+                                        break_contigs, circular)
+    else:
+        true_adj = []
 
-    true_adj = get_true_adjacencies(alignment, contigs, break_contigs, circular)
     output_edges(true_adj, true_adj_out)
     draw_breakpoint_graph(base_dot, predicted_dot, true_adj, debug_dir)
-    draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
-                                     predicted_dot, true_adj, debug_dir)
-    #print(g2c.table)
+    if os.path.exists(overlap_dot):
+        draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
+                                         predicted_dot, true_adj, debug_dir)
 
 
 def main():
