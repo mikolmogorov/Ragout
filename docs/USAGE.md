@@ -42,22 +42,22 @@ This is a very brief description of the algorithm. See our paper
 for the detailed explanation.
 
 Ragout works with genomes represented as sequences of synteny blocks
-and firstly uses *Sibelia* for this decompostion. 
+and firstly uses *Sibelia* for this decomposition. 
 Next, Ragout assembles contigs into scaffolds using a breakpoint graph.
 
 This procedure is repeated multiple times with the different size
 of synteny block decomposition. Afterwards, an optional refinement
-step is performed (if --refine was specified).
+step with assembly (overlap) graph is performed (if --refine was specified).
 
 Input
 ------
 
 Ragout takes as input:
 
-- Reference sequences in *fasta* format
-- Target assembly in *fasta* format (a set of contigs)
-- Phylogenetic tree for both reference and target genomes in "newick" format
-- Minimum synteny block size (in multiple scales)
+* Reference genomes in *FASTA* format
+* Target (assembling) genome in *FASTA* format (a set of contigs)
+* Phylogenetic tree for both reference and target genomes in *NEWICK* format
+* Minimum synteny block size (in multiple scales)
 
 All these parameters should be described in a single recipe file.
 See the example of such file below.
@@ -65,26 +65,31 @@ See the example of such file below.
 Recipe file
 -----------
 
-Here is an example of Ragout recipe file:
+If you want to cook Ragout, you need to write a recipe first.
+Here is an example of such recipe file:
 
-    REF col=references/COL.fasta
-    REF jkd=references/JKD6008.fasta
-    REF rf122=references/RF122.fasta
-    REF n315=references/N315.fasta
+    REF col = references/COL.fasta
+    REF jkd = references/JKD6008.fasta
+    REF rf122 = references/RF122.fasta
+    REF n315 = references/N315.fasta
 
-    TARGET usa=usa300_contigs.fasta
+    TARGET usa = usa300_contigs.fasta
 
-    TREE=(rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
+    TREE = (rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
 
-    BLOCK=5000,500,100
+    BLOCK = 5000,500,100
 
 Keywords description:
 
-- REF: label of the reference sequence and its relative path
-- TARGET: label of the target assembly and its relative path
-- TREE: phylogenetic tree for both reference and target genomes
-- BLOCK: minimum synteny block size (in multiple scales, one per iteration)
+* REF: reference genome name and a path to FASTA file with sequences
+* TARGET: target genome name and a path to FASTA file with sequences
+* TREE: phylogenetic tree in NEWICK format
+* BLOCK: minimum synteny block sizes (in multiple scales, one per iteration)
 
+All names should be uniqe. Paths can be both relative and absolute.
+The tree should contain all the described genomes (both references and target)
+in leaf nodes. If the branch length is ommited, it would be set to 1.
+NEWICK string as well as BLOCK string should not contain any spaces inside.
 
 Output files
 ------------
@@ -93,7 +98,7 @@ After running Ragout, an output directory will contain:
 
 * "scaffolds.ord" with a resulting order of contigs
 * "scaffolds.fasta" with scaffold sequences (contigs are separated by 11 Ns)
-* "scaffolds_refined.ord" with a refined order contigs (if --refine was specified)
+* "scaffolds_refined.ord" with a contigs order after refinement (if --refine was specified)
 * "scaffolds_refined.fasta" with refined scaffold sequences (if --refine was specified)
 
 
@@ -118,11 +123,11 @@ Running with multiple references, the output of Ragout may highly
 depend of the given phylogenetic tree and can be biased if
 the tree is incorrect.
 
-If the phylogeny is unknown, you still can run Ragout assuming
-the star phylogeny and specifying the evolutionary distance between
-target and references (which is easier to recover).
+If the phylogeny is unknown or ambiguous, you are still able run Ragout assuming
+the "star" phylogeny and specifying the evolutionary distance between
+target and references (which is easier to find out):
 
-    TREE = (target, ref1:0.1, ref2:0.05, ref3:0.003)
+    TREE = (target,ref1:0.1,ref2:0.05,ref3:0.003);
 
 
 Experimental support of Progressive Cactus
