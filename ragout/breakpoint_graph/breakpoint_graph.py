@@ -42,7 +42,7 @@ class BreakpointGraph:
         for perm in chain(perm_container.ref_perms_filtered,
                           perm_container.target_perms_filtered):
             circular = (circular_refs if perm.genome_id in self.references
-                                      else False)
+                        else False)
 
             prev_block = None
             for block in perm.iter_blocks(circular):
@@ -67,9 +67,10 @@ class BreakpointGraph:
         logger.debug("Found {0} connected components".format(len(subgraphs)))
 
         chosen_edges = []
+        orphans_count = 0
         for comp_id, subgraph in enumerate(subgraphs):
-            #trimmed_graph = self._trim_known_edges(subgraph)
             if len(subgraph) < 2:
+                orphans_count += 1
                 continue
 
             if len(subgraph) == 2:
@@ -80,6 +81,9 @@ class BreakpointGraph:
             weighted_graph = self._make_weighted(subgraph, phylogeny)
             matching_edges = _split_graph(weighted_graph)
             chosen_edges.extend(matching_edges)
+
+        logger.debug("Inferred {0} adjacencies".format(len(chosen_edges)))
+        logger.debug("{0} orphaned nodes".format(orphans_count))
 
         adjacencies = {}
         for edge in chosen_edges:

@@ -38,9 +38,11 @@ def output_order(scaffolds, out_order):
 def output_fasta(target_dict, scaffolds, out_fasta):
     logger.info("Generating FASTA output")
     contigs_fasta = {}
+    contigs_length = []
     for target_file in target_dict.values():
         for seq in SeqIO.parse(target_file, "fasta"):
             contigs_fasta[seq.id] = seq.seq
+            contigs_length.append(len(seq.seq))
 
     out_stream = open(out_fasta, "w")
     used_contigs = set()
@@ -89,9 +91,11 @@ def output_fasta(target_dict, scaffolds, out_fasta):
                 "\tUsed contigs length:\t{2} ({3:2.4}%)\n"
                 "\tUnused contigs count:\t{4}\n"
                 "\tUnused contigs length:\t{5} ({6:2.4}%)\n"
-                "\tScaffolds N50:\t\t{7}\n"
+                "\tContigs N50: \t\t{7}\n"
+                "\tScaffolds N50:\t\t{8}\n"
                 .format(len(scaffolds), used_count, used_len, used_perc,
                         unused_count, unused_len, unused_perc,
+                        _calc_n50(contigs_length, unused_len + used_len),
                         _calc_n50(scf_length, unused_len + used_len)))
 
 
