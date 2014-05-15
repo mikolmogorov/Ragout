@@ -62,28 +62,18 @@ class BreakpointGraph:
     def find_adjacencies(self, phylogeny):
         logger.info("Resolving breakpoint graph")
 
-        trimmed_graph = self._trim_known_edges(self.bp_graph)
-        subgraphs = nx.connected_component_subgraphs(trimmed_graph)
+        subgraphs = nx.connected_component_subgraphs(self.bp_graph)
         logger.debug("Found {0} connected components".format(len(subgraphs)))
 
         chosen_edges = []
-        orphans_count = 0
-        for comp_id, subgraph in enumerate(subgraphs):
-            if len(subgraph) < 2:
-                orphans_count += 1
-                continue
-
-            if len(subgraph) == 2:
-                node_1, node_2 = subgraph.nodes()
-                chosen_edges.append((node_1, node_2))
-                continue
-
-            weighted_graph = self._make_weighted(subgraph, phylogeny)
-            matching_edges = _split_graph(weighted_graph)
-            chosen_edges.extend(matching_edges)
+        self.orphans_count = 0
+        self.guessed_count = 0
+        for subgraph in subgraphs:
+            chosen_edges.extend(self._process_component(subgraph, phylogeny))
 
         logger.debug("Inferred {0} adjacencies".format(len(chosen_edges)))
-        logger.debug("{0} orphaned nodes".format(orphans_count))
+        logger.debug("{0} orphaned nodes".format(self.orphans_count))
+        logger.debug("{0} guessed edges".format(self.guessed_count))
 
         adjacencies = {}
         for edge in chosen_edges:
@@ -99,6 +89,38 @@ class BreakpointGraph:
             _output_phylogeny(phylogeny.tree_string, self.targets[0], phylo_out)
 
         return adjacencies
+
+    #processes a connected component of the breakpoint graph
+    def _process_component(self, subgraph, phylogeny):
+        trimmed_graph = self._trim_known_edges(subgraph)
+        unused_nodes = set(trimmed_graph.nodes())
+
+        chosen_edges = []
+        for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
+            if len(trim_subgraph) < 2:
+                self.orphans_count += 1
+                continue
+
+            if len(trim_subgraph) == 2:
+                chosen_edges.append(tuple(trim_subgraph.nodes()))
+                for n in trim_subgraph.nodes():
+                    unused_nodes.remove(n)
+                continue
+
+            weighted_graph = self._make_weighted(trim_subgraph, phylogeny)
+            matching_edges = _split_graph(weighted_graph)
+            for edge in matching_edges:
+                for n in edge:
+                    unused_nodes.remove(n)
+            chosen_edges.extend(matching_edges)
+
+        #check if there are only 2 nodes left
+        if len(unused_nodes) == 2:
+            self.guessed_count += 1
+            self.orphans_count -= 2
+            chosen_edges.append(tuple(unused_nodes))
+
+        return chosen_edges
 
     #removes edges with known adjacencies in target (red edges from paper)
     def _trim_known_edges(self, graph):
@@ -154,12 +176,12 @@ def _split_graph(graph):
     logger.debug("Finding perfect matching for a component of "
                  "size {0}".format(len(graph)))
     edges = nx.max_weight_matching(graph, maxcardinality=True)
-    unique_edges = []
+    unique_edges = set()
     for v1, v2 in edges.items():
         if not (v2, v1) in unique_edges:
-            unique_edges.append((v1, v2))
+            unique_edges.add((v1, v2))
 
-    return unique_edges
+    return list(unique_edges)
 
 
 def _update_edge(graph, v1, v2, weight):
