@@ -23,7 +23,8 @@ def refine_scaffolds(graph_file, scaffolds):
     max_path_len = config.ASSEMBLY_MAX_PATH_LEN
     logger.info("Refining with assembly graph")
     logger.debug("Max path len = {0}".format(max_path_len))
-    new_scaffolds = _insert_from_graph(graph_file, scaffolds, max_path_len)
+    #new_scaffolds = _insert_from_graph(graph_file, scaffolds, max_path_len)
+    new_scaffolds = _insert_from_graph_experement(graph_file, scaffolds, max_path_len) #
     return new_scaffolds
 
 
@@ -74,6 +75,34 @@ def _get_unique_path(graph, prev_cont, next_cont, max_path_len):
 
     return path_nodes
 
+def my_all_simple_paths(graph, src, dst, ordered_contigs, max_path_len):
+    answer = []
+
+    def dfs(vertex, visit):
+        for _, u in graph.edges(vertex):
+            if u in visited:
+                continue
+            if u == dst:
+                visit.append(dst)
+                answer.append(list(visit))
+                visit.pop()
+                return
+
+        if len(visit) >= max_path_len:
+            return
+
+        for _, u in graph.edges(vertex):
+            if u not in visit and str(u)[1:] not in ordered_contigs:
+                visit.append(u)
+                dfs(u, visit)
+                visit.pop()
+
+    visited = [src]
+    dfs(src, visited)
+    return answer
+
+
+
 def _get_unigue_path_experiment(graph, prev_cont, next_cont, max_path_len, ordered_contigs):
     src, dst =  str(prev_cont), str(next_cont)
 
@@ -86,7 +115,7 @@ def _get_unigue_path_experiment(graph, prev_cont, next_cont, max_path_len, order
         logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
         return None
 
-    paths = list(nx.all_simple_paths(graph, src, dst, max_path_len))
+    paths = list(my_all_simple_paths(graph, src, dst, ordered_contigs, max_path_len))
 
     if not paths:
         logger.debug("no path between {0} -- {1}".format(prev_cont, next_cont))
@@ -95,19 +124,13 @@ def _get_unigue_path_experiment(graph, prev_cont, next_cont, max_path_len, order
     path_nodes = None
     for path in paths:
         p_nodes = list(map(str, path[1:-1]))
-        consistent = True
-        for node in p_nodes:
-            if node[1:] in ordered_contigs:
-                consistent = False
-                break
 
-        if consistent:
-            if not path_nodes:
-                path_nodes = p_nodes
-            else:
-                for node in path_nodes:
-                    if p_nodes.count(node) == 0:
-                        path_nodes.remove(node)
+        if not path_nodes:
+            path_nodes = p_nodes
+        else:
+            for node in path_nodes:
+                if p_nodes.count(node) == 0:
+                    path_nodes.remove(node)
 
     if path_nodes:
         logger.debug("unique path {0} -- {1} of length {2}"
