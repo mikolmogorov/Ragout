@@ -5,6 +5,7 @@
 #include <utility>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
 #include <algorithm>
 #include <stdexcept>
 
@@ -142,6 +143,7 @@ std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs,
 
 	int prevProgress = 0;
 	int contigCounter = 0;
+	std::map<int, int> overlapHist;
 	std::cerr << "Progress: ";
 
 	for (auto &headContig : contigs)
@@ -155,6 +157,7 @@ std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs,
 			{
 				overlaps.push_back(Overlap(&headContig, &tailContig, 
 										   overlapLen));
+				overlapHist[overlapLen] += 1;
 			}
 		}
 		
@@ -167,53 +170,14 @@ std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs,
 		}
 	}
 	std::cerr << std::endl;
+	for (auto ovlpPair : overlapHist)
+	{
+		std::cerr << ovlpPair.first << " " << ovlpPair.second << std::endl;
+	}
 
 	return overlaps;
 }
 
-
-/*
-void buildDebrujinGraph(std::vector<FastaRecord>& contigs,
-						std::vector<Overlap>& overlaps, std::ostream& streamOut)
-{
-	std::unordered_map<FastaRecord*, SetNode<int>*> leftNodes;
-	std::unordered_map<FastaRecord*, SetNode<int>*> rightNodes;
-
-	int counter = 0;
-	for (auto &contig : contigs)
-	{
-		leftNodes[&contig] = new SetNode<int>(counter++);
-		rightNodes[&contig] = new SetNode<int>(counter++);
-	}
-
-	for (auto &overlap : overlaps)
-	{
-		unionSet(rightNodes[overlap.prevContig], 
-				 leftNodes[overlap.nextContig]);
-	}
-
-	std::vector<Edge> edges;
-	for (auto &contig : contigs)
-	{
-		int leftId = findSet(leftNodes[&contig])->data;
-		int rightId = findSet(rightNodes[&contig])->data;
-
-		edges.push_back(Edge(std::to_string(leftId), std::to_string(rightId),
-							 contig.description_));
-	}
-
-	for (auto nodePair : leftNodes) delete nodePair.second;
-	for (auto nodePair : rightNodes) delete nodePair.second;
-
-	streamOut << "digraph {\n";
-	for (auto edge : edges)
-	{
-		streamOut << edge.begin << " -> " << edge.end 
-				  << " [label=\"" << edge.label << "\"];\n";
-	}
-	streamOut << "}\n";
-}
-*/
 
 void buildAssemblyGraph(std::vector<FastaRecord>& contigs,
 						std::vector<Overlap>& overlaps, std::ostream& streamOut)
@@ -286,7 +250,6 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 		overlaps = filterByKmer(overlaps);
 	}
 
-	//buildDebrujinGraph(contigs, overlaps, streamOut);
 	buildAssemblyGraph(contigs, overlaps, streamOut);
 	return true;
 }

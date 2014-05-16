@@ -68,12 +68,14 @@ class BreakpointGraph:
         chosen_edges = []
         self.orphans_count = 0
         self.guessed_count = 0
+        self.trimmed_count = 0
         for subgraph in subgraphs:
             chosen_edges.extend(self._process_component(subgraph, phylogeny))
 
         logger.debug("Inferred {0} adjacencies".format(len(chosen_edges)))
         logger.debug("{0} orphaned nodes".format(self.orphans_count))
         logger.debug("{0} guessed edges".format(self.guessed_count))
+        logger.debug("{0} trimmed edges".format(self.trimmed_count))
 
         adjacencies = {}
         for edge in chosen_edges:
@@ -94,6 +96,7 @@ class BreakpointGraph:
     def _process_component(self, subgraph, phylogeny):
         trimmed_graph = self._trim_known_edges(subgraph)
         unused_nodes = set(trimmed_graph.nodes())
+        #assert len(unused_nodes) == len(trimmed_graph.nodes())
 
         chosen_edges = []
         for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
@@ -114,11 +117,20 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
             chosen_edges.extend(matching_edges)
 
+        #assert len(trimmed_graph) == len(unused_nodes) + len(chosen_edges) * 2
+        #if len(unused_nodes):
+        #    print len(unused_nodes)
+        #if len(unused_nodes) % 2:
+        #    print(len(trimmed_graph), len(unused_nodes), len(chosen_edges) * 2)
+        #    print (self.orphans_count)
+
         #check if there are only 2 nodes left
         if len(unused_nodes) == 2:
             self.guessed_count += 1
             self.orphans_count -= 2
             chosen_edges.append(tuple(unused_nodes))
+        elif len(unused_nodes):
+            self.orphans_count += len(unused_nodes)
 
         return chosen_edges
 
@@ -133,8 +145,9 @@ class BreakpointGraph:
                                   graph[v1][v2].values()))
             target_id = self.targets[0]
             if target_id in genome_ids:
-                trimmed_graph.remove_node(v1)
-                trimmed_graph.remove_node(v2)
+                for node in [v1, v2]:
+                    trimmed_graph.remove_node(node)
+                self.trimmed_count += 1
 
         return trimmed_graph
 

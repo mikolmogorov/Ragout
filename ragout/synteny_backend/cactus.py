@@ -29,8 +29,7 @@ class CactusBackend(SyntenyBackend):
 
 
     def run_backend(self, config, output_dir, overwrite):
-        return _make_permutations(config.references, config.targets, config.tree,
-                                  config.blocks, output_dir, overwrite)
+        return _make_permutations(config, output_dir, overwrite)
 
 
 if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
@@ -45,8 +44,7 @@ else:
 
 
 #Runs Cactus, then outputs preprocessesed results into output_dir
-def _make_permutations(references, targets, tree, block_sizes,
-                       output_dir, overwrite):
+def _make_permutations(recipe, output_dir, overwrite):
     work_dir = os.path.join(output_dir, CACTUS_WORKDIR)
     files = {}
 
@@ -57,7 +55,7 @@ def _make_permutations(references, targets, tree, block_sizes,
         #using existing results
         logger.warning("Using existing Cactus results from previous run")
         logger.warning("Use --overwrite to force alignment")
-        for block_size in block_sizes:
+        for block_size in recipe.blocks:
             block_dir = os.path.join(work_dir, str(block_size))
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             if not os.path.isfile(perm_file):
@@ -68,35 +66,37 @@ def _make_permutations(references, targets, tree, block_sizes,
     else:
         #running cactus
         os.mkdir(work_dir)
-        config_path = _make_cactus_config(references, targets, tree, work_dir)
-        ref_genome = targets.keys()[0]
+        config_path = _make_cactus_config(recipe.fasta, recipe.targets,
+                                          recipe.tree, work_dir)
+        ref_genome = recipe.targets[0]
         maf_file = _run_cactus(config_path, ref_genome, work_dir)
 
-        for block_size in block_sizes:
+        logger.info("Converting maf to synteny")
+        if not m2s.make_synteny(maf_file, work_dir, block_sizes):
+            raise BackendException("Something went wrong with maf2synteny")
+
+        for block_size in recipe.blocks:
             block_dir = os.path.join(work_dir, str(block_size))
-            if not os.path.isdir(block_dir):
-                os.mkdir(block_dir)
-
-            logger.info("Converting maf to synteny")
-            if not m2s.make_synteny(maf_file, block_dir, block_size):
-                raise BackendException("Something went wrong with maf2synteny")
-
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             files[block_size] = os.path.abspath(perm_file)
+            if not os.path.exists(perm_file):
+                raise BackendException("Something bad happened!")
 
     return files
 
 
-def _make_cactus_config(references, targets, tree_string, directory):
+def _make_cactus_config(fasta_files, targets, tree_string, directory):
     CONF_NAME = "cactus.cfg"
     file = open(os.path.join(directory, CONF_NAME), "w")
     file.write(tree_string + "\n")
 
     #genomes = dict(references.items() + targets.items())
-    for seq_id, seq_path in references.iteritems():
-        file.write("*{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
-    for seq_id, seq_path in targets.iteritems():
+    for seq_id, seq_path in fasta_files.items():
+        if seq_id not in targets:
+            file.write("*")
         file.write("{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
+        #file.write("*{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
+    #for seq_id, seq_path in targets.iteritems():
 
     return file.name
 

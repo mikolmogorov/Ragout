@@ -35,14 +35,14 @@ def output_order(scaffolds, out_order):
 
 
 #Outputs scaffodls to file in "fasta" format
-def output_fasta(target_dict, scaffolds, out_fasta):
+def output_fasta(in_fasta, scaffolds, out_fasta):
     logger.info("Generating FASTA output")
     contigs_fasta = {}
     contigs_length = []
-    for target_file in target_dict.values():
-        for seq in SeqIO.parse(target_file, "fasta"):
-            contigs_fasta[seq.id] = seq.seq
-            contigs_length.append(len(seq.seq))
+    #for target_file in target_dict.values():
+    for seq in SeqIO.parse(in_fasta, "fasta"):
+        contigs_fasta[seq.id] = seq.seq
+        contigs_length.append(len(seq.seq))
 
     out_stream = open(out_fasta, "w")
     used_contigs = set()

@@ -115,17 +115,18 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
+    target_fasta = recipe.fasta[recipe.targets[0]]
     scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_fasta(recipe.targets, last_scaffolds, out_scaffolds)
+    scfldr.output_fasta(target_fasta, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        if not ovlp.make_overlap_graph(recipe.targets, out_overlap):
+        if not ovlp.make_overlap_graph(target_fasta, out_overlap):
             logger.error("Error in overlap graph reconstruction, exiting")
             return
 
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_fasta(recipe.targets, refined_scaffolds,
+        scfldr.output_fasta(target_fasta, refined_scaffolds,
                             out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")

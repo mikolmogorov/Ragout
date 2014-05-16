@@ -5,6 +5,12 @@
 #include <iostream>
 #include <ctime>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #ifdef _DEBUG
 #define DEBUG_PRINT(x) do {std::cerr << timestamp() << " " << x << std::endl;} \
 					   while(0)
@@ -89,4 +95,14 @@ template <class T>
 void vecRemove(std::vector<T>& vec, const T& val)
 {
 	vec.erase(std::remove(vec.begin(), vec.end(), val), std::end(vec));
+}
+
+inline bool makeDirectory(const std::string& name)
+{
+#ifdef _WIN32
+	int ret = _mkdir(name.c_str());
+#else
+	int ret = mkdir(name.c_str(), 0777);
+#endif
+	return !ret;
 }

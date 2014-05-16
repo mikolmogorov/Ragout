@@ -44,20 +44,20 @@ class SibeliaBackend(SyntenyBackend):
                 block_dir = os.path.join(work_dir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
                 if not os.path.isfile(perm_file):
-                    logger.error("Exitsing results are incompatible with input config")
-                    raise BackendException()
+                    raise BackendException("Exitsing results are incompatible "
+                                           "with input config")
                 files[block_size] = os.path.abspath(perm_file)
 
         else:
             os.mkdir(work_dir)
-            genomes = dict(config.references.items() + config.targets.items())
-            chr2genome = _get_chr2genome(genomes)
+            chr2genome = _get_chr2genome(config.fasta)
             for block_size in config.blocks:
                 block_dir = os.path.join(work_dir, str(block_size))
                 if not os.path.isdir(block_dir):
                     os.mkdir(block_dir)
 
-                perm_file = _run_sibelia(genomes.values(), block_size, block_dir)
+                perm_file = _run_sibelia(config.fasta.values(),
+                                         block_size, block_dir)
                 _postprocess(chr2genome, perm_file)
                 files[block_size] = perm_file
 

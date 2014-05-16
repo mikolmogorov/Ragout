@@ -51,17 +51,30 @@ void compressPaths(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 	bg.getPermutations(permsOut, groupsOut);
 }
 
+void outputBlocks(const std::string& outDir, PermVec& blocks,
+				  BlockGroups& groups, int blockSize)
+{
+	makeDirectory(outDir);
+	std::string permsFile = outDir + "/genomes_permutations.txt";
+	std::string coordsFile = outDir + "/blocks_coords.txt";
+	std::string statsFile = outDir + "/coverage_report.txt";
+
+	PermVec outPerms = filterBySize(blocks, groups, blockSize, true);
+	renumerate(outPerms);
+	outputPermutation(outPerms, permsFile);
+	outputCoords(outPerms, coordsFile);
+	outputStatistics(outPerms, statsFile);
+}
+
 struct ParamPair 
 {
 	int minBlock;
 	int maxGap;
 };
 
-void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
+void doJob(const std::string& inputMaf, const std::string& outDir, 
+		   std::vector<int> minBlockSizes)
 {
-	std::string permsFile = outDir + "/genomes_permutations.txt";
-	std::string coordsFile = outDir + "/blocks_coords.txt";
-	std::string statsFile = outDir + "/coverage_report.txt";
 
 	const int MIN_ALIGNMENT = 1;
 	const int MAX_ALIGNMENT_GAP = 0;
@@ -69,14 +82,29 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 	const std::vector<ParamPair> PARAMS = {{30, 10}, {100, 100}, {500, 1000},
 										  {1000, 5000}, {5000, 15000}};
 
-	BlockGroups blockGroups;
+	BlockGroups blockGroups = EMPTY_GROUP;
 	PermVec currentBlocks;
+	//sort blocks in reverse order (will use it as stack)
+	std::sort(minBlockSizes.begin(), minBlockSizes.end(), std::greater<int>());
+	makeDirectory(outDir);
+
+	//read maf alignment and join adjacent columns
 	PermVec mafBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
 	compressPaths(mafBlocks, MAX_ALIGNMENT_GAP, currentBlocks, blockGroups);
 
+	//iterative simplification
 	for (const ParamPair& ppair : PARAMS)
 	{
-		if (ppair.minBlock > minBlock) break;
+		if (minBlockSizes.empty()) break;
+		//output blocks of certain size
+		while (!minBlockSizes.empty() && minBlockSizes.back() < ppair.minBlock)
+		{
+			std::string blockDir = outDir + "/" + 
+								   std::to_string(minBlockSizes.back());
+			outputBlocks(blockDir, currentBlocks, blockGroups,
+						 minBlockSizes.back());
+			minBlockSizes.pop_back();
+		}
 
 		std::cerr << "Simplification with " << ppair.minBlock << " "
 				  << ppair.maxGap << std::endl;
@@ -85,38 +113,37 @@ void doJob(const std::string& inputMaf, const std::string& outDir, int minBlock)
 		PermVec outBlocks;
 		blockGroups.clear();
 		processGraph(inputBlocks, ppair.maxGap, outBlocks, blockGroups);
-		if (ppair.minBlock > minBlock)
-		{
-			currentBlocks = mergePermutations(outBlocks, currentBlocks);
-		}
-		else
-		{
-			currentBlocks = outBlocks;
-		}
+		currentBlocks = outBlocks;
 	}
 
-	PermVec outPerms = filterBySize(currentBlocks, blockGroups, 
-									minBlock, true);
-	renumerate(outPerms);
-	outputPermutation(outPerms, permsFile);
-	outputCoords(outPerms, coordsFile);
-	outputStatistics(outPerms, statsFile);
+	//if any left
+	for (int minBlock : minBlockSizes)
+	{
+		std::string blockDir = outDir + "/" + std::to_string(minBlock);
+		outputBlocks(blockDir, currentBlocks, blockGroups, minBlock);
+	}
 }
 
 int main(int argc, char** argv)
 {
-	if (argc != 4)
+	if (argc < 4)
 	{
-		std::cerr << "Usage: maf2synteny <maf_file> <out_dir> <block_size>\n";
+		std::cerr << "Usage: maf2synteny <maf_file> <out_dir> "
+				  << "<block_size_1> [<block_size_2> ...]\n";
 		return 1;
 	}
 	std::string inputMaf = argv[1];
 	std::string outDir = argv[2];
-	int blockSize = atoi(argv[3]);
+
+	std::vector<int> sizes;
+	for (int i = 3; i < argc; ++i)
+	{
+		sizes.push_back(atoi(argv[i]));
+	}
 
 	try
 	{
-		doJob(inputMaf, outDir, blockSize);
+		doJob(inputMaf, outDir, sizes);
 	}
 	catch (std::runtime_error& e)
 	{
@@ -138,12 +165,18 @@ static PyObject* _make_synteny(PyObject* self, PyObject* args)
 {
 	const char* mafFile = 0;
 	const char* outDir = 0;
-	int blockSize = 0;
+	std::vector<int> blockSizes;
 	int terminate = -1;
-	
-	if (!PyArg_ParseTuple(args, "ssi", &mafFile, &outDir, &blockSize))
+
+	PyObject* listObj = nullptr;
+	if (!PyArg_ParseTuple(args, "ssO", &mafFile, &outDir, &listObj))
 	{
 		return Py_False;
+	}
+	int nBlocks = PyList_Size(listObj);
+	for (int i = 0; i < nBlocks; ++i)
+	{
+		blockSizes.push_back(PyInt_AsLong(PyList_GetItem(listObj, i)));
 	}
 
 	struct sigaction pythonSig;
@@ -155,7 +188,7 @@ static PyObject* _make_synteny(PyObject* self, PyObject* args)
 	{
 		terminate = setjmp(g_jmpEnv);
 		if (terminate) throw std::runtime_error("SIGINT catched, exiting");
-		doJob(mafFile, outDir, blockSize);
+		doJob(mafFile, outDir, blockSizes);
 	}
 	catch (std::runtime_error& e)
 	{
