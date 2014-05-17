@@ -1,10 +1,12 @@
-REF col=references/COL.fasta
-REF jkd=references/JKD6008.fasta
-REF rf122=references/RF122.fasta
-REF n315=references/N315.fasta
+TREE = (rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
 
-TARGET usa=usa300_contigs.fasta
+REFS = col, jkd, rf122, n315
+TARGET = usa
 
-TREE=(rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
+FASTA col = references/COL.fasta
+FASTA jkd = references/JKD6008.fasta
+FASTA rf122 = references/RF122.fasta
+FASTA n315 = references/N315.fasta
+FASTA usa = usa300_contigs.fasta
 
-BLOCK=5000,500,100
+BLOCKS = 5000, 500, 100

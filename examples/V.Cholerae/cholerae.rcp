@@ -1,8 +1,11 @@
-REF biovar=references/O1_biovar.fasta
-REF inaba=references/O1_Inaba.fasta
-REF o395=references/O395.fasta
+TREE = (o395:0.0202325,(biovar:0.0047298,(h1:0.00867072,inaba:0.0280561):0.0054505):0.0054505);
 
-TARGET h1=h1_contigs.fasta
+REFS = biovar, inaba, o395
+TARGET = h1
 
-TREE=(o395:0.0202325,(biovar:0.0047298,(h1:0.00867072,inaba:0.0280561):0.0054505):0.0054505);
-BLOCK=5000,500,100
+FASTA biovar = references/O1_biovar.fasta
+FASTA inaba = references/O1_Inaba.fasta
+FASTA o395 = references/O395.fasta
+FASTA h1 = h1_contigs.fasta
+
+BLOCKS = 5000, 500, 100

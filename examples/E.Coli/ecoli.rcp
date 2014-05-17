@@ -1,7 +1,9 @@
-REF dh1=references/DH1.fasta
-
-TARGET mg1655=mg1655_contigs.fasta
-
 TREE=(dh1,mg1655);
 
-BLOCK=5000,500,100
+REFS = dh1
+TARGET = mg1655
+
+FASTA dh1 = references/DH1.fasta
+FASTA mg1655 = mg1655_contigs.fasta
+
+BLOCKS = 5000,500,100
