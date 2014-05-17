@@ -124,6 +124,14 @@ def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
         agraph.layout(prog="dot")
         agraph.draw(comp_file)
 
+def read_scaffold_file(file):
+    scaffold = set()
+    with open(file, "r") as input:
+        for line in input:
+            temp = line.strip('\n ')
+            if temp[0] != '>':
+                scaffold.add(temp)
+    return scaffold
 
 def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
                                      predicted_dot, true_edges, output_dir):
@@ -145,7 +153,6 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         out_graph.add_node(v2)
         color = g2c(params["genome_id"])
         out_graph.add_edge(v1, v2, color=color)
-
 
     subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
     for subgr in subgraphs:
@@ -199,7 +206,6 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         agraph.layout(prog="dot")
         agraph.draw(comp_file)
 
-
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
     g2c.table[target_name] = "red"
@@ -245,6 +251,8 @@ def do_job(nucmer_coords, debug_dir, circular):
     if os.path.exists(overlap_dot):
         draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
                                          predicted_dot, true_adj, debug_dir)
+    draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
+                                     predicted_dot, true_adj, debug_dir)
 
 
 def main():

@@ -207,6 +207,13 @@ def _update_edge(graph, v1, v2, weight):
 #output generators
 
 def _output_graph(graph, out_file):
+    '''fout = open(out_file, "w")
+    fout.write("graph {\n")
+    for (v1, v2) in edges:
+        fout.write("{0} -- {1};\n".format(v1, v2))
+    fout.write("}")'''
+
+
     agraph = nx.write_dot(graph, out_file)
 
 
