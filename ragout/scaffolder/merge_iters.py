@@ -37,7 +37,7 @@ def merge(big_scaffolds, small_scaffolds):
             try:
                 scf_prev, begin = small_index[prev_cont.name]
                 scf_new, end = small_index[new_cont.name]
-            except ValueError:
+            except KeyError:
                 continue
             if scf_prev.name != scf_new.name:
                 continue
