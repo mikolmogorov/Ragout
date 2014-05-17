@@ -2,7 +2,7 @@
 #iterations
 #########################################################
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import sys
 import logging
 
@@ -21,24 +21,25 @@ def merge(big_scaffolds, small_scaffolds):
         for c in scf.contigs:
             big_index.add(c.name)
 
+    small_index = {}
+    for scf in small_scaffolds:
+        for pos, contig in enumerate(scf.contigs):
+            assert contig.name not in small_index
+            small_index[contig.name] = (scf, pos)
+
     count = 0
     new_scafflods = []
     for scf in big_scaffolds:
         result = []
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            found_pair = False
-            for small_scf in small_scaffolds:
-                names = list(map(lambda c: c.name, small_scf.contigs))
-                try:
-                    begin = names.index(prev_cont.name)
-                    end = names.index(new_cont.name)
-                    found_pair = True
-                    break
-                except ValueError:
-                    continue
-
             result.append(prev_cont)
-            if not found_pair:
+
+            try:
+                scf_prev, begin = small_index[prev_cont.name]
+                scf_new, end = small_index[new_cont.name]
+            except ValueError:
+                continue
+            if scf_prev.name != scf_new.name:
                 continue
 
             assert end != begin
@@ -48,7 +49,7 @@ def merge(big_scaffolds, small_scaffolds):
                 end, begin = begin, end
 
             consistent = True
-            for c in small_scf.contigs[begin + 1 : end]:
+            for c in scf_prev.contigs[begin + 1 : end]:
                 if c.name in big_index:
                     consistent = False
                     break
@@ -57,11 +58,11 @@ def merge(big_scaffolds, small_scaffolds):
                 continue
 
             if ((prev_cont.sign == new_cont.sign) !=
-                (small_scf.contigs[begin].sign == small_scf.contigs[end].sign)):
+                (scf_prev.contigs[begin].sign == scf_prev.contigs[end].sign)):
                 continue
 
             count += end - begin - 1
-            contigs = small_scf.contigs[begin + 1 : end]
+            contigs = scf_prev.contigs[begin + 1 : end]
             if not same_dir:
                 contigs = contigs[::-1]
                 contigs = list(map(lambda c: Contig(c.name, -c.sign, 0),
