@@ -59,12 +59,17 @@ def _make_permutations(recipe, output_dir, overwrite):
             block_dir = os.path.join(work_dir, str(block_size))
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             if not os.path.isfile(perm_file):
-                logger.error("Exitsing results are incompatible with input config")
-                raise BackendException("Cannot reuse results from previous run")
+                raise BackendException("Exitsing results are incompatible "
+                                       "with input recipe")
             files[block_size] = os.path.abspath(perm_file)
 
     else:
         #running cactus
+        for genome in recipe.references + recipe.targets:
+            if genome not in recipe.fasta:
+                raise BackendException("FASTA file for {0} is not "
+                                       "specified".format(genome))
+
         os.mkdir(work_dir)
         config_path = _make_cactus_config(recipe.fasta, recipe.targets,
                                           recipe.tree, work_dir)
@@ -90,13 +95,10 @@ def _make_cactus_config(fasta_files, targets, tree_string, directory):
     file = open(os.path.join(directory, CONF_NAME), "w")
     file.write(tree_string + "\n")
 
-    #genomes = dict(references.items() + targets.items())
     for seq_id, seq_path in fasta_files.items():
         if seq_id not in targets:
             file.write("*")
         file.write("{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
-        #file.write("*{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
-    #for seq_id, seq_path in targets.iteritems():
 
     return file.name
 

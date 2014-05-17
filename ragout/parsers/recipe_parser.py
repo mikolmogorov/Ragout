@@ -4,7 +4,9 @@
 from collections import namedtuple
 import re
 import os
+import logging
 
+logger = logging.getLogger()
 RecipeParams = namedtuple("RecipeParams", ["references", "targets",
                                            "fasta", "tree", "blocks",
                                            "maf"])
@@ -42,13 +44,9 @@ def parse_ragout_recipe(filename):
             if m:
                 references = list(map(str.strip, m.group(1).split(",")))
                 continue
-                #ref_id, ref_file = m.group(1), m.group(2)
-                #references[ref_id] = os.path.join(prefix, ref_file)
 
             m = target_matcher.match(line)
             if m:
-                #target_id, target_file = m.group(1), m.group(2)
-                #target[target_id] = os.path.join(prefix, target_file)
                 targets.append(m.group(1))
                 continue
 
@@ -75,7 +73,7 @@ def parse_ragout_recipe(filename):
 
             m = maf_matcher.match(line)
             if m:
-                maf_path = m.group(1)
+                maf_path = os.path.join(prefix, m.group(1))
                 continue
 
             raise RecipeException("Error parsing {0} on line {1}"
@@ -89,6 +87,9 @@ def parse_ragout_recipe(filename):
         raise RecipeException("Tree is not specified")
     if not block_size:
         raise RecipeException("Synteny block sizes are not specified")
+    for t in targets:
+        if t not in fasta:
+            logger.warning("FASTA file for target genomes is not specified")
 
     return RecipeParams(references=references, targets=targets,
                         tree=tree_str, fasta=fasta,

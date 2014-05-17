@@ -1,0 +1,52 @@
+import os
+import logging
+import shutil
+
+from .synteny_backend import SyntenyBackend, BackendException
+import ragout.maf2synteny.maf2synteny as m2s
+
+logger = logging.getLogger()
+MAF_WORKDIR = "maf-workdir"
+
+class MafBackend(SyntenyBackend):
+    def __init__(self):
+        SyntenyBackend.__init__(self)
+
+    def run_backend(self, recipe, output_dir, overwrite):
+        workdir = os.path.join(output_dir, MAF_WORKDIR)
+        if overwrite and os.path.isdir(workdir):
+            shutil.rmtree(workdir)
+
+        if not recipe.maf or not os.path.exists(recipe.maf):
+            raise BackendException("Could not open MAF file "
+                                   "or it is not specified")
+
+        files = {}
+        if os.path.isdir(workdir):
+            #using existing results
+            logger.warning("Using synteny blocks from previous run")
+            logger.warning("Use --overwrite to force alignment")
+            for block_size in recipe.blocks:
+                block_dir = os.path.join(workdir, str(block_size))
+                perm_file = os.path.join(block_dir, "genomes_permutations.txt")
+                if not os.path.isfile(perm_file):
+                    raise BackendException("Exitsing results are incompatible "
+                                           "with input recipe")
+                files[block_size] = os.path.abspath(perm_file)
+
+        else:
+            os.mkdir(workdir)
+            logger.info("Converting MAF to synteny")
+            if not m2s.make_synteny(recipe.maf, workdir, recipe.blocks):
+                raise BackendException("Something went wrong with maf2synteny")
+
+            for block_size in recipe.blocks:
+                block_dir = os.path.join(workdir, str(block_size))
+                perm_file = os.path.join(block_dir, "genomes_permutations.txt")
+                files[block_size] = os.path.abspath(perm_file)
+                if not os.path.exists(perm_file):
+                    raise BackendException("Something bad happened!")
+
+        return files
+
+SyntenyBackend.register_backend("maf", MafBackend())

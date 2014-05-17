@@ -44,6 +44,7 @@ void processGraph(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 void compressPaths(const PermVec& permsIn, int maxGap, PermVec& permsOut,
 				  BlockGroups& groupsOut)
 {
+	std::cerr << "\tStarted initial compression\n";
 	BreakpointGraph bg(permsIn);
 	int paths = compressGraph(bg, maxGap);
 	(void)paths;	//disable warning
@@ -89,6 +90,7 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 	makeDirectory(outDir);
 
 	//read maf alignment and join adjacent columns
+	std::cerr << "\tParsing MAF file\n";
 	PermVec mafBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
 	compressPaths(mafBlocks, MAX_ALIGNMENT_GAP, currentBlocks, blockGroups);
 
@@ -106,7 +108,7 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 			minBlockSizes.pop_back();
 		}
 
-		std::cerr << "Simplification with " << ppair.minBlock << " "
+		std::cerr << "\tSimplification with " << ppair.minBlock << " "
 				  << ppair.maxGap << std::endl;
 		PermVec inputBlocks = filterBySize(currentBlocks, BlockGroups(),
 										   ppair.minBlock, true);

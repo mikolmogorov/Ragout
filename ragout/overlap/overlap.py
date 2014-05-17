@@ -18,9 +18,8 @@ logger = logging.getLogger()
 #builds assembly graph and outputs it in "dot" format
 def make_overlap_graph(contigs_file, dot_file):
     logger.info("Building overlap graph...")
-    filterByKmer = True
     res = _build_overlap_graph(contigs_file, dot_file,
                                config.ASSEMBLY_MIN_OVERLAP,
                                config.ASSEMBLY_MAX_OVERLAP,
-                               filterByKmer)
+                               config.ASSEMBLY_EXACTLY_K)
     return res

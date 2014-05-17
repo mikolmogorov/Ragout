@@ -23,6 +23,7 @@ from shared.debug import DebugConfig
 #register backends
 import synteny_backend.sibelia
 import synteny_backend.cactus
+import synteny_backend.maf
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -73,6 +74,8 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         logger.error("Error parsing recipe")
         logger.error(e)
         return
+    #if recipe.maf:
+    #    backend = "maf"
 
     try:
         phylogeny = Phylogeny(recipe)
@@ -143,7 +146,7 @@ def main():
                         help="path to the working directory",
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
-                        default="sibelia", choices=["sibelia", "cactus"],
+                        default="sibelia", choices=["sibelia", "cactus", "maf"],
                         help="tool for synteny block decomposition")
     parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
