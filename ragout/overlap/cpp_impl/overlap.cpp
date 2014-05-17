@@ -1,255 +1,260 @@
-#include <string>
-#include <vector>
 #include <iostream>
-#include <fstream>
-#include <utility>
 #include <unordered_map>
-#include <unordered_set>
-#include <map>
+#include <fstream>
+#include <string>
 #include <algorithm>
-#include <stdexcept>
+#include <cassert>
 
+#include "overlap.h"
 #include "fasta.h"
-#include "disjoint_set.h"
+#include "suffix_array.h"
 
-namespace
-{
+namespace {
 
-struct Edge
+struct coords
 {
-	Edge(const std::string& begin, const std::string& end, 
-		 const std::string& label): begin(begin), end(end), label(label) {}
-	std::string begin;
-	std::string end;
-	std::string label;
+	long long numOfString;
+	long long numOfSuffix;
+	coords(long long nOfString, long long nOfSuffix):
+		numOfString(nOfString), numOfSuffix(nOfSuffix)
+	{}
+
+	coords():
+		numOfString(0), numOfSuffix(0)
+	{}
+
 };
 
-struct Overlap
+struct FMIndex
 {
-	Overlap(FastaRecord* prevContig, FastaRecord* nextContig, int size):
-		prevContig(prevContig), nextContig(nextContig), size(size) {}
+	static const int ALPHABET = 255;
+	std::unordered_map<char, std::vector<long long>> occ_;
+	std::unordered_map<char, long long> c_;
+	std::vector<char> BWT_;
+	std::vector<coords> gsa_;
+	std::vector<int> lexOrder_;
+	FMIndex()
+	{}
 
-	FastaRecord* prevContig;
-	FastaRecord* nextContig;
-	int size;
-};
-
-void makePrefixFunction(const std::string& str, std::vector<int>& table)
-{
-	table.assign(str.length(), 0);
-	for (size_t i = 1; i < str.length(); ++i)
+	FMIndex(std::vector<char>& BWT, std::vector<coords>& gsa) :
+		BWT_(BWT), gsa_(gsa)
 	{
-		int k = table[i - 1];
-		while (true)
+		for (size_t i = 0; i < gsa.size(); ++i)
 		{
-			if (str[i] == str[k])
+			if (gsa[i].numOfSuffix == 0)
 			{
-				table[i] = k + 1;
-				break;
+				lexOrder_.push_back(gsa[i].numOfString);
 			}
-			if (k == 0)
-			{
-				table[i] = 0;
-				break;
-			}
-			k = table[k - 1];
 		}
+		std::vector<long long> temp(ALPHABET);
+		for (size_t i = 0; i < BWT_.size(); ++i)
+		{
+			temp[BWT_[i] + 1]++;
+		}
+
+		for (size_t i = 0; i < temp.size(); ++i)
+		{
+			if (temp[i] != 0)
+			{
+				occ_[(char)i - 1].resize(BWT_.size());
+			}
+		}
+		for (size_t i = 1; i < temp.size(); ++i)
+		{
+			temp[i] += temp[i - 1];
+			c_[(char)i] = temp[i];
+
+		} 
+		occ_[BWT_[0]][0] = 1;
+		for (auto it : occ_)
+		{
+			for (size_t i = 1; i < BWT_.size(); ++i)
+			{
+				if (it.first == BWT_[i]) 
+				{
+					occ_[it.first][i]++;
+				}
+				occ_[it.first][i] += occ_[it.first][i - 1];
+			}
+		}
+	}
+
+	std::vector<Overlap> findOverlaps(std::vector<FastaRecord>& fRecords,
+									  int minOverlap)
+	{
+		std::vector<Overlap> overlaps;
+		std::cerr << "\tOverapping: ";
+		int prevPerc = 0;
+		for (size_t i = 0; i < fRecords.size(); ++i)
+		{
+			findOccures(i, minOverlap, fRecords, overlaps);
+			int perc = i * 10 / fRecords.size();
+			if (perc > prevPerc)
+			{
+				std::cerr << perc * 10 << " ";
+				prevPerc = perc;
+			}
+		}
+		std::cerr << std::endl;
+		return overlaps;
+	}
+
+	void findOccures(int indexInRecord, int minOverlap,
+					 std::vector<FastaRecord>& fRecords,
+					 std::vector<Overlap>& overlapsOut)
+	{
+		std::string read = fRecords[indexInRecord].sequence_;
+		if (read[read.length() - 1] == 'N') return;
+		long long l = c_[read[read.length() - 1]];
+		long long r = c_[read[read.length() - 1] + 1] - 1;
+		int i = read.length() - 2;
+		
+		while(l + 1 <= r && i >= 0)
+		{
+			if (read[i] == 'N') return;
+			l = c_[read[i]] + occ_[read[i]][l - 1];
+			r = c_[read[i]] + occ_[read[i]][r] - 1;
+
+			if ((int)read.length() - i >= minOverlap)
+			{
+				long long  newl = c_['$'] + occ_['$'][l - 1];
+				long long newr = c_['$'] + occ_['$'][r] - 1;
+				if (newl <= newr)
+				{
+					for (int j = newl; j <= newr; ++j)
+					{
+						if (lexOrder_[j] != indexInRecord)
+						{
+							overlapsOut.push_back(Overlap(&fRecords[indexInRecord],
+														  &fRecords[lexOrder_[j]],
+														  read.length() - i));
+						}
+					}
+				}
+			}
+			--i;
+		}
+	}
+
+};
+
+//transform suffix array at form (i,j) -> i - NumberOfString, 
+//j - numberOfSuffix of that string
+void getGSA(std::vector<long long>& SA, std::string& superText,
+			std::vector<coords>& GSA)
+{
+
+	std::vector<coords> preGSA;
+	preGSA.reserve(SA.size());
+	GSA.resize(SA.size());
+	long long numberof$ = 0;
+	long long numSuff = 0;
+	for (size_t i = 0; i < superText.length(); ++i)
+	{
+		preGSA.push_back(coords(numberof$, numSuff));
+		numSuff++;
+		if (superText[i] == '$')
+		{
+			numberof$++;
+			numSuff = 0;
+		}
+	}
+	for (size_t i = 0; i < superText.length(); ++i)
+	{
+		GSA[i] = preGSA[SA[i]];
 	}
 }
 
-
-int kmpOverlap(const std::string& strHead, const std::string& strTail, 
-			   const std::vector<int>& prefixFun)
+void getBwt(std::vector<coords>& GSA, std::vector<FastaRecord>& fRecords,
+			std::vector<char>& BWT)
 {
-	size_t i = 0;
-	size_t j = 0;
-	size_t maxOvlp = 0;
-	while (i + j < strHead.length())
+	BWT.resize(GSA.size());
+	for (size_t i = 0; i < GSA.size(); ++i)
 	{
-		if (strHead[i + j] == strTail[j])
+		if (GSA[i].numOfSuffix != 0)
 		{
-			if (i + j == strHead.length() - 1) 
-			{
-				maxOvlp = std::max(maxOvlp, j + 1);
-			}
+			BWT[i] = fRecords[GSA[i].numOfString].sequence_[GSA[i].numOfSuffix - 1];
 			
-			if (j == strTail.length() - 1)
-			{
-				i = i + j - prefixFun[j - 1];
-				j = prefixFun[j - 1];
-			}
-			else
-			{
-				++j;	
-			}
-		}
-		else if (j == 0)
-		{
-			++i;
+			assert(std::string("ACGTN").find(BWT[i]) != std::string::npos);
 		}
 		else
 		{
-			i = i + j - prefixFun[j - 1];
-			j = prefixFun[j - 1];
+			BWT[i] = '$';
 		}
 	}
-	return maxOvlp;
 }
 
-int getOverlap(FastaRecord* headContig, FastaRecord* tailContig, size_t maxOvlp)
+//concatenate everything with $
+std::string getSuperString(std::vector<FastaRecord>& fRecords,
+						   int maxOverlapLength)
 {
-	static std::unordered_map<FastaRecord*, std::vector<int>> prefixFunCache;
-
-	maxOvlp = std::min(maxOvlp, headContig->sequence_.length());
-	maxOvlp = std::min(maxOvlp, tailContig->sequence_.length());
-	std::string strHead(headContig->sequence_, 
-						headContig->sequence_.length() - maxOvlp);
-	std::string strTail(tailContig->sequence_, 0, maxOvlp);
-
-	auto &pfun = prefixFunCache[tailContig];
-	if (pfun.size() != maxOvlp)	//zero, for instance
+	std::string superString = "";
+	long long length = 0;
+	for (size_t i = 0; i < fRecords.size(); ++i)
 	{
-		makePrefixFunction(strTail, pfun);
-	}
-	return kmpOverlap(strHead, strTail, pfun);
-}
-
-
-bool getContigs(const std::string& filename, std::vector<FastaRecord>& contigs)
-{
-	FastaReader reader(filename);
-	if (!reader.IsOk()) 
-	{
-		std::cerr << "Error openning " << filename << std::endl;
-		return false;
-	}
-	try
-	{
-		reader.GetSequencesWithComplements(contigs);
-	}
-	catch (std::runtime_error& e)
-	{
-		std::cerr << "Error: " << e.what() << std::endl;
-		return false;
-	}
-	return true;
-}
-
-
-std::vector<Overlap> overlapAll(std::vector<FastaRecord>& contigs, 
-								int minOverlap, int maxOverlap)
-{
-	std::vector<Overlap> overlaps;
-
-	int prevProgress = 0;
-	int contigCounter = 0;
-	std::map<int, int> overlapHist;
-	std::cerr << "Progress: ";
-
-	for (auto &headContig : contigs)
-	{
-		for (auto &tailContig : contigs)
+		if ((int)fRecords[i].sequence_.length() <= 2 * maxOverlapLength)
 		{
-			if (&headContig == &tailContig) continue;
-			
-			int overlapLen = getOverlap(&headContig, &tailContig, maxOverlap);
-			if (overlapLen >= minOverlap)
-			{
-				overlaps.push_back(Overlap(&headContig, &tailContig, 
-										   overlapLen));
-				overlapHist[overlapLen] += 1;
-			}
+			length += fRecords[i].sequence_.length() + 1;
 		}
-		
-		++contigCounter;
-		int progress = contigCounter * 100 / contigs.size();
-		if (progress / 10 > prevProgress / 10)
+		else
 		{
-			std::cerr << progress << " ";
-			prevProgress = progress;
+			length += 2 * maxOverlapLength + 1;
 		}
 	}
-	std::cerr << std::endl;
-	for (auto ovlpPair : overlapHist)
+	superString.reserve(length);
+	//int eliminated = 0;
+	for (size_t i = 0; i < fRecords.size(); ++i)
 	{
-		std::cerr << ovlpPair.first << " " << ovlpPair.second << std::endl;
-	}
-
-	return overlaps;
-}
-
-
-void buildAssemblyGraph(std::vector<FastaRecord>& contigs,
-						std::vector<Overlap>& overlaps, std::ostream& streamOut)
-{
-	//std::unordered_set<FastaRecord*> usedContigs;
-
-	streamOut << "digraph {\n";
-	for (Overlap& ovlp : overlaps)
-	{
-		//usedContigs.insert(ovlp.prevContig);
-		//usedContigs.insert(ovlp.nextContig);
-
-		streamOut << "\"" << ovlp.prevContig->description_ << "\" -> \""
-				  << ovlp.nextContig->description_ 
-				  << "\" [label=\"" << ovlp.size << "\"];\n";
-	}
-
-	//for (FastaRecord& rec : contigs)
-	//{
-	//	if (!usedContigs.count(&rec))
-	//	{
-	//		streamOut << "\"" << rec.description_ << "\"\n";
-	//	}
-	//}
-
-	streamOut << "}\n";
-}
-
-std::vector<Overlap> filterByKmer(std::vector<Overlap>& overlapsIn)
-{
-	std::vector<Overlap> overlapsOut;
-	std::unordered_map<int, int> overlapHist;
-	
-	int mostFrequent = -1;
-	int frequency = 0;
-	for (auto &ovlp : overlapsIn) ++overlapHist[ovlp.size];
-	for (auto &histPair : overlapHist)
-	{
-		if (histPair.second > frequency)
+		if ((int)fRecords[i].sequence_.length() <= 2 * maxOverlapLength)
 		{
-			mostFrequent = histPair.first;
-			frequency = histPair.second;
+			superString.append(fRecords[i].sequence_);
+			superString.push_back('$');
+		}
+		else
+		{
+			superString += fRecords[i].sequence_.substr(0, maxOverlapLength);
+			superString += fRecords[i].sequence_.substr(fRecords[i].sequence_.length() -
+														maxOverlapLength, 
+														maxOverlapLength);
+			superString += "$";
+			fRecords[i].sequence_ = fRecords[i].sequence_.substr(0, maxOverlapLength) + 
+									fRecords[i].sequence_.substr(fRecords[i].sequence_.length() -
+																 maxOverlapLength, maxOverlapLength);
 		}
 	}
-	std::cerr << "Kmer size is set to " << mostFrequent << std::endl;
-
-	std::copy_if(overlapsIn.begin(), overlapsIn.end(),
-				 std::back_inserter(overlapsOut),
-				 [&] (const Overlap& o) {return o.size == mostFrequent;});
-	return overlapsOut;
+	return superString;
 }
 
-}	//end anonymous namespace
-
-bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
-		  			  int minOverlap, int maxOverlap, bool filterKmer)
+FMIndex getFM(std::vector<FastaRecord>& fRecords, int maxOverlapLength)
 {
-	std::vector<FastaRecord> contigs;
-	std::ofstream streamOut(fileOut);
-	if (!streamOut)
-	{
-		std::cerr << "Cannot open: " << fileOut << std::endl;
-		return false;
-	}
-	if (!getContigs(fileIn, contigs)) return false;
+	std::cerr << "\tBuilding FM-index\n";
+	std::string superString = getSuperString(fRecords, maxOverlapLength);
+	unsigned char* text = new unsigned char[superString.size()];
+	long long* SA = new long long[superString.size()];
+	std::copy(superString.begin(), superString.end(), text);
 
-	std::vector<Overlap> overlaps = overlapAll(contigs, minOverlap, maxOverlap);
-	if (filterKmer)
-	{
-		overlaps = filterByKmer(overlaps);
-	}
+	sais(text, SA, superString.length());
+	std::vector<long long> vSA(superString.length());
+	std::copy(SA, SA + superString.length(), vSA.begin());
+	delete[] SA;
+	delete[] text;
 
-	buildAssemblyGraph(contigs, overlaps, streamOut);
-	return true;
+	std::vector<coords> gsa;
+	getGSA(vSA, superString, gsa);
+	superString.clear();
+	vSA.clear();
+
+	std::vector<char> BWT;
+	getBwt(gsa, fRecords, BWT);
+	FMIndex FM(BWT, gsa);
+	return FM;
+}
+
+} //end anonymous namespace
+
+std::vector<Overlap> getOverlaps(std::vector<FastaRecord>& contigs, 
+								 int minOverlap, int maxOverlap)
+{
+	FMIndex FM = getFM(contigs, maxOverlap);
+	return FM.findOverlaps(contigs, minOverlap);
 }

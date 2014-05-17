@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "overlap.h"
+#include "build_graph.h"
 
 
 int main(int argc, char** argv)

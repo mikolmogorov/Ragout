@@ -47,8 +47,9 @@ See *docs/USAGE.md* file.
 
 Authors
 -------
-- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of
-Sciences)
+- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences)
+- Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
+- Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
 - Son Pham (University of California, San Diego)
 
 

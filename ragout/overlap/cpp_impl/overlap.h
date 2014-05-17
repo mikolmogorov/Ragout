@@ -1,4 +1,20 @@
-#include <string>
+#ifndef OVERLAP_H
+#define OVERLAP_H
 
-bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
-		  			  int minOverlap, int maxOverlap, bool filterKmer);
+#include "fasta.h"
+#include <vector>
+
+struct Overlap
+{
+	Overlap(FastaRecord* prevContig, FastaRecord* nextContig, int size):
+		prevContig(prevContig), nextContig(nextContig), size(size) {}
+
+	FastaRecord* prevContig;
+	FastaRecord* nextContig;
+	int size;
+};
+
+std::vector<Overlap> getOverlaps(std::vector<FastaRecord>& contigs, 
+								 int minOverlap, int maxOverlap);
+
+#endif
