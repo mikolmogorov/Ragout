@@ -130,6 +130,11 @@ Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
 containing *Sibelia* excecutable.
 
+progressiveCactus
+-----------------
+
+First, download and build Progressive Cactus: https://github.com/glennhickey/progressiveCactus
+Then set "CACTUS_INSTALL" variable pointing to cactus installation directory:
 
 Troubleshooting
 ---------------
