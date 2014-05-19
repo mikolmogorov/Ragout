@@ -5,9 +5,14 @@ from collections import namedtuple
 import re
 import os
 import logging
+from Bio import Phylo
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 logger = logging.getLogger()
-RecipeParams = namedtuple("RecipeParams", ["references", "targets",
+RecipeParams = namedtuple("RecipeParams", ["genomes", "targets",
                                            "fasta", "tree", "blocks",
                                            "maf"])
 
@@ -20,7 +25,7 @@ class RecipeException(Exception):
 def parse_ragout_recipe(filename):
     prefix = os.path.dirname(filename)
 
-    ref_matcher = re.compile("REFS\s*=\s*([^\s].*)$")
+    #ref_matcher = re.compile("REFS\s*=\s*([^\s].*)$")
     target_matcher = re.compile("TARGET\s*=\s*([^\s].*)$")
     tree_matcher = re.compile("TREE\s*=\s*([^\s].*)$")
     block_matcher = re.compile("BLOCKS\s*=\s*([^\s][\d,\s]*)$")
@@ -30,8 +35,9 @@ def parse_ragout_recipe(filename):
     tree_str = None
     block_size = None
     maf_path = None
-    references = []
+    #references = []
     targets = []
+    genomes = []
     fasta = {}
 
     with open(filename, "r") as f:
@@ -40,10 +46,10 @@ def parse_ragout_recipe(filename):
             if not line or line.startswith("#"):
                 continue
 
-            m = ref_matcher.match(line)
-            if m:
-                references = list(map(str.strip, m.group(1).split(",")))
-                continue
+            #m = ref_matcher.match(line)
+            #if m:
+                #references = list(map(str.strip, m.group(1).split(",")))
+                #continue
 
             m = target_matcher.match(line)
             if m:
@@ -53,6 +59,8 @@ def parse_ragout_recipe(filename):
             m = tree_matcher.match(line)
             if m:
                 tree_str = m.group(1)
+                tree = Phylo.read(StringIO(tree_str), "newick")
+                genomes = list(map(lambda n: n.name, tree.get_terminals()))
                 continue
 
             m = block_matcher.match(line)
@@ -79,8 +87,8 @@ def parse_ragout_recipe(filename):
             raise RecipeException("Error parsing {0} on line {1}"
                                   .format(filename, lineno + 1))
 
-    if not references:
-        raise RecipeException("No references specified")
+    if not genomes:
+        raise RecipeException("No genomes in terminal nodes of the tree")
     if not targets:
         raise RecipeException("No targets specified")
     if not tree_str:
@@ -89,8 +97,10 @@ def parse_ragout_recipe(filename):
         raise RecipeException("Synteny block sizes are not specified")
     for t in targets:
         if t not in fasta:
-            logger.warning("FASTA file for target genomes is not specified")
+            logger.warning("FASTA file for target genome is not specified")
+        if t not in genomes:
+            raise RecipeException("Target genome is not in tree")
 
-    return RecipeParams(references=references, targets=targets,
+    return RecipeParams(genomes=genomes, targets=targets,
                         tree=tree_str, fasta=fasta,
                         blocks=block_size, maf=maf_path)

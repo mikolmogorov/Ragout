@@ -1,6 +1,5 @@
 TREE=(dh1,mg1655);
 
-REFS = dh1
 TARGET = mg1655
 
 FASTA dh1 = references/DH1.fasta

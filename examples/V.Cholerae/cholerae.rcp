@@ -1,6 +1,5 @@
 TREE = (o395:0.0202325,(biovar:0.0047298,(h1:0.00867072,inaba:0.0280561):0.0054505):0.0054505);
 
-REFS = biovar, inaba, o395
 TARGET = h1
 
 FASTA biovar = references/O1_biovar.fasta

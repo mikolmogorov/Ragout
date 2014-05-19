@@ -65,7 +65,7 @@ def _make_permutations(recipe, output_dir, overwrite):
 
     else:
         #running cactus
-        for genome in recipe.references + recipe.targets:
+        for genome in recipe.genomes:
             if genome not in recipe.fasta:
                 raise BackendException("FASTA file for {0} is not "
                                        "specified".format(genome))

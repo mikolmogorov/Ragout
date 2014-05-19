@@ -49,7 +49,7 @@ class SibeliaBackend(SyntenyBackend):
                 files[block_size] = os.path.abspath(perm_file)
 
         else:
-            for genome in recipe.references + recipe.targets:
+            for genome in recipe.genomes:
                 if genome not in recipe.fasta:
                     raise BackendException("FASTA file for '{0}' is not "
                                            "specified".format(genome))

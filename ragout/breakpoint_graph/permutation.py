@@ -43,17 +43,15 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
 
-        if set(config.references).intersection(set(config.targets)):
-            raise PermException("Some genomes are labeled both as reference "
-                                "and target")
-
         logging.info("Reading permutation file")
         permutations = _parse_blocks_file(permutations_file)
         if not permutations:
             raise PermException("Error reading permutations")
 
         for p in permutations:
-            if p.genome_id in config.references:
+            if p.genome_id not in config.genomes:
+                continue
+            if p.genome_id not in config.targets:
                 self.ref_perms.append(p)
             elif p.genome_id in config.targets:
                 self.target_perms.append(p)
