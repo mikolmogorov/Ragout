@@ -96,6 +96,19 @@ std::vector<Overlap> filterByKmer(std::vector<Overlap>& overlapsIn)
 	return overlapsOut;
 }
 
+void drawHistogram(std::vector<Overlap>& overlaps)
+{
+	std::map<int, int> hist;
+	for (Overlap& ovlp : overlaps)
+	{
+		++hist[ovlp.size];
+	}
+	for (auto histPair : hist)
+	{
+		std::cerr << histPair.first << " " << histPair.second << std::endl;
+	}
+}
+
 }	//end anonymous namespace
 
 bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
@@ -112,6 +125,7 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 
 	std::vector<Overlap> overlaps = getOverlaps(contigs, minOverlap, 
 												maxOverlap);
+	drawHistogram(overlaps);
 	if (filterKmer)
 	{
 		overlaps = filterByKmer(overlaps);

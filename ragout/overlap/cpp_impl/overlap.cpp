@@ -83,19 +83,25 @@ struct FMIndex
 									  int minOverlap)
 	{
 		std::vector<Overlap> overlaps;
-		std::cerr << "\tOverapping: ";
-		int prevPerc = 0;
+		std::cerr << "\tOverapping\n";
+		auto cmp = [] (Overlap* o1, Overlap* o2) {return o1->size < o2->size;};
 		for (size_t i = 0; i < fRecords.size(); ++i)
 		{
-			findOccures(i, minOverlap, fRecords, overlaps);
-			int perc = i * 10 / fRecords.size();
-			if (perc > prevPerc)
+			std::vector<Overlap> contigOverlaps;
+			std::unordered_map<FastaRecord*, std::vector<Overlap*>> ovlpTable;
+
+			findOccures(i, minOverlap, fRecords, contigOverlaps);
+			for (Overlap& ovlp : contigOverlaps)
 			{
-				std::cerr << perc * 10 << " ";
-				prevPerc = perc;
+				ovlpTable[ovlp.nextContig].push_back(&ovlp);
+			}
+			for (auto tablePair : ovlpTable)
+			{
+				overlaps.push_back(**std::max_element(tablePair.second.begin(),
+													  tablePair.second.end(),
+													  cmp));
 			}
 		}
-		std::cerr << std::endl;
 		return overlaps;
 	}
 
