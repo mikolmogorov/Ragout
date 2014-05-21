@@ -91,38 +91,42 @@ g2c.colors = ["green", "blue", "yellow", "cyan", "magnetta"]
 g2c.table = {}
 
 
-def draw_breakpoint_graph(base_dot, predicted_dot, true_edges, out_dir):
+def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
     base_graph = nx.read_dot(base_dot)
     predicted_edges = nx.read_dot(predicted_dot)
     out_graph = nx.MultiGraph()
-    nodes_with_predicted = set()
 
     for v1, v2, data in base_graph.edges_iter(data=True):
         color = g2c(data["genome_id"])
         out_graph.add_edge(v1, v2, color=color)
     for v1, v2 in predicted_edges.edges_iter():
         out_graph.add_edge(v1, v2, color="red", style="dashed")
-        nodes_with_predicted.add(v1)
-        nodes_with_predicted.add(v2)
     for (v1, v2) in true_edges:
         out_graph.add_edge(str(v1), str(v2), color="red", style="bold")
 
-    subgraphs = nx.connected_component_subgraphs(out_graph)
+    return out_graph
+
+
+def output_graph(graph, output_dir, only_predicted):
+    subgraphs = nx.connected_component_subgraphs(graph)
     for comp_id, subgr in enumerate(subgraphs):
         if len(subgr) == 2:
             continue
-        to_show = False
-        for node in subgr.nodes():
-            if node in nodes_with_predicted:
-                to_show = True
-                break
-        if not to_show:
-            continue
 
-        comp_file = os.path.join(out_dir, "comp{0}-bg.png".format(comp_id))
+        if only_predicted:
+            to_show = False
+            for v1, v2, data in subgr.edges_iter(data=True):
+                if data.get("style") == "dashed":
+                    to_show = True
+                    break
+            if not to_show:
+                continue
+
+        comp_file = os.path.join(output_dir, "comp{0}-bg.png".format(comp_id))
         agraph = nx.to_agraph(subgr)
         agraph.layout(prog="dot")
         agraph.draw(comp_file)
+
 
 def read_scaffold_file(file):
     scaffold = set()
@@ -133,8 +137,8 @@ def read_scaffold_file(file):
                 scaffold.add(temp)
     return scaffold
 
-def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
-                                     predicted_dot, true_edges, output_dir):
+
+def add_overlap_edges(graph, overlap_dot, contigs_file):
     contigs = get_contig_permutations(contigs_file)
     contig_begins = {}
     contig_ends = {}
@@ -144,17 +148,9 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
         contig_ends[-blocks[-1]] = "+" + name
         contig_ends[blocks[0]] = "-" + name
 
-    breakpoint_graph = nx.read_dot(base_dot)
     overlap_graph = nx.read_dot(overlap_dot)
 
-    out_graph = nx.MultiGraph()
-    for v1, v2, params in breakpoint_graph.edges_iter(data=True):
-        out_graph.add_node(v1)
-        out_graph.add_node(v2)
-        color = g2c(params["genome_id"])
-        out_graph.add_edge(v1, v2, color=color)
-
-    subgraphs = nx.connected_component_subgraphs(breakpoint_graph)
+    subgraphs = nx.connected_component_subgraphs(graph)
     for subgr in subgraphs:
         for v1, v2 in combinations(subgr.nodes(), 2):
             v1, v2 = int(v1), int(v2)
@@ -175,7 +171,7 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
             if not nx.has_path(overlap_graph, src, dst):
                 continue
 
-            paths = list(nx.all_shortest_paths(overlap_graph, src, dst))
+            paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
             for path in paths:
                 is_good = True
                 len_path = 0
@@ -186,25 +182,10 @@ def draw_breakpoint_graph_with_edges(base_dot, overlap_dot, contigs_file,
                         break
 
                 if is_good:
-                    out_graph.add_edge(str(v1), str(v2), label=len_path,
+                    graph.add_edge(str(v1), str(v2), label=len_path,
                                        weight=0.1)
                     break
 
-    predicted_edges = nx.read_dot(predicted_dot)
-    for v1, v2 in predicted_edges.edges_iter():
-        out_graph.add_edge(v1, v2, color="red", style="dashed")
-    for (v1, v2) in true_edges:
-        out_graph.add_edge(str(v1), str(v2), color="red", style="bold")
-
-    subgraphs = nx.connected_component_subgraphs(out_graph)
-    for comp_id, subgr in enumerate(subgraphs):
-        if len(subgr) == 2:
-            continue
-        comp_file = os.path.join(output_dir, "comp_we{0}-bg.png".format(comp_id))
-        agraph = nx.to_agraph(subgr)
-        #agraph.layout(prog="neato", args="-Goverlap=scale -Gsplines=true")
-        agraph.layout(prog="dot")
-        agraph.draw(comp_file)
 
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
@@ -222,7 +203,7 @@ def draw_phylogeny(phylogeny_txt, out_file):
     pylab.savefig(out_file)
 
 
-def do_job(nucmer_coords, debug_dir, circular):
+def do_job(nucmer_coords, debug_dir, circular, only_predicted):
     used_contigs = os.path.join(debug_dir, "used_contigs.txt")
     true_adj_out = os.path.join(debug_dir, "true_edges.dot")
     base_dot = os.path.join(debug_dir, "breakpoint_graph.dot")
@@ -247,23 +228,23 @@ def do_job(nucmer_coords, debug_dir, circular):
         true_adj = []
 
     output_edges(true_adj, true_adj_out)
-    draw_breakpoint_graph(base_dot, predicted_dot, true_adj, debug_dir)
+    g = compose_breakpoint_graph(base_dot, predicted_dot, true_adj)
     if os.path.exists(overlap_dot):
-        draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
-                                         predicted_dot, true_adj, debug_dir)
-    draw_breakpoint_graph_with_edges(base_dot, overlap_dot, used_contigs,
-                                     predicted_dot, true_adj, debug_dir)
+        add_overlap_edges(g, overlap_dot, used_contigs)
+    output_graph(g, debug_dir, only_predicted)
 
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: debug_report.py <nucmer_coords> <debug_dir>")
+        print("Usage: debug_report.py <nucmer_coords> <debug_dir> "
+              "[--circular] [--predicted]")
         return
 
     nucmer_coords = sys.argv[1]
     debug_dir = sys.argv[2]
-    circular = True
-    do_job(nucmer_coords, debug_dir, circular)
+    circular = True if "--circular" in sys.argv else False
+    only_predicted = True if "--predicted" in sys.argv else False
+    do_job(nucmer_coords, debug_dir, circular, only_predicted)
 
 if __name__ == "__main__":
     main()

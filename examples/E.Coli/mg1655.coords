@@ -1,4 +1,4 @@
-/home/volrath/Bioinf/ragout/examples/E.Coli/references/MG1655-K12.fasta /home/volrath/Bioinf/ragout/examples/E.Coli/mg1655_contigs.fasta
+/home/volrath/Bioinf/ragout/test_datasets/examples/E.Coli/references/MG1655-K12.fasta /home/volrath/Bioinf/ragout/test_datasets/examples/E.Coli/mg1655_contigs.fasta
 NUCMER
 
     [S1]     [E1]  |     [S2]     [E2]  |  [LEN 1]  [LEN 2]  |  [% IDY]  | [TAGS]

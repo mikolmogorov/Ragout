@@ -150,7 +150,7 @@ before applying progressiveCactus to genomes with big fraction of repetitive seq
 If you already have a multiple alignment, you also can use it for synteny blocks decomposition.
 Alignment should be in *MAF* format and sequence names should follow UCSC notation:
 
-    genome_name.sequence.name
+    genome_name.sequence_name
 
 In case you are working with *MAF* input you should not specify reference *FASTA* files.
 All you need is to set *FASTA* for target genome (which will be used for output generation).
