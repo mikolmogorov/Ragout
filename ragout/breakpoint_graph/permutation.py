@@ -25,16 +25,9 @@ class Permutation:
         self.chr_num = chr_num
         self.blocks = blocks
 
-    #iterates over synteny blocks in permutation
-    def iter_blocks(self, circular=False):
-        if not len(self.blocks):
-            return
-
-        for block in self.blocks:
-            yield block
-
-        if circular:
-            yield self.blocks[0]
+    def iter_pairs(self):
+        for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
+            yield pb, nb
 
 
 class PermutationContainer:

@@ -41,20 +41,23 @@ class BreakpointGraph:
 
         for perm in chain(perm_container.ref_perms_filtered,
                           perm_container.target_perms_filtered):
-            circular = (circular_refs if perm.genome_id in self.references
-                        else False)
 
-            prev_block = None
-            for block in perm.iter_blocks(circular):
-                if not prev_block:
-                    prev_block = block
-                    continue
-
+            if len(perm.blocks) < 2:
+                continue
+            for prev_block, next_block in perm.iter_pairs():
                 self.bp_graph.add_node(-prev_block)
-                self.bp_graph.add_node(block)
-                self.bp_graph.add_edge(-prev_block, block,
+                self.bp_graph.add_node(next_block)
+                self.bp_graph.add_edge(-prev_block, next_block,
                                        genome_id=perm.genome_id)
-                prev_block = block
+
+            if perm.genome_id in self.references:
+                if circular_refs:
+                    self.bp_graph.add_edge(-perm.blocks[-1], perm.blocks[0],
+                                           genome_id=perm.genome_id)
+                else:
+                    self.bp_graph.add_edge(-perm.blocks[-1], perm.blocks[0],
+                                           genome_id=perm.genome_id,
+                                           infinity=True)
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
@@ -79,8 +82,9 @@ class BreakpointGraph:
 
         adjacencies = {}
         for edge in chosen_edges:
-            adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
-            adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
+            if not self._is_infinity(edge[0], edge[1]):
+                adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
+                adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
 
         if debugger.debugging:
             phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")
@@ -176,6 +180,17 @@ class BreakpointGraph:
 
         return g
 
+    def _is_infinity(self, node_1, node_2):
+        if not self.bp_graph.has_edge(node_1, node_2):
+            return False
+
+        for edge_data in self.bp_graph[node_1][node_2].values():
+            if "infinity" in edge_data:
+                #print("Infinity detected!")
+                #print(self.bp_graph[node_1][node_2].values())
+                return True
+        return False
+
 
 #PRIVATE:
 ###########################################################################
@@ -212,8 +227,6 @@ def _output_graph(graph, out_file):
     for (v1, v2) in edges:
         fout.write("{0} -- {1};\n".format(v1, v2))
     fout.write("}")'''
-
-
     agraph = nx.write_dot(graph, out_file)
 
 
