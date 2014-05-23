@@ -137,6 +137,22 @@ def read_scaffold_file(file):
                 scaffold.add(temp)
     return scaffold
 
+def my_has_path(graph, ordered_contigs, src, dst):
+    visited = set()
+
+    def dfs(vertex):
+        visited.add(vertex)
+
+        for _, u in graph.edges(vertex):
+            if u == dst:
+                return True
+            elif u not in visited and str(u)[1:] not in ordered_contigs:
+                if dfs(u):
+                    return True
+        return False
+
+    return dfs(src)
+
 
 def add_overlap_edges(graph, overlap_dot, contigs_file):
     contigs = get_contig_permutations(contigs_file)
@@ -171,7 +187,10 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
             if not nx.has_path(overlap_graph, src, dst):
                 continue
 
-            paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
+            if my_has_path(overlap_graph, contigs, src, dst):
+                graph.add_edge(str(v1), str(v2), weight=0.1)
+
+            '''paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
             for path in paths:
                 is_good = True
                 len_path = 0
@@ -185,7 +204,7 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
                     graph.add_edge(str(v1), str(v2), label=len_path,
                                        weight=0.1)
                     break
-
+            '''
 
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
