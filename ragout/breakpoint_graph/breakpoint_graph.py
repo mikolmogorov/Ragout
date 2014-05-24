@@ -82,6 +82,7 @@ class BreakpointGraph:
 
         adjacencies = {}
         for edge in chosen_edges:
+            #infinity edges correspond to joined chromosome ends -- ignore them
             if not self._is_infinity(edge[0], edge[1]):
                 adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
                 adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
@@ -100,12 +101,10 @@ class BreakpointGraph:
     def _process_component(self, subgraph, phylogeny):
         trimmed_graph = self._trim_known_edges(subgraph)
         unused_nodes = set(trimmed_graph.nodes())
-        #assert len(unused_nodes) == len(trimmed_graph.nodes())
 
         chosen_edges = []
         for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
             if len(trim_subgraph) < 2:
-                self.orphans_count += 1
                 continue
 
             if len(trim_subgraph) == 2:
@@ -115,26 +114,20 @@ class BreakpointGraph:
                 continue
 
             weighted_graph = self._make_weighted(trim_subgraph, phylogeny)
+
+            #assert len(unused_nodes) == len(weighted_graph)
             matching_edges = _split_graph(weighted_graph)
             for edge in matching_edges:
                 for n in edge:
                     unused_nodes.remove(n)
             chosen_edges.extend(matching_edges)
 
-        #assert len(trimmed_graph) == len(unused_nodes) + len(chosen_edges) * 2
-        #if len(unused_nodes):
-        #    print len(unused_nodes)
-        #if len(unused_nodes) % 2:
-        #    print(len(trimmed_graph), len(unused_nodes), len(chosen_edges) * 2)
-        #    print (self.orphans_count)
-
         #check if there are only 2 nodes left
         if len(unused_nodes) == 2:
             self.guessed_count += 1
-            self.orphans_count -= 2
             chosen_edges.append(tuple(unused_nodes))
-        elif len(unused_nodes):
-            self.orphans_count += len(unused_nodes)
+            unused_nodes.clear()
+        self.orphans_count += len(unused_nodes)
 
         return chosen_edges
 
@@ -152,6 +145,7 @@ class BreakpointGraph:
                 for node in [v1, v2]:
                     trimmed_graph.remove_node(node)
                 self.trimmed_count += 1
+
 
         return trimmed_graph
 
@@ -186,8 +180,6 @@ class BreakpointGraph:
 
         for edge_data in self.bp_graph[node_1][node_2].values():
             if "infinity" in edge_data:
-                #print("Infinity detected!")
-                #print(self.bp_graph[node_1][node_2].values())
                 return True
         return False
 
@@ -222,23 +214,27 @@ def _update_edge(graph, v1, v2, weight):
 #output generators
 
 def _output_graph(graph, out_file):
-    '''fout = open(out_file, "w")
-    fout.write("graph {\n")
-    for (v1, v2) in edges:
-        fout.write("{0} -- {1};\n".format(v1, v2))
-    fout.write("}")'''
-    agraph = nx.write_dot(graph, out_file)
+    with open(out_file, "w") as fout:
+        fout.write("graph {\n")
+        for v1, v2, data in graph.edges_iter(data=True):
+            fout.write("{0} -- {1}".format(v1, v2))
+            if len(data):
+                extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),
+                                 data.items()))
+                fout.write(" [" + ", ".join(extra) + "]")
+            fout.write(";\n")
+        fout.write("}")
 
 
 def _output_edges(edges, out_file):
-    fout = open(out_file, "w")
-    fout.write("graph {\n")
-    for (v1, v2) in edges:
-        fout.write("{0} -- {1};\n".format(v1, v2))
-    fout.write("}")
+    with open(out_file, "w") as fout:
+        fout.write("graph {\n")
+        for (v1, v2) in edges:
+            fout.write("{0} -- {1};\n".format(v1, v2))
+        fout.write("}")
 
 
 def _output_phylogeny(tree_string, target_name, out_file):
-    fout = open(out_file, "w")
-    fout.write(tree_string + "\n")
-    fout.write(target_name)
+    with open(out_file, "w") as fout:
+        fout.write(tree_string + "\n")
+        fout.write(target_name)
