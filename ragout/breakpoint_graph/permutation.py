@@ -117,14 +117,14 @@ def _parse_blocks_file(filename):
                 continue
 
             if line.startswith(">"):
-                tokens = line[1:].split(".")
+                tokens = line[1:].split(".", 1)
                 if len(tokens) < 2:
                     logger.error("permutation ids in " + filename + " do not "
                                  "follow naming convention: genome.chromosome")
                     return None
 
                 genome_name = tokens[0]
-                chr_name = "".join(tokens[1:])
+                chr_name = tokens[1]
             else:
                 blocks = line.split(" ")[:-1]
                 permutations.append(Permutation(genome_name, chr_name,

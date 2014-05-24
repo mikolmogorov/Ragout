@@ -115,7 +115,6 @@ class BreakpointGraph:
 
             weighted_graph = self._make_weighted(trim_subgraph, phylogeny)
 
-            #assert len(unused_nodes) == len(weighted_graph)
             matching_edges = _split_graph(weighted_graph)
             for edge in matching_edges:
                 for n in edge:

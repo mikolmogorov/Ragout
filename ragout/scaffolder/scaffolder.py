@@ -50,7 +50,7 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
     scf_length = []
     for scf in scaffolds:
         scf_seqs = []
-        first = True
+        #first = True
 
         for contig in scf.contigs:
             cont_seq = contigs_fasta[contig.name]
@@ -58,13 +58,9 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
 
             if contig.sign < 0:
                 cont_seq = cont_seq.reverse_complement()
-
-            if not first:
-                scf_seqs.append("N" * 11)
-            first = False
             scf_seqs.append(str(cont_seq))
 
-        scf_seq = "".join(scf_seqs)
+        scf_seq = ("N" * 11).join(scf_seqs)
         scf_length.append(len(scf_seq))
         SeqIO.write(SeqRecord(Seq(scf_seq), id=scf.name, description=""),
                     out_stream, "fasta")

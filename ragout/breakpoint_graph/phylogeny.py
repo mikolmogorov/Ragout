@@ -24,15 +24,9 @@ class Phylogeny:
         self.tree = Phylo.read(StringIO(recipe.tree), "newick")
         self.tree.clade.branch_length = 0
         self.tree_string = recipe.tree
-        #genomes = recipe.references + recipe.targets
-        #self.validate_tree(genomes)
 
     def validate_tree(self, recipe_genomes):
         pass
-        #tree_genomes = set(map(lambda n: n.name, self.tree.get_terminals()))
-        #if tree_genomes != set(recipe_genomes):
-        #    raise PhyloException("Some genomes are missing "
-        #                         "from the tree/description")
 
     def estimate_tree(self, adjacencies):
         return _tree_score(self.tree, adjacencies)
