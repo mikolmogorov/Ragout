@@ -82,6 +82,6 @@ We would like to thank:
 - Aleksey Gurevich (testing)
 
 
-Licence
+License
 -------
-The program is distributed under GNU GPL v2 license.
+The program is distributed under BSD license (see *LICENSE* file)

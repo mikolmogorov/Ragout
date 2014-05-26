@@ -39,7 +39,6 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
     logger.info("Generating FASTA output")
     contigs_fasta = {}
     contigs_length = []
-    #for target_file in target_dict.values():
     for seq in SeqIO.parse(in_fasta, "fasta"):
         contigs_fasta[seq.id] = seq.seq
         contigs_length.append(len(seq.seq))
@@ -50,8 +49,6 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
     scf_length = []
     for scf in scaffolds:
         scf_seqs = []
-        #first = True
-
         for contig in scf.contigs:
             cont_seq = contigs_fasta[contig.name]
             used_contigs.add(contig.name)

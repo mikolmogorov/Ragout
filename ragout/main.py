@@ -76,18 +76,18 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     except RecipeException as e:
         logger.error("Error parsing recipe")
         logger.error(e)
-        return
+        return 1
 
     try:
         phylogeny = Phylogeny(recipe)
     except PhyloException as e:
         logger.error(e)
-        return
+        return 1
 
     perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
     if not perm_files:
         logger.error("There were problems with synteny backend, exiting.")
-        return
+        return 1
 
     last_scaffolds = None
     for block_size in recipe.blocks:
@@ -102,7 +102,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
                                                   recipe)
         except PermException as e:
             logger.error(e)
-            return
+            return 1
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, circular_refs)
@@ -126,7 +126,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     if assembly_refine:
         if not ovlp.make_overlap_graph(target_fasta, out_overlap):
             logger.error("Error in overlap graph reconstruction, exiting")
-            return
+            return 1
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
         #asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
         #                                          refined_scaffolds,
@@ -170,10 +170,11 @@ def main():
     if args.synteny_backend not in backends:
         sys.stderr.write(args.synteny_backend + " is not installed. "
                          "You can use provided scripts to install it.\n")
-        return
+        return 1
 
-    do_job(args.recipe, args.output_dir, args.synteny_backend,
-           args.assembly_refine, args.circular_refs, args.overwrite, args.debug)
+    return do_job(args.recipe, args.output_dir, args.synteny_backend,
+                  args.assembly_refine, args.circular_refs,
+                  args.overwrite, args.debug)
 
 if __name__ == "__main__":
     main()
