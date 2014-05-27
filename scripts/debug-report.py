@@ -13,6 +13,7 @@ from Bio import Phylo
 from utils.nucmer_parser import *
 
 Edge = namedtuple("Edge", ["start", "end"])
+Adjacency = namedtuple("Adjacency", ["left", "right", "infinite"])
 
 def verify_alignment(alignment, contigs):
     problematic_contigs = []
@@ -36,25 +37,27 @@ def get_true_adjacencies(alignment, contig_permutations,
     adjacencies = []
 
     for chr_name, entries in by_chr.items():
-        if circular:
-            entries.append(entries[0])
-
         prev_block = None
         prev_contig = None
+
+        entries.append(entries[0])
         for hit in entries:
             if prev_contig in break_contigs or hit.contig_id in break_contigs:
                 continue
 
             sign = 1 if hit.e_qry > hit.s_qry else -1
             blocks = contig_permutations[hit.contig_id]
-            #print(hit.contig_id, blocks)
 
             if sign < 0:
                 blocks = list(map(lambda x: -x, blocks))[::-1]
             if prev_block:
-                adjacencies.append((-prev_block, blocks[0]))
+                adjacencies.append(Adjacency(-prev_block, blocks[0], False))
             prev_block = blocks[-1]
             prev_contig = hit.contig_id
+
+        if entries and not circular:
+            adjacencies[-1] = Adjacency(adjacencies[-1].left,
+                                        adjacencies[-1].right, True)
 
     return adjacencies
 
@@ -77,8 +80,9 @@ def get_contig_permutations(filename):
 def output_edges(edges, out_file):
     fout = open(out_file, "w")
     fout.write("graph {\n")
-    for (v1, v2) in edges:
-        fout.write("{0} -- {1};\n".format(v1, v2))
+    for (v1, v2, inf) in edges:
+        label = "oo" if inf else ""
+        fout.write("{0} -- {1} [label=\"{2}\"];\n".format(v1, v2, label))
     fout.write("}")
 
 
@@ -101,8 +105,10 @@ def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
         out_graph.add_edge(v1, v2, color=color)
     for v1, v2 in predicted_edges.edges_iter():
         out_graph.add_edge(v1, v2, color="red", style="dashed")
-    for (v1, v2) in true_edges:
-        out_graph.add_edge(str(v1), str(v2), color="red", style="bold")
+    for (v1, v2, infinite) in true_edges:
+        label = "oo" if infinite else ""
+        out_graph.add_edge(str(v1), str(v2), color="red",
+                           style="bold", label=label)
 
     return out_graph
 
@@ -238,7 +244,7 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
         alignment = parse_nucmer_coords(nucmer_coords)
         alignment = list(filter(lambda e: e.contig_id in contigs, alignment))
         #alignment = join_collinear(alignment)
-        alignment = filter_by_coverage(alignment)
+        alignment = filter_by_coverage(alignment, 0.7)
         alignment = join_collinear(alignment)
         break_contigs = verify_alignment(alignment, contigs)
         true_adj = get_true_adjacencies(alignment, contigs,

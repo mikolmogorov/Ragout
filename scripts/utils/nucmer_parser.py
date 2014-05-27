@@ -50,22 +50,29 @@ def get_order(alignment):
 def join_collinear(alignment):
     new_entries = []
     by_chr = group_by_chr(alignment)
+
+    def append_entry(start_entry, last_entry):
+        new_entries.append(AlignmentInfo(start_entry.s_ref, last_entry.e_ref,
+                                   start_entry.s_qry, last_entry.e_qry,
+                                   abs(last_entry.e_ref - start_entry.s_ref),
+                                   abs(last_entry.e_qry - start_entry.s_qry),
+                                   last_entry.ref_id, last_entry.contig_id))
     for chr_id in by_chr:
         by_chr[chr_id].sort(key=lambda e: e.s_ref)
-        #prev_contig = None
         start_entry = None
         last_entry = None
         for entry in by_chr[chr_id]:
+
             if not start_entry:
                 start_entry = entry
             elif start_entry.contig_id != entry.contig_id:
-                new_entries.append(AlignmentInfo(start_entry.s_ref, last_entry.e_ref,
-                                    start_entry.s_qry, last_entry.e_qry,
-                                    abs(last_entry.e_ref - start_entry.s_ref),
-                                    abs(last_entry.e_qry - start_entry.s_qry),
-                                    last_entry.ref_id, last_entry.contig_id))
+                append_entry(start_entry, last_entry)
                 start_entry = entry
+
             last_entry = entry
+
+        if start_entry:
+            append_entry(start_entry, last_entry)
 
     return new_entries
 
@@ -95,15 +102,14 @@ def parse_nucmer_coords(filename):
     return alignment
 
 
-def filter_by_coverage(alignment):
-    MIN_HIT = 0.45
+def filter_by_coverage(alignment, threshold=0.45):
     by_name = defaultdict(list)
     for entry in alignment:
         by_name[entry.contig_id].append(entry)
 
     for name in by_name:
         by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
-        len_filter = lambda e: e.len_qry > MIN_HIT * by_name[name][0].len_qry
+        len_filter = lambda e: e.len_qry > threshold * by_name[name][0].len_qry
         by_name[name] = list(filter(len_filter, by_name[name]))
         #print(by_name[name])
 
