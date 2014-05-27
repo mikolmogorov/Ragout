@@ -1,8 +1,8 @@
-TREE=(dh1,mg1655);
+.tree = (dh1,mg1655);
+.target = mg1655
+.blocks = 5000
 
-TARGET = mg1655
+*.circular = true
 
-FASTA dh1 = references/DH1.fasta
-FASTA mg1655 = mg1655_contigs.fasta
-
-BLOCKS = 5000,500,100
+dh1.fasta = references/DH1_simulated.fasta
+mg1655.fasta = references/mg1655_contigs.fasta

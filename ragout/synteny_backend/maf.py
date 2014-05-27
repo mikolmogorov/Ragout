@@ -17,7 +17,7 @@ class MafBackend(SyntenyBackend):
         if overwrite and os.path.isdir(workdir):
             shutil.rmtree(workdir)
 
-        if not recipe.maf or not os.path.exists(recipe.maf):
+        if "maf" not in recipe or not os.path.exists(recipe["maf"]):
             raise BackendException("Could not open MAF file "
                                    "or it is not specified")
 
@@ -26,7 +26,7 @@ class MafBackend(SyntenyBackend):
             #using existing results
             logger.warning("Using synteny blocks from previous run")
             logger.warning("Use --overwrite to force alignment")
-            for block_size in recipe.blocks:
+            for block_size in recipe["blocks"]:
                 block_dir = os.path.join(workdir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
                 if not os.path.isfile(perm_file):
@@ -37,10 +37,10 @@ class MafBackend(SyntenyBackend):
         else:
             os.mkdir(workdir)
             logger.info("Converting MAF to synteny")
-            if not m2s.make_synteny(recipe.maf, workdir, recipe.blocks):
+            if not m2s.make_synteny(recipe["maf"], workdir, recipe["blocks"]):
                 raise BackendException("Something went wrong with maf2synteny")
 
-            for block_size in recipe.blocks:
+            for block_size in recipe["blocks"]:
                 block_dir = os.path.join(workdir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
                 files[block_size] = os.path.abspath(perm_file)

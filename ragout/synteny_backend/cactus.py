@@ -28,8 +28,8 @@ class CactusBackend(SyntenyBackend):
         SyntenyBackend.__init__(self)
 
 
-    def run_backend(self, config, output_dir, overwrite):
-        return _make_permutations(config, output_dir, overwrite)
+    def run_backend(self, recipe, output_dir, overwrite):
+        return _make_permutations(recipe, output_dir, overwrite)
 
 
 if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
@@ -55,7 +55,7 @@ def _make_permutations(recipe, output_dir, overwrite):
         #using existing results
         logger.warning("Using existing Cactus results from previous run")
         logger.warning("Use --overwrite to force alignment")
-        for block_size in recipe.blocks:
+        for block_size in recipe["blocks"]:
             block_dir = os.path.join(work_dir, str(block_size))
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             if not os.path.isfile(perm_file):
@@ -65,22 +65,21 @@ def _make_permutations(recipe, output_dir, overwrite):
 
     else:
         #running cactus
-        for genome in recipe.genomes:
-            if genome not in recipe.fasta:
+        for genome, params in recipe["genomes"].items():
+            if "fasta" not in params:
                 raise BackendException("FASTA file for {0} is not "
                                        "specified".format(genome))
 
         os.mkdir(work_dir)
-        config_path = _make_cactus_config(recipe.fasta, recipe.targets,
-                                          recipe.tree, work_dir)
-        ref_genome = recipe.targets[0]
+        config_path = _make_cactus_config(recipe, work_dir)
+        ref_genome = recipe["target"][0]
         maf_file = _run_cactus(config_path, ref_genome, work_dir)
 
         logger.info("Converting maf to synteny")
-        if not m2s.make_synteny(maf_file, work_dir, block_sizes):
+        if not m2s.make_synteny(maf_file, work_dir, recipe["blocks"]):
             raise BackendException("Something went wrong with maf2synteny")
 
-        for block_size in recipe.blocks:
+        for block_size in recipe["blocks"]:
             block_dir = os.path.join(work_dir, str(block_size))
             perm_file = os.path.join(block_dir, "genomes_permutations.txt")
             files[block_size] = os.path.abspath(perm_file)
@@ -90,15 +89,15 @@ def _make_permutations(recipe, output_dir, overwrite):
     return files
 
 
-def _make_cactus_config(fasta_files, targets, tree_string, directory):
+def _make_cactus_config(recipe, directory):
     CONF_NAME = "cactus.cfg"
     file = open(os.path.join(directory, CONF_NAME), "w")
-    file.write(tree_string + "\n")
+    file.write(recipe["tree"] + "\n")
 
-    for seq_id, seq_path in fasta_files.items():
-        if seq_id not in targets:
+    for genome, params in recipe["genomes"].items():
+        if genome not in recipe["target"]:
             file.write("*")
-        file.write("{0} {1}\n".format(seq_id, os.path.abspath(seq_path)))
+        file.write("{0} {1}\n".format(genome, os.path.abspath(params["fasta"])))
 
     return file.name
 

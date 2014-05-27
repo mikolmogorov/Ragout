@@ -31,8 +31,8 @@ class Permutation:
 
 
 class PermutationContainer:
-    #parses permutation files referenced from config and filters duplications
-    def __init__(self, permutations_file, config):
+    #parses permutation files referenced from recipe and filters duplications
+    def __init__(self, permutations_file, recipe):
         self.ref_perms = []
         self.target_perms = []
 
@@ -42,11 +42,11 @@ class PermutationContainer:
             raise PermException("Error reading permutations")
 
         for p in permutations:
-            if p.genome_id not in config.genomes:
+            if p.genome_id not in recipe["genomes"]:
                 continue
-            if p.genome_id not in config.targets:
+            if p.genome_id not in recipe["target"]:
                 self.ref_perms.append(p)
-            elif p.genome_id in config.targets:
+            else:
                 self.target_perms.append(p)
 
         logger.debug("Read {0} reference sequences"

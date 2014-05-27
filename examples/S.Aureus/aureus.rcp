@@ -1,11 +1,11 @@
-TREE = (rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
+.tree = (rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
+.target = usa
+.blocks = 5000, 500, 100
 
-TARGET = usa
+*.circular = true
 
-FASTA col = references/COL.fasta
-FASTA jkd = references/JKD6008.fasta
-FASTA rf122 = references/RF122.fasta
-FASTA n315 = references/N315.fasta
-FASTA usa = usa300_contigs.fasta
-
-BLOCKS = 5000, 500, 100
+col.fasta = references/COL.fasta
+jkd.fasta = references/JKD6008.fasta
+rf122.fasta = references/RF122.fasta
+n315.fasta = references/N315.fasta
+usa.fasta = usa300_contigs.fasta

@@ -21,9 +21,9 @@ class PhyloException(Exception):
 #given half-breakpoint states
 class Phylogeny:
     def __init__(self, recipe):
-        self.tree = Phylo.read(StringIO(recipe.tree), "newick")
+        self.tree = Phylo.read(StringIO(recipe["tree"]), "newick")
         self.tree.clade.branch_length = 0
-        self.tree_string = recipe.tree
+        self.tree_string = recipe["tree"]
 
     def validate_tree(self, recipe_genomes):
         pass

@@ -40,7 +40,7 @@ class SibeliaBackend(SyntenyBackend):
             #using existing results
             logger.warning("Using existing Sibelia results from previous run")
             logger.warning("Use --overwrite to force alignment")
-            for block_size in recipe.blocks:
+            for block_size in recipe["blocks"]:
                 block_dir = os.path.join(work_dir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
                 if not os.path.isfile(perm_file):
@@ -49,20 +49,20 @@ class SibeliaBackend(SyntenyBackend):
                 files[block_size] = os.path.abspath(perm_file)
 
         else:
-            for genome in recipe.genomes:
-                if genome not in recipe.fasta:
+            for genome, params in recipe["genomes"].items():
+                if "fasta" not in params:
                     raise BackendException("FASTA file for '{0}' is not "
                                            "specified".format(genome))
 
             os.mkdir(work_dir)
-            chr2genome = _get_chr2genome(recipe.fasta)
-            for block_size in recipe.blocks:
+            chr2genome = _get_chr2genome(recipe)
+            for block_size in recipe["blocks"]:
                 block_dir = os.path.join(work_dir, str(block_size))
                 if not os.path.isdir(block_dir):
                     os.mkdir(block_dir)
 
-                perm_file = _run_sibelia(recipe.fasta.values(),
-                                         block_size, block_dir)
+                all_fasta = [p["fasta"] for p in recipe["genomes"].values()]
+                perm_file = _run_sibelia(all_fasta, block_size, block_dir)
                 _postprocess(chr2genome, perm_file)
                 files[block_size] = perm_file
 
@@ -82,10 +82,11 @@ else:
 #PRIVATE:
 #################################################################
 
-def _get_chr2genome(genomes):
+def _get_chr2genome(recipe):
     chr2genome = {}
-    for gen_name, fasta in genomes.items():
-        with open(fasta, "r") as f:
+    #for gen_name, fasta in genomes.items():
+    for gen_name, gen_params in recipe["genomes"].items():
+        with open(gen_params["fasta"], "r") as f:
             for line in f:
                 line = line.strip()
                 if line.startswith(">"):

@@ -50,7 +50,7 @@ def enable_logging(log_file, debug):
 
 #top-level logic of program
 def do_job(recipe_file, out_dir, backend, assembly_refine,
-           circular_refs, overwrite, debug):
+           overwrite, debug):
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
     out_log = os.path.join(out_dir, "ragout.log")
@@ -90,7 +90,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         return 1
 
     last_scaffolds = None
-    for block_size in recipe.blocks:
+    for block_size in recipe["blocks"]:
         logger.info("Running Ragout with the block size {0}".format(block_size))
 
         if debug:
@@ -105,7 +105,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             return 1
 
         graph = bg.BreakpointGraph()
-        graph.build_from(perm_container, circular_refs)
+        graph.build_from(perm_container, recipe)
 
         connections = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(connections, perm_container)
@@ -119,7 +119,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
-    target_fasta = recipe.fasta[recipe.targets[0]]
+    target_fasta = recipe["genomes"][recipe["target"][0]]["fasta"]
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_fasta(target_fasta, last_scaffolds, out_scaffolds)
 
@@ -154,9 +154,6 @@ def main():
     parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="enable refinement with assembly graph")
-    parser.add_argument("--circular", action="store_const",
-                        dest="circular_refs", default=False, const=True,
-                        help="treat input references as circular")
     parser.add_argument("--overwrite", action="store_const",
                         dest="overwrite", default=False, const=True,
                         help="overwrite existing synteny blocks")
@@ -173,8 +170,7 @@ def main():
         return 1
 
     return do_job(args.recipe, args.output_dir, args.synteny_backend,
-                  args.assembly_refine, args.circular_refs,
-                  args.overwrite, args.debug)
+                  args.assembly_refine, args.overwrite, args.debug)
 
 if __name__ == "__main__":
     main()

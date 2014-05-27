@@ -28,7 +28,7 @@ class BreakpointGraph:
         self.known_adjacencies = {}
 
     #builds breakpoint graph from permutations
-    def build_from(self, perm_container, circular_refs):
+    def build_from(self, perm_container, recipe):
         logger.info("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
@@ -50,8 +50,10 @@ class BreakpointGraph:
                 self.bp_graph.add_edge(-prev_block, next_block,
                                        genome_id=perm.genome_id)
 
-            if perm.genome_id in self.references:
-                if circular_refs:
+            if (perm.genome_id in self.references and
+                not recipe["genomes"][perm.genome_id]["draft"]):
+
+                if recipe["genomes"][perm.genome_id]["circular"]:
                     self.bp_graph.add_edge(-perm.blocks[-1], perm.blocks[0],
                                            genome_id=perm.genome_id)
                 else:

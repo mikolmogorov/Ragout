@@ -1,13 +1,12 @@
-TREE = (((sjm180:0.0400823,els:0.0217168):0.0344596,gambia:0.0652494):0.0217168,(puno:0.064641,g27:0.0526246):0.008389);
+.tree = (((sjm180:0.0400823,els:0.0217168):0.0344596,gambia:0.0652494):0.0217168,(puno:0.064641,g27:0.0526246):0.008389);
+.target = sjm180
+.blocks = 5000, 500, 100
+.maf = out/cactus-workdir/cactus.maf
 
-TARGET = sjm180
+*.circular = true
 
-FASTA els = references/ELS37.fasta
-FASTA g27 = references/G27.fasta
-FASTA gambia = references/Gambia94_24.fasta
-FASTA puno = references/Puno120.fasta
-FASTA sjm180 = SJM180_contigs.fasta
-
-MAF = out/cactus-workdir/cactus.maf
-
-BLOCKS = 5000, 500, 100
+els.fasta = references/ELS37.fasta
+g27.fasta = references/G27.fasta
+gambia.fasta = references/Gambia94_24.fasta
+puno.fasta = references/Puno120.fasta
+sjm180.fasta = SJM180_contigs.fasta

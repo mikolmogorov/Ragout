@@ -17,18 +17,18 @@ class SyntenyBackend:
         pass
 
     #runs backend and then prepare data for futher processing
-    def make_permutations(self, config, output_dir, overwrite):
+    def make_permutations(self, recipe, output_dir, overwrite):
         try:
-            files = self.run_backend(config, output_dir, overwrite)
+            files = self.run_backend(recipe, output_dir, overwrite)
         except BackendException as e:
             logger.error(e)
             return False
-        assert sorted(files.keys()) == sorted(config.blocks)
+        assert sorted(files.keys()) == sorted(recipe["blocks"])
         return files
 
     #runs backend and returns a dict with permutations files
     #indexed by block sizes
-    def run_backend(self, config, output_dir, overwrite):
+    def run_backend(self, recipe, output_dir, overwrite):
         return None
 
     @staticmethod
