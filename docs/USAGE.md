@@ -18,7 +18,6 @@ Supported arguments:
                             which tool to use for synteny block decomposition.
                             (default: sibelia)
       --refine              refine with the assembly graph (default: False)
-      --circular            treat input references as circular (default: False)
       --overwrite           overwrite existing Sibelia/Cactus results (default:
                             False)
       --debug               enable debug output (default: False)
@@ -68,45 +67,73 @@ Recipe file
 If you want to cook Ragout, you need to write a recipe first.
 Here is an example of such recipe file:
 
-    TREE = (rf122:0.0280919,(((usa:0.0151257,col:0.0127906):0.0132464,jkd:0.0439743):0.00532819,n315:0.0150894):0.0150894);
-    TARGET = usa
+    .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
+    .target = usa
+    .blocks = 5000, 500, 100
 
-    FASTA col = references/COL.fasta
-    FASTA jkd = references/JKD6008.fasta
-    FASTA rf122 = references/RF122.fasta
-    FASTA n315 = references/N315.fasta
-    FASTA usa = usa300_contigs.fasta
+    *.circular = true
 
-    BLOCKS = 5000,500,100
+    col.fasta = references/COL.fasta
+    jkd.fasta = references/JKD6008.fasta
+    rf122.fasta = references/RF122.fasta
+    n315.fasta = references/N315.fasta
+    usa.fasta = usa300_contigs.fasta
+    
 
 or, if using *MAF* as input:
 
-    TREE = (miranda:0.04,(yakuba:0.122089,(melanogaster:0.0409765,simulans:0.0409765):0.0811128):0.15);
-    TARGET = yakuba
+    .tree = (miranda:0.04,(yakuba:0.12,(melanogaster:0.04,simulans:0.04):0.08):0.15);
+    .target = yakuba
+    .maf = genomes/alignment.maf
+    .blocks = 5000, 500
 
-    FASTA yakuba = genomes/D.yakuba_contigs.fasta
-    MAF = genomes/alignment.maf
+    yakuba.fasta = genomes/D.yakuba_contigs.fasta
+   
 
-    BLOCKS = 5000, 500
+###Parameters description:
 
-Keywords description:
+Each parameter could be "global" or "local" (for a particular genome).
+Global parameters starts from dot:
 
-* TREE: phylogenetic tree in NEWICK format
-* TARGET: target genome name
-* FASTA: path to *FASTA* with genome's sequences
-* MAF: path to multiple alignment in *MAF* format (optional)
-* BLOCKS: minimum synteny block sizes (in multiple scales, one per iteration)
+  .global_param_name = value
+
+To set local parameter, use:
+
+  genome_name.param_name = value
+
+###Global parameters
+
+* tree: phylogenetic tree in NEWICK format [required]
+* target: target genome name [required]
+* blocks: comma-separated list of minimum synteny block sizes [required]
+* maf: path to multiple alignment in *MAF* format [default = not set]
+
+###Local parameters
+
+* fasta: path to *FASTA* with genomic sequences [default = not set]
+* circular: indicates that reference chromosomes are circular [default = false]
+* draft: indicated that reference is in draft form (contigs/scaffolds) [default = false]
+
+###Default values
+
+You can change default values for local parameters assigning parameter value to '*' genome.
+For instance, if all input references except one are in draft form, you can write:
+
+    *.draft = true
+    complete_ref.draft = false
+
+###Detailed description
 
 Genome names are picked form the terminal nodes of the phylogenetic tree.
-All those names should be uniqe. Paths can be both relative and absolute.
-If the branch length is ommited, it would be set to 1.
+All those names should be uniqe. If the branch length is ommited, it would be set to 1.
+
+Paths to *FASTA*/*MAF* can be both relative and absolute.
 
 Ragout firstly decomposes genomes into set of synteny blocks.
 You can use either a set of *FASTA* files corresponding to each input genome
 or multiple alignment of all the genomes in *MAF* format.
 In both cases you should specify target's *FASTA* since it will be
 used to generate output. See "Synteny backends" section for more information.
-
 
 Output files
 ------------
@@ -181,7 +208,7 @@ If the phylogeny is unknown or ambiguous, you are still able run Ragout assuming
 the "star" phylogeny and specifying the evolutionary distance between
 target and references (which is easier to find out):
 
-    TREE = (target,ref1:0.1,ref2:0.05,ref3:0.003);
+    .tree = (target,ref1:0.1,ref2:0.05,ref3:0.003);
 
 
 Useful scripts

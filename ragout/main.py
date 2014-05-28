@@ -150,7 +150,7 @@ def main():
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
                         default="sibelia", choices=["sibelia", "cactus", "maf"],
-                        help="tool for synteny block decomposition")
+                        help="which tool to use for synteny block decomposition")
     parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
                         dest="assembly_refine", default=False, const=True,
                         help="enable refinement with assembly graph")

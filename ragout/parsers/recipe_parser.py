@@ -100,7 +100,6 @@ def parse_ragout_recipe(filename):
     if not recipe_dict["genomes"]:
         raise RecipeException("No genomes in terminal nodes of the tree")
 
-    print(recipe_dict)
     if recipe_dict["target"] not in recipe_dict["genomes"]:
         raise RecipeException("Target genome is not in tree")
     if "fasta" not in recipe_dict["genomes"][recipe_dict["target"]]:
