@@ -72,7 +72,7 @@ def _make_permutations(recipe, output_dir, overwrite):
 
         os.mkdir(work_dir)
         config_path = _make_cactus_config(recipe, work_dir)
-        ref_genome = recipe["target"][0]
+        ref_genome = recipe["target"]
         maf_file = _run_cactus(config_path, ref_genome, work_dir)
 
         logger.info("Converting maf to synteny")
@@ -95,7 +95,7 @@ def _make_cactus_config(recipe, directory):
     file.write(recipe["tree"] + "\n")
 
     for genome, params in recipe["genomes"].items():
-        if genome not in recipe["target"]:
+        if genome != recipe["target"]:
             file.write("*")
         file.write("{0} {1}\n".format(genome, os.path.abspath(params["fasta"])))
 

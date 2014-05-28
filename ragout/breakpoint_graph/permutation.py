@@ -44,10 +44,10 @@ class PermutationContainer:
         for p in permutations:
             if p.genome_id not in recipe["genomes"]:
                 continue
-            if p.genome_id not in recipe["target"]:
-                self.ref_perms.append(p)
-            else:
+            if p.genome_id == recipe["target"]:
                 self.target_perms.append(p)
+            else:
+                self.ref_perms.append(p)
 
         logger.debug("Read {0} reference sequences"
                      .format(len(self.ref_perms)))

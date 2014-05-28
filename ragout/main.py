@@ -119,7 +119,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
-    target_fasta = recipe["genomes"][recipe["target"][0]]["fasta"]
+    target_fasta = recipe["genomes"][recipe["target"]]["fasta"]
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_fasta(target_fasta, last_scaffolds, out_scaffolds)
 
