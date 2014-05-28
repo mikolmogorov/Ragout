@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico" />
+    
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Ragout - usage instructions</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Ragout</h1>
+          <h2>Ragout - a tool for assisted assembly using multiple references</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/fenderglass/Ragout/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/fenderglass/Ragout/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/fenderglass/Ragout" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+
+<h1>Usage instructions for Ragout</h1>
+<pre><code>Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
+              [--circular] [--overwrite] [--debug] [--version]
+              recipe_file</code></pre>
+<p>Supported arguments:</p>
+<pre><code>positional arguments:
+  recipe_file           path to recipe file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT_DIR, --outdir OUTPUT_DIR
+                        path to the working directory (default: ragout-out)
+  -s {sibelia,cactus,maf}, --synteny {sibelia,cactus,maf}
+                        which tool to use for synteny block decomposition.
+                        (default: sibelia)
+  --refine              refine with the assembly graph (default: False)
+  --overwrite           overwrite existing Sibelia/Cactus results (default:
+                        False)
+  --debug               enable debug output (default: False)
+  --version             show program&#39;s version number and exit</code></pre>
+<h2>Examples</h2>
+<p>You can try Ragout on the provided ready-to-use examples:</p>
+<pre><code>ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine</code></pre>
+<h2>Algorithm overview</h2>
+<p>This is a very brief description of the algorithm. See our paper 
+for the detailed explanation.</p>
+<p>Ragout works with genomes represented as sequences of synteny blocks
+and firstly uses <em>Sibelia</em> for this decomposition. 
+Next, Ragout assembles contigs into scaffolds using a breakpoint graph.</p>
+<p>This procedure is repeated multiple times with the different size
+of synteny block decomposition. Afterwards, an optional refinement
+step with assembly (overlap) graph is performed (if --refine was specified).</p>
+<h2>Input</h2>
+<p>Ragout takes as input:</p>
+<ul>
+<li>Reference genomes in <em>FASTA</em> format</li>
+<li>Target (assembling) genome in <em>FASTA</em> format (a set of contigs)</li>
+<li>Phylogenetic tree for both reference and target genomes in <em>NEWICK</em> format</li>
+<li>Minimum synteny block size (in multiple scales)</li>
+</ul>
+<p>All these parameters should be described in a single recipe file.
+See the example of such file below.</p>
+<h2>Recipe file</h2>
+<p>If you want to cook Ragout, you need to write a recipe first.
+Here is an example of such recipe file:</p>
+<pre><code>.tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
+.target = usa
+.blocks = 5000, 500, 100
+
+*.circular = true
+
+col.fasta = references/COL.fasta
+jkd.fasta = references/JKD6008.fasta
+rf122.fasta = references/RF122.fasta
+n315.fasta = references/N315.fasta
+usa.fasta = usa300_contigs.fasta</code></pre>
+<p>or, if using <em>MAF</em> as input:</p>
+<pre><code>.tree = (miranda:0.04,(yakuba:0.12,(melanogaster:0.04,simulans:0.04):0.08):0.15);
+.target = yakuba
+.maf = genomes/alignment.maf
+.blocks = 5000, 500
+
+yakuba.fasta = genomes/D.yakuba_contigs.fasta</code></pre>
+<h3>Parameters description:</h3>
+<p>Each parameter could be &quot;global&quot; or &quot;local&quot; (for a particular genome).
+Global parameters starts from dot:</p>
+<p>  .global_param_name = value</p>
+<p>To set local parameter, use:</p>
+<p>  genome_name.param_name = value</p>
+<h3>Global parameters</h3>
+<ul>
+<li>tree: phylogenetic tree in NEWICK format [required]</li>
+<li>target: target genome name [required]</li>
+<li>blocks: comma-separated list of minimum synteny block sizes [required]</li>
+<li>maf: path to multiple alignment in <em>MAF</em> format [default = not set]</li>
+</ul>
+<h3>Local parameters</h3>
+<ul>
+<li>fasta: path to <em>FASTA</em> with genomic sequences [default = not set]</li>
+<li>circular: indicates that reference chromosomes are circular [default = false]</li>
+<li>draft: indicated that reference is in draft form (contigs/scaffolds) [default = false]</li>
+</ul>
+<h3>Default values</h3>
+<p>You can change default values for local parameters assigning parameter value to &#39;*&#39; genome.
+For instance, if all input references except one are in draft form, you can write:</p>
+<pre><code>*.draft = true
+complete_ref.draft = false</code></pre>
+<h3>Detailed description</h3>
+<p>Genome names are picked form the terminal nodes of the phylogenetic tree.
+All those names should be uniqe. If the branch length is ommited, it would be set to 1.</p>
+<p>Paths to <em>FASTA</em>/<em>MAF</em> can be both relative and absolute.</p>
+<p>Ragout firstly decomposes genomes into set of synteny blocks.
+You can use either a set of <em>FASTA</em> files corresponding to each input genome
+or multiple alignment of all the genomes in <em>MAF</em> format.
+In both cases you should specify target&#39;s <em>FASTA</em> since it will be
+used to generate output. See &quot;Synteny backends&quot; section for more information.</p>
+<h2>Output files</h2>
+<p>After running Ragout, an output directory will contain:</p>
+<ul>
+<li>&quot;scaffolds.ord&quot; with a resulting order of contigs</li>
+<li>&quot;scaffolds.fasta&quot; with scaffold sequences (contigs are separated by 11 Ns)</li>
+<li>&quot;scaffolds_refined.ord&quot; with a contigs order after refinement (if --refine was specified)</li>
+<li>&quot;scaffolds_refined.fasta&quot; with refined scaffold sequences (if --refine was specified)</li>
+</ul>
+<h2>Synteny backends</h2>
+<p>Ragout have three different options for synteny block decomposition:</p>
+<ul>
+<li>Decompoition with <em>Sibelia</em></li>
+<li>Decomposition with <em>progressiveCactus</em></li>
+<li>Use of finished alignment in <em>MAF</em> format</li>
+</ul>
+<p>You can choose between backends by specifying --synteny (-s) option.
+If you use <em>Sibelia</em> or <em>progressiveCactus</em>, you should specify separate <em>FASTA</em>
+file for each input genome, while if you work with <em>MAF</em>, you should set
+only a path to <em>MAF</em> itself and a path to targset&#39;s <em>FASTA</em> (see below).</p>
+<h3>Sibelia</h3>
+<p>&quot;Sibelia&quot; option is set by default and is recommended for small genomes (like bacterial ones).
+The tools should be installed in your system -- see docs/INSTALL.md for detailed instructions.</p>
+<h3>progressiveCactus</h3>
+<p>&quot;progressiveCactus&quot; can be used for bigger genomes, up to multuple mammalian species.
+Please note, that current implementation is still experimental. The tool also 
+should be properly installed. Do not forget to mask repeats (with RepeatMasker, for instance)
+before applying progressiveCactus to genomes with big fraction of repetitive sequences.</p>
+<h3>alignment in <em>MAF</em> format</h3>
+<p>If you already have a multiple alignment, you also can use it for synteny blocks decomposition.
+Alignment should be in <em>MAF</em> format and sequence names should follow UCSC notation:</p>
+<pre><code>genome_name.sequence_name</code></pre>
+<p>In case you are working with <em>MAF</em> input you should not specify reference <em>FASTA</em> files.
+All you need is to set <em>FASTA</em> for target genome (which will be used for output generation).</p>
+<h2>The parameters choice</h2>
+<h3>Minimum synteny block size</h3>
+<p>Because the decomposition procedure is parameter-dependent, the assembly
+is performed in multiple iterations with different synteny block
+scale. Intuitively, the algorithm firstly considers only contigs
+that are long enough and then puts shorter ones into the analysis.</p>
+<p>For bacterial genomes, we recommend to run Ragout in three
+iterations with the block size equal to 5000, 500, 100.
+However, you can specify our own configuration which better
+describes your dataset.</p>
+<h3>Phylogenetic tree</h3>
+<p>Running with multiple references, the output of Ragout may highly
+depend of the given phylogenetic tree and can be biased if
+the tree is incorrect.</p>
+<p>If the phylogeny is unknown or ambiguous, you are still able run Ragout assuming
+the &quot;star&quot; phylogeny and specifying the evolutionary distance between
+target and references (which is easier to find out):</p>
+<pre><code>.tree = (target,ref1:0.1,ref2:0.05,ref3:0.003);</code></pre>
+<h2>Useful scripts</h2>
+<p>Scripts are located in &quot;scripts&quot; directory</p>
+<p><strong>verify-order.py:</strong></p>
+<p>Tests the correctness of the infered order of contigs if a closely related reference
+is available. First, contigs should be mapped on this reference using <em>nucmer</em> software:</p>
+<pre><code>nucmer --maxmatch --coords reference contigs</code></pre>
+<p>Then run the script with the obtained &quot;coords&quot; file:</p>
+<pre><code>scripts/verify-order.py nucmer_coords ord_file</code></pre>
+
+        </section>
+
+        <footer>
+          Ragout is maintained by <a href="https://github.com/fenderglass">fenderglass</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
