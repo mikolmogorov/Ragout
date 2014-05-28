@@ -1,78 +1,121 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Ragout by fenderglass</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
     <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <title>Ragout by fenderglass</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/fenderglass/Ragout">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/fenderglass/Ragout/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/fenderglass/Ragout/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
+    <div id="container">
+      <div class="inner">
 
-    <div class="wrapper">
-
-      <section>
-        <div id="title">
+        <header>
           <h1>Ragout</h1>
-          <p>Ragout - a tool for assisted assembly using multiple references</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/fenderglass">fenderglass</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h2>Ragout - a tool for assisted assembly using multiple references</h2>
+        </header>
 
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/fenderglass/Ragout/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/fenderglass/Ragout/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/fenderglass/Ragout" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+        <hr>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+        <section id="main_content">
+          <p>Ragout (Reference-Assisted Genome Ordering UTility) is a tool for
+assisted assembly using multiple references. It takes a short read
+assembly (a set of contigs), a set of related references
+and a corresponding phylogenetic tree and then assembles the contigs into
+scaffolds.</p>
+
+<p>The benefits of assembly with multiple references become significant,
+when those references have structural variations compared to the target
+genome. Even if each reference is structurally divergent, it is possible
+to assemble the target into the correct set of scaffolds. Enlarge your
+contigs with Ragout!</p>
+
+<p>The current version of Ragout is limited to genomes of bacterial size,
+but we are working on expanding it to mammalian-scaled ones.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Latest version: 0.2 beta (Apr 15 2014)</p>
+
+<p>The easiest way to install Ragout is to type:</p>
+
+<pre><code>pip install ragout
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>You also can read more detailed <em>installation instructions</em>.</p>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<p>Please read <em>manual</em>.</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<h2>
+<a name="authors" class="anchor" href="#authors"><span class="octicon octicon-link"></span></a>Authors</h2>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<ul>
+<li>Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of
+Sciences)</li>
+<li>Son Pham (University of California, San Diego)</li>
+<li>Pavel Avdeyev (St. Petersburg University of the Russian Academy of
+Sciences)</li>
+<li>Dmitry Meleshko (St. Petersburg University of the Russian Academy of
+Sciences)</li>
+</ul><h2>
+<a name="citation" class="anchor" href="#citation"><span class="octicon octicon-link"></span></a>Citation</h2>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>If you use Ragout for your research, please cite:</p>
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<ul>
+<li>Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
+"Ragout: A reference-assisted assembly tool for bacterial genomes" 
+(accepted to ISMB 2014)</li>
+</ul><h2>
+<a name="ismb-2014-supplementary" class="anchor" href="#ismb-2014-supplementary"><span class="octicon octicon-link"></span></a>ISMB 2014 supplementary</h2>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>Supplementary materials for ISMB submission could be found at:
+<a href="https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing">https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing</a></p>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<h2>
+<a name="contacts" class="anchor" href="#contacts"><span class="octicon octicon-link"></span></a>Contacts</h2>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
+<p>Please report any bugs directly to the issue tracker of this project.
+Also, you can send your feedback at <a href="mailto:fenderglass@gmail.com">fenderglass@gmail.com</a></p>
 
+<h2>
+<a name="acknowledgements" class="anchor" href="#acknowledgements"><span class="octicon octicon-link"></span></a>Acknowledgements</h2>
+
+<p>The work was supported by VP Foundation.</p>
+
+<p>We would like to thank:</p>
+
+<ul>
+<li>Nikolay Vyahhi (testing and some useful suggestions)</li>
+<li>Tamara Panesh (art)</li>
+<li>Aleksey Gurevich (testing)</li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>The program is distributed under BSD license</p>
+        </section>
+
+        <footer>
+          Ragout is maintained by <a href="https://github.com/fenderglass">fenderglass</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
   </body>
 </html>
