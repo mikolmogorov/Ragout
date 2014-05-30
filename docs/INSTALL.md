@@ -10,7 +10,7 @@ under Windows, we currently do not provide an official support.
 
 Build requirements
 ------------------
-* Python 2.7 (with developer headers)
+* Python 2.7 (with developer headers installed)
 * C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)
 * GNU make / Cmake (for building Sibelia)
 
