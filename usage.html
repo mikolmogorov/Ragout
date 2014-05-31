@@ -22,7 +22,7 @@
 
         <header>
           <h1>Ragout</h1>
-          <h2>Ragout - a tool for assisted assembly using multiple references</h2>
+          <h2>A tool for assisted assembly using multiple references</h2>
         </header>
 
         <section id="downloads" class="clearfix">
@@ -37,7 +37,7 @@
 
 <h1>Usage instructions for Ragout</h1>
 <pre><code>Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
-              [--circular] [--overwrite] [--debug] [--version]
+              [--overwrite] [--debug] [--version]
               recipe_file</code></pre>
 <p>Supported arguments:</p>
 <pre><code>positional arguments:
@@ -104,9 +104,9 @@ yakuba.fasta = genomes/D.yakuba_contigs.fasta</code></pre>
 <h3>Parameters description:</h3>
 <p>Each parameter could be &quot;global&quot; or &quot;local&quot; (for a particular genome).
 Global parameters starts from dot:</p>
-<p>  .global_param_name = value</p>
+<pre><code>.global_param_name = value</code></pre>
 <p>To set local parameter, use:</p>
-<p>  genome_name.param_name = value</p>
+<pre><code>genome_name.param_name = value</code></pre>
 <h3>Global parameters</h3>
 <ul>
 <li>tree: phylogenetic tree in NEWICK format [required]</li>
