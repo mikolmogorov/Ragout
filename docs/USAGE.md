@@ -2,7 +2,7 @@ Usage instructions for Ragout
 =============================
 
     Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
-                  [--circular] [--overwrite] [--debug] [--version]
+                  [--overwrite] [--debug] [--version]
                   recipe_file
     
 Supported arguments:
@@ -95,11 +95,11 @@ or, if using *MAF* as input:
 Each parameter could be "global" or "local" (for a particular genome).
 Global parameters starts from dot:
 
-  .global_param_name = value
+    .global_param_name = value
 
 To set local parameter, use:
 
-  genome_name.param_name = value
+    genome_name.param_name = value
 
 ###Global parameters
 
