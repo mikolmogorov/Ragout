@@ -86,6 +86,10 @@ def _get_chr2genome(recipe):
     chr2genome = {}
     #for gen_name, fasta in genomes.items():
     for gen_name, gen_params in recipe["genomes"].items():
+        if not os.path.exists(gen_params["fasta"]):
+            raise BackendException("Can't open '{0}'"
+                                   .format(gen_params["fasta"]))
+
         with open(gen_params["fasta"], "r") as f:
             for line in f:
                 line = line.strip()

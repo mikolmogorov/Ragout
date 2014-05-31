@@ -105,7 +105,7 @@ def _extend_scaffolds(connections, perm_container):
 
     def extend_scaffold(contig):
         visited.add(contig)
-        scf_name = "scaffold{0}".format(counter[0])
+        scf_name = "ragout-scaffold-{0}".format(counter[0])
         counter[0] += 1
         scf = Scaffold.with_contigs(scf_name, contig.blocks[0], contig.blocks[-1], [contig])
         scaffolds.append(scf)

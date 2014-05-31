@@ -125,7 +125,7 @@ bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut,
 
 	std::vector<Overlap> overlaps = getOverlaps(contigs, minOverlap, 
 												maxOverlap);
-	drawHistogram(overlaps);
+	//drawHistogram(overlaps);
 	if (filterKmer)
 	{
 		overlaps = filterByKmer(overlaps);

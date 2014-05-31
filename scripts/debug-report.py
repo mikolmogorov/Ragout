@@ -91,7 +91,7 @@ def g2c(genome_id):
         g2c.table[genome_id] = g2c.colors[0]
         g2c.colors = g2c.colors[1:] + g2c.colors[:1] #rotate list
     return g2c.table[genome_id]
-g2c.colors = ["green", "blue", "yellow", "cyan", "magnetta"]
+g2c.colors = ["green", "blue", "yellow", "cyan", "magenta", "olive"]
 g2c.table = {}
 
 
