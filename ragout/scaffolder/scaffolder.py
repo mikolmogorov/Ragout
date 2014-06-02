@@ -50,6 +50,7 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
+            #print contig.blocks
             cont_seq = contigs_fasta[contig.name]
             used_contigs.add(contig.name)
 
@@ -107,7 +108,8 @@ def _extend_scaffolds(connections, perm_container):
         visited.add(contig)
         scf_name = "ragout-scaffold-{0}".format(counter[0])
         counter[0] += 1
-        scf = Scaffold.with_contigs(scf_name, contig.blocks[0], contig.blocks[-1], [contig])
+        scf = Scaffold.with_contigs(scf_name, contig.blocks[0],
+                                    contig.blocks[-1], [contig])
         scaffolds.append(scf)
 
         #go right
@@ -172,14 +174,14 @@ def _make_contigs(perm_container):
     contigs = []
     index = defaultdict(list)
     for perm in perm_container.target_perms_filtered:
-        if len(perm.blocks) == 0:
-            continue
+        assert len(perm.blocks)
 
-        contigs.append(Contig(perm.chr_id))
-        contigs[-1].blocks = copy.copy(perm.blocks)
+
+        contigs.append(Contig(perm.chr_name))
 
         for block in perm.blocks:
-            index[abs(block)].append(contigs[-1])
+            index[block.block_id].append(contigs[-1])
+            contigs[-1].blocks.append(block.signed_id())
 
     return contigs, index
 

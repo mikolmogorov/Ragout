@@ -57,11 +57,11 @@ def _make_permutations(recipe, output_dir, overwrite):
         logger.warning("Use --overwrite to force alignment")
         for block_size in recipe["blocks"]:
             block_dir = os.path.join(work_dir, str(block_size))
-            perm_file = os.path.join(block_dir, "genomes_permutations.txt")
-            if not os.path.isfile(perm_file):
+            coords_file = os.path.join(block_dir, "blocks_coords.txt")
+            if not os.path.isfile(coords_file):
                 raise BackendException("Exitsing results are incompatible "
                                        "with input recipe")
-            files[block_size] = os.path.abspath(perm_file)
+            files[block_size] = os.path.abspath(coords_file)
 
     else:
         #running cactus
@@ -81,9 +81,9 @@ def _make_permutations(recipe, output_dir, overwrite):
 
         for block_size in recipe["blocks"]:
             block_dir = os.path.join(work_dir, str(block_size))
-            perm_file = os.path.join(block_dir, "genomes_permutations.txt")
-            files[block_size] = os.path.abspath(perm_file)
-            if not os.path.exists(perm_file):
+            coords_file = os.path.join(block_dir, "blocks_coords.txt")
+            files[block_size] = os.path.abspath(coords_file)
+            if not os.path.exists(coords_file):
                 raise BackendException("Something bad happened!")
 
     return files

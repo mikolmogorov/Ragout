@@ -32,12 +32,12 @@ class BreakpointGraph:
         logger.info("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
-            if perm.genome_id not in self.references:
-                self.references.append(perm.genome_id)
+            if perm.genome_name not in self.references:
+                self.references.append(perm.genome_name)
 
         for perm in perm_container.target_perms_filtered:
-            if perm.genome_id not in self.targets:
-                self.targets.append(perm.genome_id)
+            if perm.genome_name not in self.targets:
+                self.targets.append(perm.genome_name)
 
         for perm in chain(perm_container.ref_perms_filtered,
                           perm_container.target_perms_filtered):
@@ -45,20 +45,23 @@ class BreakpointGraph:
             if len(perm.blocks) < 2:
                 continue
             for prev_block, next_block in perm.iter_pairs():
-                self.bp_graph.add_node(-prev_block)
-                self.bp_graph.add_node(next_block)
-                self.bp_graph.add_edge(-prev_block, next_block,
-                                       genome_id=perm.genome_id)
+                self.bp_graph.add_node(-prev_block.signed_id())
+                self.bp_graph.add_node(next_block.signed_id())
+                self.bp_graph.add_edge(-prev_block.signed_id(),
+                                       next_block.signed_id(),
+                                       genome_id=perm.genome_name)
 
-            if (perm.genome_id in self.references and
-                not recipe["genomes"][perm.genome_id]["draft"]):
+            if (perm.genome_name in self.references and
+                not recipe["genomes"][perm.genome_name]["draft"]):
 
-                if recipe["genomes"][perm.genome_id]["circular"]:
-                    self.bp_graph.add_edge(-perm.blocks[-1], perm.blocks[0],
-                                           genome_id=perm.genome_id)
+                if recipe["genomes"][perm.genome_name]["circular"]:
+                    self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
+                                           perm.blocks[0].signed_id(),
+                                           genome_id=perm.genome_name)
                 else:
-                    self.bp_graph.add_edge(-perm.blocks[-1], perm.blocks[0],
-                                           genome_id=perm.genome_id,
+                    self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
+                                           perm.blocks[0].signed_id(),
+                                           genome_id=perm.genome_name,
                                            infinity=True)
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))

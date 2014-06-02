@@ -46,8 +46,12 @@ void outputCoords(PermVec& permutations, const std::string& outFile)
 		for (BlockPair& bp : itBlocks.second)
 		{
 			char strand = (bp.block->sign > 0) ? '+' : '-';
+			int convStart = bp.block->start;
+			int convEnd = bp.block->end;
+			if (strand == '-') std::swap(convStart, convEnd);
+
 			fout << bp.seqId << "\t" << strand << "\t"
-				 << bp.block->start << "\t" << bp.block->end
+				 << convStart << "\t" << convEnd
 				 << "\t" << bp.block->getLen() << std::endl;
 		}
 		fout << SEPARATOR << std::endl;
