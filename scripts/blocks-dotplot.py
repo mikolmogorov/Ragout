@@ -96,9 +96,12 @@ def parse_coords_file(blocks_file):
             chr_num, bl_strand, bl_start, bl_end, bl_length = l.split()
             chr_num = int(chr_num)
             chr_id = seq_info[chr_num].id
+            bl_start, bl_end = int(bl_start), int(bl_end)
+            if bl_strand == "-":
+                bl_start, bl_end = bl_end, bl_start
 
             num_id = block_id if bl_strand == "+" else -block_id
-            blocks_info[block_id].append(Block(num_id, int(bl_start),
+            blocks_info[block_id].append(Block(num_id, bl_start,
                                         int(bl_length), chr_id))
     return blocks_info
 
