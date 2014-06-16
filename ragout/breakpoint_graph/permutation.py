@@ -212,7 +212,7 @@ def _parse_blocks_coords(filename):
 #outputs permutations
 def _write_permutations(permutations, out_stream):
     for perm in permutations:
-        out_stream.write(">" + perm.chr_id + "\n")
+        out_stream.write(">" + perm.chr_name + "\n")
         for block in perm.blocks:
-            out_stream.write("{0:+} ".format(block))
+            out_stream.write("{0:+} ".format(block.signed_id()))
         out_stream.write("$\n")

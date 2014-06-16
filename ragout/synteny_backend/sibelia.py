@@ -98,6 +98,9 @@ def _get_chr2genome(recipe):
                 line = line.strip()
                 if line.startswith(">"):
                     chr_name = line.strip()[1:].split(" ")[0]
+                    if chr_name in chr2genome:
+                        raise BackendException("Some fasta files contain "
+                                               "sequences with similar names")
                     chr2genome[chr_name] = gen_name
     return chr2genome
 

@@ -127,7 +127,8 @@ For instance, if all input references except one are in draft form, you can writ
 Genome names are picked form the terminal nodes of the phylogenetic tree.
 All those names should be uniqe. If the branch length is ommited, it would be set to 1.
 
-Paths to *FASTA*/*MAF* can be both relative and absolute.
+Paths to *FASTA*/*MAF* can be both relative and absolute. Running with Sibelia requires
+all sequence headers among ALL *FASTA* files to be unique.
 
 Ragout firstly decomposes genomes into set of synteny blocks.
 You can use either a set of *FASTA* files corresponding to each input genome
