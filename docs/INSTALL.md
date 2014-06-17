@@ -21,43 +21,44 @@ Runtime depenencies
 * Python 2.7
 * biopython [http://biopython.org]
 * networkx 1.8+ [http://networkx.github.io]
-* Sibelia [https://github.com/bioinf/Sibelia]
+* Sibelia [https://github.com/bioinf/Sibelia] or Progresssive Cactus [https://github.com/glennhickey/progressiveCactus]
 
-
-You can install Ragout as a Python package, which is recommended.
-Alternatively, you can build and run it from a source directory.
 
 Buildng Ragout requires Python headers, which should be
 explicitly installed on some OS. For instance, Ubuntu
 users should check that package "python-dev" is installed.
 
-
-Installation from PyPI (recommended)
-------------------------------------
-
-The easies way to install Ragout is to use Python package index database:
-
-	pip install ragout
-
-Note, that this may require superuser privileges:
-
-	sudo pip install ragout
-
-If you do not have *pip* installed, you can get it from here:
-http://www.pip-installer.org/
+You have two options for the installation: First, you can build Ragout
+and run it from the distribution directory without installation. 
+Alternatively, you can install it as a Python package to integrate into
+your system.
 
 
-Binary packages
----------------
+Local installation
+------------------
 
-Pre-compiled binary packages for Linux and Mac OS are available at:
-https://pypi.python.org/pypi/ragout as binary *eggs*.
-You can install them via *easy_install*:
-http://pythonhosted.org/setuptools/easy_install.html
+To build Ragout inside the distribution directory, run:
+
+	python2.7 setup.py inplace
+
+In this case, you should manually install all dependencies using *pip*
+or your OS-specific package manager:
+
+	pip install biopython networkx
+
+or
+
+	sudo apt-get install biopython networkx
+
+After the installation process you can test your installation by running:
+
+	ragout-bin --help
+
+If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
 
 
-Installing from source
-----------------------
+Installing as a package
+-----------------------
 
 To install Ragout as a Python package, run:
 
@@ -67,9 +68,13 @@ If you don't have permission to install software on your system, you can
 install into another directory using the --user, --prefix, or --home flags to setup.py.
 
 	python2.7 setup.py install --user
-	or
+
+or
+
 	python2.7 setup.py install --prefix=~/.local
-	or
+
+or
+
 	python2.7 setup.py install --home=~
 
 If you didn't install in the standard Python site-packages directory you will 
@@ -83,26 +88,12 @@ For example, if your prefix was "~/.local", run:
 	export PATH=$PATH:~/.local/bin
 
 setup.py script also will install all necessary Python dependencies, if neded.
-After installation process you can test your installation by running:
+
+After the installation process you can test your installation by running:
 
 	ragout --help
 
 If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
-
-
-Using without installation
---------------------------
-
-To build Ragout inside the source directory, run:
-
-	python2.7 setup.py inplace
-
-In this case, you should manually install all dependencies using *pip*
-or your OS-specific package manager:
-
-	pip install biopython networkx
-	or
-	sudo apt-get install biopython networkx
 
 
 Sibelia
@@ -114,7 +105,9 @@ You can download and install it from the website: https://github.com/bioinf/Sibe
 Otherwise, you can use our script for a quick installation:
 
 	sudo scripts/install-sibelia.py
-	or
+
+or
+
 	scripts/install-sibelia.py --prefix=your_prefix
 
 Alternatively, if you have installed Ragout with *pip* and do not have
@@ -122,7 +115,7 @@ Alternatively, if you have installed Ragout with *pip* and do not have
 
 	curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | python
 
-	or, if you want more control:
+or, if you want more control:
 
 	curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | [sudo] python [- --prefix=your_prefix]
 
@@ -130,11 +123,13 @@ Do not forget that "your_prefix/bin" folder also should be in your PATH.
 Alternatively, you can set SIBELIA_INSTALL variable to directory
 containing *Sibelia* excecutable.
 
+
 progressiveCactus
 -----------------
 
 First, download and build Progressive Cactus: https://github.com/glennhickey/progressiveCactus
 Then set "CACTUS_INSTALL" variable pointing to cactus installation directory:
+
 
 Troubleshooting
 ---------------
