@@ -39,7 +39,7 @@ cmaf2synteny = Extension("ragout.cmaf2synteny",
 
 #local installation feature
 script_args = sys.argv[1:]
-INPLACE_EXEC = "ragout-local"
+INPLACE_EXEC = "ragout-bin"
 if "inplace" in script_args:
     script_args = ["build_ext", "--inplace"]
     open(INPLACE_EXEC, "w").write("#!" + sys.executable + "\n"
