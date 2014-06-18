@@ -16,7 +16,7 @@ from ragout.shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 
-def refine_scaffolds(graph_file, scaffolds):
+def refine_scaffolds(graph_file, scaffolds, contigs_fasta):
     """
     Does the job
     """
@@ -25,7 +25,7 @@ def refine_scaffolds(graph_file, scaffolds):
     logger.debug("Max path len = {0}".format(max_path_len))
     graph = _load_dot(graph_file)
     new_scaffolds = _insert_from_graph(graph, scaffolds, max_path_len)
-    _reestimate_distances(graph, new_scaffolds, max_path_len)
+    _reestimate_distances(graph, new_scaffolds, max_path_len, contigs_fasta)
     return new_scaffolds
 
 
@@ -33,7 +33,7 @@ def _load_dot(filename):
     """
     Loads dot file (ignore heavy python-graphviz)
     """
-    graph = nx.MultiDiGraph()
+    graph = nx.DiGraph()
     pattern = re.compile("\"(.+)\"\s*\->\s*\"(.+)\"\s*\[.*=.*\"(.+)\".*\];")
     for line in open(filename, "r").read().splitlines():
         m = pattern.match(line)
@@ -41,8 +41,7 @@ def _load_dot(filename):
             continue
 
         v1, v2 = m.group(1), m.group(2)
-        graph.add_node(v1)
-        graph.add_node(v2)
+        assert not graph.has_edge(v1, v2)
         graph.add_edge(v1, v2, label=m.group(3))
     return graph
 
@@ -62,26 +61,61 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
         for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
             new_scaffolds[-1].contigs.append(prev_cont)
 
-            #find unique path
-            path_nodes = _get_unigue_path_experiment(graph, prev_cont, new_cont,
-                                                     max_path_len, ordered_contigs)
+            #find contigs to insert
+            path_nodes = _get_cut_vertices(graph, prev_cont, new_cont,
+                                           max_path_len, ordered_contigs)
 
             if not path_nodes:
                 continue
 
             #insert contigs along the path
             for node in path_nodes:
-                new_scaffolds[-1].contigs.append(Contig.from_sting(node))
+                sign = 1 if node[0] == "+" else -1
+                name = node[1:]
+                new_scaffolds[-1].contigs.append(Contig(name, sign))
 
         new_scaffolds[-1].contigs.append(new_cont)
     return new_scaffolds
 
 
-def _reestimate_distances(graph, scaffolds, max_path_len):
+def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
     """
     Estimates distances between contigs using overlap graph
     """
-    pass
+    ordered_contigs = set()
+    for scf in scaffolds:
+        ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
+
+    for scf in scaffolds:
+        for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
+            src, dst =  str(prev_cont), str(next_cont)
+            #print src, dst, prev_cont.gap
+            if graph.has_edge(src, dst):
+                overlap = graph[src][dst]["label"]
+                prev_cont.gap = -int(overlap)
+                #print "adjacent"
+
+            else:
+                paths = _all_simple_paths(graph, src, dst,
+                                          ordered_contigs, max_path_len)
+                if not paths:
+                    continue
+                else:
+                    paths_lens = []
+                    for p in paths:
+                        path_len = 0
+                        for node in p[1:-1]:
+                            path_len += len(contigs_fasta[node[1:]])
+                        for n1, n2 in zip(p[:-1], p[1:]):
+                            overlap = graph[n1][n2]["label"]
+                            path_len -= int(overlap)
+                        paths_lens.append(path_len)
+                    #print paths_lens, _median(paths_lens)
+                    prev_cont.gap = _median(paths_lens)
+
+        #for cnt in scf.contigs[:-1]:
+        #    if cnt.gap == 0:
+        #        print("aa")
 
 
 def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,
@@ -107,22 +141,20 @@ def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,
         logger.debug("no path between {0} -- {1}".format(prev_cont, next_cont))
         return None
 
-    path_nodes = None
+    cut_vertices = None
     for path in paths:
         p_nodes = list(map(str, path[1:-1]))
 
-        if not path_nodes:
-            path_nodes = p_nodes
+        if not cut_vertices:
+            cut_vertices = p_nodes
         else:
-            for node in path_nodes:
-                if p_nodes.count(node) == 0:
-                    path_nodes.remove(node)
+            cut_vertices = [p for p in cut_vertices if p in p_nodes]
 
-    if path_nodes:
-        logger.debug("unique path {0} -- {1} of length {2}"
-                 .format(prev_cont, next_cont, len(path_nodes)))
+    if len(cut_vertices):
+        logger.debug("found {0} cut vertixes between {1} -- {2}"
+                     .format(len(cut_vertices), prev_cont, next_cont))
 
-    return path_nodes
+    return cut_vertices
 
 
 def _all_simple_paths(graph, src, dst, ordered_contigs, max_path_len):
@@ -154,3 +186,9 @@ def _all_simple_paths(graph, src, dst, ordered_contigs, max_path_len):
     visited = [src]
     dfs(src, visited)
     return answer
+
+
+def _median(values):
+    #not a true median, but we keep real distances
+    sorted_values = sorted(values)
+    return sorted_values[(len(values) - 1) / 2]

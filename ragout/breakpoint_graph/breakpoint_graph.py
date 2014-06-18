@@ -16,7 +16,7 @@ from ragout.shared.debug import DebugConfig
 Adjacency = namedtuple("Adjacency", ["block", "distance"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
-
+DEFAULT_DISTANCE = 42   #just an arbitrary number
 
 class BreakpointGraph:
     """
@@ -86,8 +86,9 @@ class BreakpointGraph:
         """
         logger.info("Resolving breakpoint graph")
 
-        subgraphs = nx.connected_component_subgraphs(self.bp_graph)
-        logger.debug("Found {0} connected components".format(len(subgraphs)))
+        subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
+        logger.debug("Found {0} connected components"
+                     .format(len(subgraphs)))
 
         chosen_edges = []
         self.orphans_count = 0
@@ -216,7 +217,7 @@ class BreakpointGraph:
         in a target genome
         """
         if not self.bp_graph.has_edge(node_1, node_2):
-            return 0
+            return DEFAULT_DISTANCE
         distances = [e["distance"]
                      for e in self.bp_graph[node_1][node_2].values()]
         return _median(distances) #currently, just a median :(
@@ -250,7 +251,7 @@ def _update_edge(graph, v1, v2, weight):
 def _median(values):
     #not a true median, but we keep real distances
     sorted_values = sorted(values)
-    return sorted_values[len(values) / 2]
+    return sorted_values[(len(values) - 1) / 2]
 
 """
 Output generators

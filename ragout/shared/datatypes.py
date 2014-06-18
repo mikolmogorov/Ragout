@@ -22,10 +22,9 @@ class Scaffold:
         return scf
 
 class Contig:
-    def __init__(self, name, length):
+    def __init__(self, name, sign=1):
         self.name = name
-        self.length = length
-        self.sign = 1
+        self.sign = sign
         self.gap = 0
         self.blocks = []
 

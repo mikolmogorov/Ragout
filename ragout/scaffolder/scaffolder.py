@@ -14,12 +14,12 @@ from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 logger = logging.getLogger()
 
 
-def get_scaffolds(adjacencies, perm_container, contigs_fasta):
+def get_scaffolds(adjacencies, perm_container):
     """
     Assembles scaffolds
     """
     logger.info("Building scaffolds")
-    contigs, contig_index = _make_contigs(perm_container, contigs_fasta)
+    contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index)
     scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
     return scaffolds
@@ -53,8 +53,12 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
 
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
-            scf_seqs.append(cont_seq)
-            scf_seqs.append("N" * contig.gap)
+
+            if contig.gap >= 0:
+                scf_seqs.append(cont_seq)
+                scf_seqs.append("N" * contig.gap)
+            else:
+                scf_seqs.append(cont_seq[:contig.gap])
 
         scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
@@ -166,7 +170,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
     return scaffolds
 
 
-def _make_contigs(perm_container, contigs_fasta):
+def _make_contigs(perm_container):
     """
     Converts permutations into contigs
     """
@@ -175,7 +179,7 @@ def _make_contigs(perm_container, contigs_fasta):
     for perm in perm_container.target_perms_filtered:
         assert len(perm.blocks)
 
-        contigs.append(Contig(perm.chr_name, len(contigs_fasta[perm.chr_name])))
+        contigs.append(Contig(perm.chr_name))
         for block in perm.blocks:
             index[block.block_id].append(contigs[-1])
             contigs[-1].blocks.append(block.signed_id())

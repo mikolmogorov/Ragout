@@ -92,8 +92,6 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         logger.error("There were problems with synteny backend, exiting.")
         return 1
 
-    target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
-    target_fasta_dict = read_fasta_dict(target_fasta_file)
 
     last_scaffolds = None
     for block_size in recipe["blocks"]:
@@ -114,8 +112,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         graph.build_from(perm_container, recipe)
 
         adjacencies = graph.find_adjacencies(phylogeny)
-        scaffolds = scfldr.get_scaffolds(adjacencies, perm_container,
-                                         target_fasta_dict)
+        scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
 
         if debug:
             ord_path = os.path.join(debug_dir, "scaffolds.ord")
@@ -126,19 +123,23 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
+    target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
+    target_fasta_dict = read_fasta_dict(target_fasta_file)
+
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        if not ovlp.make_overlap_graph(target_fasta, out_overlap):
+        if not ovlp.make_overlap_graph(target_fasta_file, out_overlap):
             logger.error("Error in overlap graph reconstruction, exiting")
             return 1
-        refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds)
+        refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds,
+                                                   target_fasta_dict)
         #asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
         #                                          refined_scaffolds,
         #                                          out_colored_overlap)
         scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_fasta(target_fasta, refined_scaffolds,
+        scfldr.output_fasta(target_fasta_dict, refined_scaffolds,
                             out_refined_scaffolds)
 
     logger.info("Your Ragout is ready!")

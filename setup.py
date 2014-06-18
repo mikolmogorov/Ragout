@@ -20,7 +20,8 @@ except ImportError:
 
 #extensions
 compile_args = ["-std=c++0x"]
-if uname()[0] == "Darwin":                 #a fix for buggy macos
+link_args = ["-static-libgcc", "-static-libstdc++"]
+if uname()[0] == "Darwin":  #TODO: check for clang
     compile_args.extend(["-stdlib=libc++", "-Qunused-arguments"])
 
 
@@ -28,13 +29,15 @@ coverlap = Extension("ragout.coverlap",
                     language = "c++",
                     define_macros = [("PYTHON_LIB", 1)],
                     sources = glob("ragout/overlap/cpp_impl/*.cpp"),
-                    extra_compile_args = compile_args)
+                    extra_compile_args = compile_args,
+                    extra_link_args = link_args)
 
 cmaf2synteny = Extension("ragout.cmaf2synteny",
                     language = "c++",
                     define_macros = [("PYTHON_LIB", 1)],
                     sources = glob("ragout/maf2synteny/cpp_impl/*.cpp"),
-                    extra_compile_args = compile_args)
+                    extra_compile_args = compile_args,
+                    extra_link_args = link_args)
 
 
 #local installation feature
@@ -66,8 +69,7 @@ setup(
             "ragout = ragout.main:main"
         ]
     },
-    #setup_requires = ["biopython", "networkx>=1.8"],
-    install_requires = ["biopython", "networkx>=1.8"],
+    install_requires = ["biopython", "networkx >=1.8, <=1.9"],
     ext_modules = [coverlap, cmaf2synteny],
     data_files = [("share/ragout/docs", glob("docs/*"))],
     classifiers = [
