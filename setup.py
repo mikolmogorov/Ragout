@@ -39,12 +39,13 @@ cmaf2synteny = Extension("ragout.cmaf2synteny",
 
 #local installation feature
 script_args = sys.argv[1:]
-INPLACE_EXEC = "ragout-bin"
+INPLACE_EXEC = "ragout-local"
 if "inplace" in script_args:
     script_args = ["build_ext", "--inplace"]
     open(INPLACE_EXEC, "w").write("#!" + sys.executable + "\n"
+                                  "import sys\n"
                                   "from ragout.main import main\n"
-                                  "main()")
+                                  "sys.exit(main())")
     st = os.stat(INPLACE_EXEC)
     os.chmod(INPLACE_EXEC, st.st_mode | stat.S_IEXEC)
 
@@ -65,7 +66,7 @@ setup(
             "ragout = ragout.main:main"
         ]
     },
-    setup_requires = ["biopython", "networkx>=1.8"],
+    #setup_requires = ["biopython", "networkx>=1.8"],
     install_requires = ["biopython", "networkx>=1.8"],
     ext_modules = [coverlap, cmaf2synteny],
     data_files = [("share/ragout/docs", glob("docs/*"))],

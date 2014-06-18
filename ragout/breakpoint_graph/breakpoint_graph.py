@@ -1,7 +1,8 @@
-#This module implements a breakpoint graph
-#as well as the main algorithm that recovers missing 
-#adjacencies
-################################################
+"""
+This module implements a breakpoint graph
+as well as the main algorithm that recovers missing
+adjacencies
+"""
 
 from collections import namedtuple
 from itertools import chain
@@ -12,23 +13,25 @@ import networkx as nx
 
 from ragout.shared.debug import DebugConfig
 
-Connection = namedtuple("Connection", ["start", "end"])
+Adjacency = namedtuple("Adjacency", ["block", "distance"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-#PUBLIC:
-################################################
-
 
 class BreakpointGraph:
+    """
+    Breakpoint graph implementation, as it is written in paper
+    """
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
         self.targets = []
         self.references = []
         self.known_adjacencies = {}
 
-    #builds breakpoint graph from permutations
     def build_from(self, perm_container, recipe):
+        """
+        Builds breakpoint graph from permutations
+        """
         logger.info("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
@@ -44,30 +47,43 @@ class BreakpointGraph:
 
             if len(perm.blocks) < 2:
                 continue
+
             for prev_block, next_block in perm.iter_pairs():
                 self.bp_graph.add_node(-prev_block.signed_id())
                 self.bp_graph.add_node(next_block.signed_id())
+
+                distance = next_block.start - prev_block.end
+                assert distance >= 0
                 self.bp_graph.add_edge(-prev_block.signed_id(),
                                        next_block.signed_id(),
-                                       genome_id=perm.genome_name)
+                                       genome_id=perm.genome_name,
+                                       distance=distance)
 
             if (perm.genome_name in self.references and
                 not recipe["genomes"][perm.genome_name]["draft"]):
 
+                distance = (perm.chr_len - perm.blocks[-1].end +
+                            perm.blocks[0].start)
+                assert distance >= 0
+
                 if recipe["genomes"][perm.genome_name]["circular"]:
                     self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                            perm.blocks[0].signed_id(),
-                                           genome_id=perm.genome_name)
+                                           genome_id=perm.genome_name,
+                                           distance=distance)
                 else:
                     self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                            perm.blocks[0].signed_id(),
                                            genome_id=perm.genome_name,
+                                           distance=distance,
                                            infinity=True)
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
-    #infers missing adjacencies (the main Ragout part)
     def find_adjacencies(self, phylogeny):
+        """
+        Infers missing adjacencies (the main Ragout part)
+        """
         logger.info("Resolving breakpoint graph")
 
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
@@ -89,8 +105,9 @@ class BreakpointGraph:
         for edge in chosen_edges:
             #infinity edges correspond to joined chromosome ends -- ignore them
             if not self._is_infinity(edge[0], edge[1]):
-                adjacencies[-edge[0]] = Connection(-edge[0], edge[1])
-                adjacencies[-edge[1]] = Connection(-edge[1], edge[0])
+                distance = self._get_distance(edge[0], edge[1])
+                adjacencies[-edge[0]] = Adjacency(edge[1], distance)
+                adjacencies[-edge[1]] = Adjacency(edge[0], distance)
 
         if debugger.debugging:
             phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")
@@ -102,8 +119,10 @@ class BreakpointGraph:
 
         return adjacencies
 
-    #processes a connected component of the breakpoint graph
     def _process_component(self, subgraph, phylogeny):
+        """
+        Processes a connected component of the breakpoint graph
+        """
         trimmed_graph = self._trim_known_edges(subgraph)
         unused_nodes = set(trimmed_graph.nodes())
 
@@ -135,8 +154,10 @@ class BreakpointGraph:
 
         return chosen_edges
 
-    #removes edges with known adjacencies in target (red edges from paper)
     def _trim_known_edges(self, graph):
+        """
+        Removes edges with known adjacencies in target (red edges from paper)
+        """
         trimmed_graph = graph.copy()
         for v1, v2, data in graph.edges_iter(data=True):
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
@@ -153,8 +174,10 @@ class BreakpointGraph:
 
         return trimmed_graph
 
-    #converts breakpoint graph into a weighted graph
     def _make_weighted(self, graph, phylogeny):
+        """
+        Converts a breakpoint graph into a weighted graph
+        """
         assert len(graph) > 2
         g = nx.Graph()
         g.add_nodes_from(graph.nodes())
@@ -187,13 +210,22 @@ class BreakpointGraph:
                 return True
         return False
 
+    def _get_distance(self, node_1, node_2):
+        """
+        Tries to guess the distance between synteny blocks
+        in a target genome
+        """
+        if not self.bp_graph.has_edge(node_1, node_2):
+            return 0
+        distances = [e["distance"]
+                     for e in self.bp_graph[node_1][node_2].values()]
+        return _median(distances) #currently, just a median :(
 
-#PRIVATE:
-###########################################################################
 
-
-#finds a perfect matching with minimum weight
 def _split_graph(graph):
+    """
+    Finds a perfect matching with minimum weight
+    """
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
 
@@ -214,8 +246,15 @@ def _update_edge(graph, v1, v2, weight):
     else:
         graph[v1][v2]["weight"] += weight
 
-################################
-#output generators
+
+def _median(values):
+    #not a true median, but we keep real distances
+    sorted_values = sorted(values)
+    return sorted_values[len(values) / 2]
+
+"""
+Output generators
+"""
 
 def _output_graph(graph, out_file):
     with open(out_file, "w") as fout:

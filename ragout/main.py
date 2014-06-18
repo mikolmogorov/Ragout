@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-##################################
-#The main Ragout module
-##################################
+"""
+The main Ragout module
+"""
 
 import os
 import sys
@@ -19,6 +19,7 @@ import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
 from parsers.recipe_parser import parse_ragout_recipe, RecipeException
+from parsers.fasta_parser import read_fasta_dict
 from shared.debug import DebugConfig
 
 #register backends
@@ -48,9 +49,11 @@ def enable_logging(log_file, debug):
     logger.addHandler(file_handler)
 
 
-#top-level logic of program
 def do_job(recipe_file, out_dir, backend, assembly_refine,
            overwrite, debug):
+    """
+    top-level logic of program
+    """
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
     out_log = os.path.join(out_dir, "ragout.log")
@@ -89,6 +92,9 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         logger.error("There were problems with synteny backend, exiting.")
         return 1
 
+    target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
+    target_fasta_dict = read_fasta_dict(target_fasta_file)
+
     last_scaffolds = None
     for block_size in recipe["blocks"]:
         logger.info("Running Ragout with the block size {0}".format(block_size))
@@ -107,8 +113,9 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
 
-        connections = graph.find_adjacencies(phylogeny)
-        scaffolds = scfldr.get_scaffolds(connections, perm_container)
+        adjacencies = graph.find_adjacencies(phylogeny)
+        scaffolds = scfldr.get_scaffolds(adjacencies, perm_container,
+                                         target_fasta_dict)
 
         if debug:
             ord_path = os.path.join(debug_dir, "scaffolds.ord")
@@ -119,9 +126,8 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
-    target_fasta = recipe["genomes"][recipe["target"]]["fasta"]
     scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_fasta(target_fasta, last_scaffolds, out_scaffolds)
+    scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
         if not ovlp.make_overlap_graph(target_fasta, out_overlap):

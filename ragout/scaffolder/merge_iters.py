@@ -1,6 +1,7 @@
-#This module merges scaffolds from two consecutive
-#iterations
-#########################################################
+"""
+This module merges scaffolds from two consecutive
+iterations
+"""
 
 from collections import namedtuple, defaultdict
 import sys
@@ -10,11 +11,11 @@ from ragout.shared.datatypes import Contig, Scaffold
 
 logger = logging.getLogger()
 
-#PUBLIC:
-########################################################
 
-#The only function here
 def merge(big_scaffolds, small_scaffolds):
+    """
+    The only function here
+    """
     logger.info("Merging two iterations")
     big_index = set()
     for scf in big_scaffolds:
@@ -65,8 +66,9 @@ def merge(big_scaffolds, small_scaffolds):
             contigs = scf_prev.contigs[begin + 1 : end]
             if not same_dir:
                 contigs = contigs[::-1]
-                contigs = list(map(lambda c: Contig(c.name, -c.sign, 0),
-                                   contigs))
+                contigs = list(map(lambda c: c.reverse(), contigs))
+            #keeping gap from new contigs
+            result[-1].gap = scf_prev.contigs[begin].gap
             result.extend(contigs)
 
         result.append(new_cont)

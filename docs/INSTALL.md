@@ -31,17 +31,18 @@ users should check that package "python-dev" is installed.
 You have two options for the installation: First, you can build Ragout
 and run it from the distribution directory without installation. 
 Alternatively, you can install it as a Python package to integrate into
-your system.
+your system. The second option is recommended, however, it may require
+superuser privilegies.
 
 
-Local installation
-------------------
+Using from distribution folder
+------------------------------
 
 To build Ragout inside the distribution directory, run:
 
 	python2.7 setup.py inplace
 
-In this case, you should manually install all dependencies using *pip*
+With this type of setup, you should manually install all dependencies using *pip*
 or your OS-specific package manager:
 
 	pip install biopython networkx
@@ -52,7 +53,7 @@ or
 
 After the installation process you can test your installation by running:
 
-	ragout-bin --help
+	./ragout-local --help
 
 If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)
 

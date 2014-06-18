@@ -184,7 +184,7 @@ def _parse_blocks_coords(filename):
                     return None
                 genome_name, chr_name = tokens
                 perm_by_id[chr_id] = Permutation(genome_name, chr_name,
-                                                 chr_id, chr_size, [])
+                                                 chr_id, int(chr_size), [])
 
             else:
                 if line.startswith("Seq_id") or line.startswith("-"):
@@ -195,8 +195,9 @@ def _parse_blocks_coords(filename):
                     continue
 
                 seq_id, sign, start, end, length = line.split("\t")
-                if sign == "+":
+                if sign == "-":
                     start, end = end, start
+                assert int(end) >= int(start)
 
                 sign_num = 1 if sign == "+" else -1
                 perm_by_id[seq_id].blocks.append(Block(block_id, sign_num,

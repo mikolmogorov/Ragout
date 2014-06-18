@@ -1,32 +1,34 @@
-#This module assembles contigs into scaffolds with respect
-#to given adjacencies. Also, it outputs scaffolds in different
-#formats
-#################################################################
+"""
+This module assembles contigs into scaffolds with respect
+to given adjacencies. Also, it outputs scaffolds in different
+formats
+"""
 
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from collections import defaultdict
 import copy
 import logging
 
 from ragout.shared.datatypes import Contig, Scaffold
+from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 
 logger = logging.getLogger()
 
-#PUBLIC:
-################################################################
 
-#Assembles scaffolds
-def get_scaffolds(connections, perm_container):
+def get_scaffolds(adjacencies, perm_container, contigs_fasta):
+    """
+    Assembles scaffolds
+    """
     logger.info("Building scaffolds")
-    scaffolds = _extend_scaffolds(connections, perm_container)
+    contigs, contig_index = _make_contigs(perm_container, contigs_fasta)
+    scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index)
     scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
     return scaffolds
 
 
-#Outputs scaffolds to file in "ord" format
 def output_order(scaffolds, out_order):
+    """
+    Outputs scaffolds to file in "ord" format
+    """
     out_order_stream = open(out_order, "w")
     for scf in scaffolds:
         out_order_stream.write(">" + scf.name + "\n")
@@ -34,34 +36,30 @@ def output_order(scaffolds, out_order):
             out_order_stream.write(str(contig) + "\n")
 
 
-#Outputs scaffodls to file in "fasta" format
-def output_fasta(in_fasta, scaffolds, out_fasta):
+def output_fasta(contigs_fasta, scaffolds, out_file):
+    """
+    Outputs scaffodls to file in "fasta" format
+    """
     logger.info("Generating FASTA output")
-    contigs_fasta = {}
-    contigs_length = []
-    for seq in SeqIO.parse(in_fasta, "fasta"):
-        contigs_fasta[seq.id] = seq.seq
-        contigs_length.append(len(seq.seq))
-
-    out_stream = open(out_fasta, "w")
     used_contigs = set()
+    out_fasta_dict = {}
 
     scf_length = []
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
-            #print contig.blocks
             cont_seq = contigs_fasta[contig.name]
             used_contigs.add(contig.name)
 
             if contig.sign < 0:
-                cont_seq = cont_seq.reverse_complement()
-            scf_seqs.append(str(cont_seq))
+                cont_seq = reverse_complement(cont_seq)
+            scf_seqs.append(cont_seq)
+            scf_seqs.append("N" * contig.gap)
 
-        scf_seq = ("N" * 11).join(scf_seqs)
+        scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
-        SeqIO.write(SeqRecord(Seq(scf_seq), id=scf.name, description=""),
-                    out_stream, "fasta")
+        out_fasta_dict[scf.name] = scf_seq
+    write_fasta_dict(out_fasta_dict, out_file)
 
     #add some statistics
     used_count = 0
@@ -78,6 +76,7 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
     assembly_len = unused_len + used_len
     used_perc = 100 * float(used_len) / assembly_len
     unused_perc = 100 * float(unused_len) / assembly_len
+    contigs_length = [len(c) for c in contigs_fasta.values()]
 
     logger.info("Assembly statistics:\n\n"
                 "\tScaffolds count:\t{0}\n"
@@ -93,12 +92,10 @@ def output_fasta(in_fasta, scaffolds, out_fasta):
                         _calc_n50(scf_length, unused_len + used_len)))
 
 
-#PRIVATE:
-################################################################
-
-#Assembles contigs into scaffolds
-def _extend_scaffolds(connections, perm_container):
-    contigs, contig_index = _make_contigs(perm_container)
+def _extend_scaffolds(adjacencies, contigs, contig_index):
+    """
+    Assembles contigs into scaffolds
+    """
 
     scaffolds = []
     visited = set()
@@ -113,52 +110,52 @@ def _extend_scaffolds(connections, perm_container):
         scaffolds.append(scf)
 
         #go right
-        while scf.right in connections:
-            adjacent = connections[scf.right].end
+        while scf.right in adjacencies:
+            adj_block = adjacencies[scf.right].block
+            adj_distance = adjacencies[scf.right].distance
+            assert len(contig_index[abs(adj_block)]) == 1
 
-            #print adjacent, contig_index[abs(adjacent)]
-            assert len(contig_index[abs(adjacent)]) == 1
-
-            contig = contig_index[abs(adjacent)][0]
+            contig = contig_index[abs(adj_block)][0]
             if contig in visited:
                 break
 
-            if contig.blocks[0] == adjacent:
+            if adj_block in [contig.blocks[0], -contig.blocks[-1]]:
+                scf.contigs[-1].gap = adj_distance
                 scf.contigs.append(contig)
-                scf.right = contig.blocks[-1]
                 visited.add(contig)
-                continue
 
-            if -contig.blocks[-1] == adjacent:
-                scf.contigs.append(contig)
-                scf.contigs[-1].sign = -1
-                scf.right = -contig.blocks[0]
-                visited.add(contig)
+                if contig.blocks[0] == adj_block:
+                    scf.right = contig.blocks[-1]
+                else:
+                    scf.contigs[-1].sign = -1
+                    scf.right = -contig.blocks[0]
+
                 continue
 
             break
 
         #go left
-        while -scf.left in connections:
-            adjacent = -connections[-scf.left].end
+        while -scf.left in adjacencies:
+            adj_block = -adjacencies[-scf.left].block
+            adj_distance = adjacencies[-scf.left].distance
+            assert len(contig_index[abs(adj_block)]) == 1
 
-            assert len(contig_index[abs(adjacent)]) == 1
-
-            contig = contig_index[abs(adjacent)][0]
+            contig = contig_index[abs(adj_block)][0]
             if contig in visited:
                 break
 
-            if contig.blocks[-1] == adjacent:
+            if adj_block in [contig.blocks[-1], -contig.blocks[0]]:
                 scf.contigs.insert(0, contig)
-                scf.left = contig.blocks[0]
+                scf.contigs[0].gap = adj_distance
                 visited.add(contig)
-                continue
 
-            if -contig.blocks[0] == adjacent:
-                scf.contigs.insert(0, contig)
-                scf.contigs[0].sign = -1
-                scf.left = -contig.blocks[-1]
-                visited.add(contig)
+                if contig.blocks[-1] == adj_block:
+                    scf.left = contig.blocks[0]
+
+                else:
+                    scf.contigs[0].sign = -1
+                    scf.left = -contig.blocks[-1]
+
                 continue
 
             break
@@ -169,16 +166,16 @@ def _extend_scaffolds(connections, perm_container):
     return scaffolds
 
 
-#Converts permutations into contigs
-def _make_contigs(perm_container):
+def _make_contigs(perm_container, contigs_fasta):
+    """
+    Converts permutations into contigs
+    """
     contigs = []
     index = defaultdict(list)
     for perm in perm_container.target_perms_filtered:
         assert len(perm.blocks)
 
-
-        contigs.append(Contig(perm.chr_name))
-
+        contigs.append(Contig(perm.chr_name, len(contigs_fasta[perm.chr_name])))
         for block in perm.blocks:
             index[block.block_id].append(contigs[-1])
             contigs[-1].blocks.append(block.signed_id())

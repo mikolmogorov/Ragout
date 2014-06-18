@@ -1,15 +1,15 @@
-#This module provides some common data structures
-#################################################
+"""
+This module provides some common data structures
+"""
 
 from collections import namedtuple
+from copy import copy
 
-#PUBLIC:
-#################################################
 
 class Scaffold:
     def __init__(self, name):
-        self.left = 0
-        self.right = 0
+        self.left = None
+        self.right = None
         self.contigs = []
         self.name = name
 
@@ -22,23 +22,18 @@ class Scaffold:
         return scf
 
 class Contig:
-    def __init__(self, name, sign=1, gap=0):
+    def __init__(self, name, length):
         self.name = name
-        self.sign = sign
-        self.gap = gap
+        self.length = length
+        self.sign = 1
+        self.gap = 0
         self.blocks = []
 
-    @staticmethod
-    def from_sting(string):
-        return Contig(*parse_contig_name(string))
+    def reverse(self):
+        contig = copy(self)
+        contig.sign = -contig.sign
+        return contig
 
     def __str__(self):
         sign = "+" if self.sign > 0 else "-"
         return sign + self.name
-
-def parse_contig_name(string):
-    if string[0] not in ["+", "-"]:
-        return None
-
-    sign = 1 if string[0] == "+" else -1
-    return string[1:], sign
