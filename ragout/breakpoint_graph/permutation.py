@@ -1,7 +1,8 @@
-#This module provides PermutationContainer class
-#which stores permutations and provides some filtering
-#procedures
-######################################################
+"""
+This module provides PermutationContainer class
+which stores permutations and provides some filtering
+procedures
+"""
 
 from collections import defaultdict
 import logging
@@ -13,9 +14,6 @@ from ragout.shared.debug import DebugConfig
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-
-#PUBLIC:
-########################################################
 
 class PermException(Exception):
     pass
@@ -52,8 +50,10 @@ class Permutation:
 
 
 class PermutationContainer:
-    #parses permutation files referenced from recipe and filters duplications
     def __init__(self, block_coords_file, recipe):
+        """
+        Parses permutation files referenced from recipe and filters duplications
+        """
         self.ref_perms = []
         self.target_perms = []
 
@@ -101,11 +101,10 @@ class PermutationContainer:
             _write_permutations(self.target_perms_filtered, open(file, "w"))
 
 
-#PRIVATE:
-#######################################################
-
-#find duplicated blocks
 def _find_duplications(ref_perms, target_perms):
+    """
+    Find duplicated blocks
+    """
     index = defaultdict(set)
     duplications = set()
     for perm in ref_perms + target_perms:
@@ -118,8 +117,10 @@ def _find_duplications(ref_perms, target_perms):
     return duplications
 
 
-#filters duplications
 def _filter_perm(perm, to_hold):
+    """
+    Filters duplications
+    """
     new_perm = Permutation(perm.genome_name, perm.chr_name, perm.chr_id,
                            perm.chr_len, [])
     for block in perm.blocks:
@@ -128,8 +129,10 @@ def _filter_perm(perm, to_hold):
     return new_perm
 
 
-#parses a file with signed permutations
 def _parse_permutations(filename):
+    """
+    Parses a file with signed permutations
+    """
     permutations = []
     chr_count = 0
     with open(filename, "r") as f:
@@ -158,8 +161,10 @@ def _parse_permutations(filename):
 
 
 
-#parses a file with blocks coords
 def _parse_blocks_coords(filename):
+    """
+    Parses a file with blocks coords
+    """
     perm_by_id = {}
     with open(filename, "r") as f:
         header = True
@@ -210,8 +215,10 @@ def _parse_blocks_coords(filename):
     return out_perms
 
 
-#outputs permutations
 def _write_permutations(permutations, out_stream):
+    """
+    Outputs permutations
+    """
     for perm in permutations:
         out_stream.write(">" + perm.chr_name + "\n")
         for block in perm.blocks:

@@ -1,6 +1,7 @@
-#This module solves "Half-breakpoint state parsimony"
-#problem
-#####################################################
+"""
+This module solves "Half-breakpoint state parsimony"
+problem
+"""
 
 import math
 from collections import defaultdict
@@ -11,15 +12,15 @@ except ImportError:
 
 from Bio import Phylo
 
-#PUBLIC:
-####################################################
 
 class PhyloException(Exception):
     pass
 
-#Represents phylogenetic tree and scores it with 
-#given half-breakpoint states
 class Phylogeny:
+    """
+    Represents phylogenetic tree and scores it with
+    given half-breakpoint states
+    """
     def __init__(self, recipe):
         self.tree = Phylo.read(StringIO(recipe["tree"]), "newick")
         self.tree.clade.branch_length = 0
@@ -31,11 +32,11 @@ class Phylogeny:
     def estimate_tree(self, adjacencies):
         return _tree_score(self.tree, adjacencies)
 
-#PRIVATE:
-####################################################
 
-#scoring with DP (see algorithm description in the paper)
 def _tree_score(tree, leaf_states):
+    """
+    Scoring with DP (see algorithm description in the paper)
+    """
     all_states = set(leaf_states.values())
 
     #score of a tree branch

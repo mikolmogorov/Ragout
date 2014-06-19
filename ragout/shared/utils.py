@@ -1,7 +1,9 @@
 import os
 
-#Mimics UNIX "which" command
 def which(program):
+    """
+    Mimics UNIX "which" command
+    """
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 

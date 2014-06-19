@@ -7,10 +7,6 @@ import re
 import logging
 from collections import namedtuple
 
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-
 from ragout.shared import config
 from ragout.shared.datatypes import Contig, Scaffold
 
@@ -89,11 +85,9 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
     for scf in scaffolds:
         for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
             src, dst =  str(prev_cont), str(next_cont)
-            #print src, dst, prev_cont.gap
             if graph.has_edge(src, dst):
                 overlap = graph[src][dst]["label"]
                 prev_cont.gap = -int(overlap)
-                #print "adjacent"
 
             else:
                 paths = _all_simple_paths(graph, src, dst,
@@ -110,12 +104,7 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
                             overlap = graph[n1][n2]["label"]
                             path_len -= int(overlap)
                         paths_lens.append(path_len)
-                    #print paths_lens, _median(paths_lens)
                     prev_cont.gap = _median(paths_lens)
-
-        #for cnt in scf.contigs[:-1]:
-        #    if cnt.gap == 0:
-        #        print("aa")
 
 
 def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,
@@ -189,6 +178,8 @@ def _all_simple_paths(graph, src, dst, ordered_contigs, max_path_len):
 
 
 def _median(values):
-    #not a true median, but we keep real distances
+    """
+    Not a true median, but we keep real distances
+    """
     sorted_values = sorted(values)
     return sorted_values[(len(values) - 1) / 2]
