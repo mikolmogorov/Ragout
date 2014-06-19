@@ -20,7 +20,7 @@ except ImportError:
 
 #extensions
 compile_args = ["-std=c++0x"]
-link_args = ["-static-libgcc", "-static-libstdc++"]
+link_args = []
 if uname()[0] == "Darwin":  #TODO: check for clang
     compile_args.extend(["-stdlib=libc++", "-Qunused-arguments"])
 
