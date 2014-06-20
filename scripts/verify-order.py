@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+This script checks correctness of Ragout results
+if true reference is available
+"""
+
 from __future__ import print_function
 import sys
 from collections import namedtuple, defaultdict

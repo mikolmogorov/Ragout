@@ -3,5 +3,5 @@
 *.o
 *.so
 lib/Sibelia
-lib/maf2synteny
-lib/overlap
+lib/ragout-maf2synteny
+lib/ragout-overlap

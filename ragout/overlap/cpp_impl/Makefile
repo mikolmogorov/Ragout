@@ -1,5 +1,5 @@
 CFLAGS += -Wall
-OUT_BIN := ${BIN_DIR}/overlap
+OUT_BIN := ${BIN_DIR}/ragout-overlap
 
 .PHONY: all clean debug
 

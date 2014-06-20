@@ -11,7 +11,7 @@ from ragout.shared.utils import which
 
 logger = logging.getLogger()
 
-OVERLAP_EXEC = "overlap"
+OVERLAP_EXEC = "ragout-overlap"
 
 def make_overlap_graph(contigs_file, dot_file):
     """

@@ -8,7 +8,7 @@ import subprocess
 
 from ragout.shared.utils import which
 
-M2S_EXEC = "maf2synteny"
+M2S_EXEC = "ragout-maf2synteny"
 
 
 def make_synteny(maf_file, out_dir, min_blocks_list):

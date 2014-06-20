@@ -84,3 +84,11 @@ We would like to thank:
 License
 -------
 The program is distributed under BSD license (see *LICENSE* file)
+
+
+Third-party
+-----------
+Ragout uses some third-patry software;
+
+* Networkx Python library [https://networkx.github.io/]
+* Sibelia [https://github.com/bioinf/Sibelia]

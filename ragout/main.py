@@ -19,7 +19,7 @@ import scaffolder.scaffolder as scfldr
 import scaffolder.merge_iters as merge
 from synteny_backend.synteny_backend import SyntenyBackend
 from parsers.recipe_parser import parse_ragout_recipe, RecipeException
-from parsers.fasta_parser import read_fasta_dict
+from parsers.fasta_parser import read_fasta_dict, FastaError
 from shared.debug import DebugConfig
 
 #register backends
@@ -124,7 +124,11 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             last_scaffolds = scaffolds
 
     target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
-    target_fasta_dict = read_fasta_dict(target_fasta_file)
+    try:
+        target_fasta_dict = read_fasta_dict(target_fasta_file)
+    except FastaError as e:
+        logger.error(e)
+        return 1
 
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)

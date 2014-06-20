@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-#####################################
-#A script which installs dependencies
-#####################################
+"""
+A script which installs Sibelia
+"""
 
 from __future__ import print_function
 import sys, os
