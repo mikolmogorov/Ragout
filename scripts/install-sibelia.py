@@ -15,6 +15,7 @@ except ImportError:
     from urllib.request import urlretrieve
 
 SIBELIA_LINK = "https://github.com/bioinf/Sibelia/archive/master.tar.gz"
+DEFAULT_PREFIX = "lib"
 
 def install_deps(prefix):
     if which("Sibelia"):
@@ -50,10 +51,13 @@ def install_sibelia(prefix):
 
     srcdir = os.path.join("..", "src")
     subprocess.check_call(["cmake", srcdir, "-DONLY_SIBELIA=1",
-                            "-DCMAKE_INSTALL_PREFIX=" + prefix])
+                            "-DCMAKE_INSTALL_PREFIX=" + tmp_dir])
     subprocess.check_call(["make"])
     subprocess.check_call(["make", "install"])
 
+    sibelia_bin_src = os.path.join(tmp_dir, "bin", "Sibelia")
+    sibelia_bin_dst = os.path.join(initial_dir, prefix, "Sibelia")
+    shutil.copyfile(sibelia_bin_src, sibelia_bin_dst)
 
     os.chdir(initial_dir)
     shutil.rmtree(tmp_dir)
@@ -89,10 +93,12 @@ def test_tools():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A helper script for"
+    parser = argparse.ArgumentParser(description="A helper script for "
                                                  "Sibelia installation")
     parser.add_argument("--prefix", dest="prefix",
-                        help="installation prefix", default="/usr/local")
+                        help="installation prefix (default = \"{0}\")"
+                        .format(DEFAULT_PREFIX),
+                        default=DEFAULT_PREFIX)
     args = parser.parse_args()
     return int(not install_deps(args.prefix))
 
