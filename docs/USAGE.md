@@ -29,10 +29,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-    ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-    ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-    ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
+    bin/ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    bin/ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    bin/ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    bin/ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------

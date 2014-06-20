@@ -4,8 +4,6 @@ from collections import namedtuple, defaultdict
 
 logger = logging.getLogger()
 
-#PUBLIC:
-####################################################
 
 class BackendException(Exception):
     pass
@@ -16,8 +14,10 @@ class SyntenyBackend:
     def __init__(self):
         pass
 
-    #runs backend and then prepare data for futher processing
     def make_permutations(self, recipe, output_dir, overwrite):
+        """
+        Runs backend and then prepare data for futher processing
+        """
         try:
             files = self.run_backend(recipe, output_dir, overwrite)
         except BackendException as e:
@@ -26,9 +26,11 @@ class SyntenyBackend:
         assert sorted(files.keys()) == sorted(recipe["blocks"])
         return files
 
-    #runs backend and returns a dict with permutations files
-    #indexed by block sizes
     def run_backend(self, recipe, output_dir, overwrite):
+        """
+        Runs backend and returns a dict with permutations files
+        Indexed by block sizes
+        """
         return None
 
     @staticmethod

@@ -1,6 +1,6 @@
-###############################################################
-#This module runs progressiveCactus
-###############################################################
+"""
+This module runs progressiveCactus
+"""
 
 import os
 import sys
@@ -20,9 +20,6 @@ except:
     CACTUS_INSTALL = ""
 logger = logging.getLogger()
 
-#PUBLIC:
-################################################################
-
 class CactusBackend(SyntenyBackend):
     def __init__(self):
         SyntenyBackend.__init__(self)
@@ -39,12 +36,10 @@ else:
     logger.debug("progressiveCactus is not installed")
 
 
-#PRIVATE:
-#################################################################
-
-
-#Runs Cactus, then outputs preprocessesed results into output_dir
 def _make_permutations(recipe, output_dir, overwrite):
+    """
+    Runs Cactus, then outputs preprocessesed results into output_dir
+    """
     work_dir = os.path.join(output_dir, CACTUS_WORKDIR)
     files = {}
 

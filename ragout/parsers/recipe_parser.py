@@ -1,5 +1,6 @@
-#This module parses Ragout configuration file
-#############################################
+"""
+This module parses Ragout configuration file
+"""
 
 from collections import namedtuple
 import re
@@ -16,8 +17,6 @@ logger = logging.getLogger()
 class RecipeException(Exception):
     pass
 
-#PUBLIC:
-#############################################
 
 def parse_ragout_recipe(filename):
     if not os.path.exists(filename):

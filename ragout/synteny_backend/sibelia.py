@@ -1,5 +1,6 @@
-#This module runs Sibelia
-##############################################################
+"""
+This module runs Sibelia
+"""
 
 import os
 import sys
@@ -20,10 +21,6 @@ try:
     os.environ["PATH"] += os.pathsep + SIBELIA_INSTALL
 except:
     pass
-
-
-#PUBLIC:
-################################################################
 
 
 class SibeliaBackend(SyntenyBackend):
@@ -82,9 +79,6 @@ if _check_installation():
 else:
     logger.debug("Sibelia is not installed")
 
-
-#PRIVATE:
-#################################################################
 
 def _get_chr2genome(recipe):
     chr2genome = {}
