@@ -36,7 +36,7 @@ If you already have Sibelia installed, you can skip second step.
 
 After this, you can test your installation by typing:
 
-    bin/ragout --help
+    python ragout.py --help
 
 If no errors occured, installation was successful and you can start using Ragout!
 
