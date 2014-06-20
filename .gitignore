@@ -2,8 +2,6 @@
 *.pyc
 *.o
 *.so
-lib/
-dist/
-build/
-*.egg-info
-run-ragout
+lib/Sibelia
+lib/maf2synteny
+lib/overlap

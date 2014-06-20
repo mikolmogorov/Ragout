@@ -1,12 +1,7 @@
 CFLAGS += -Wall
-OUT_BIN := ../maf2synteny
+OUT_BIN := ${BIN_DIR}/maf2synteny
 
-.PHONY: all clean debug pylib pyclean
-
-pylib: CFLAGS += -fPIC -I${PYTHON_INCLUDE} -DPYTHON_LIB
-pylib: LDFLAGS += -shared
-pylib: OUT_BIN := ../cmaf2synteny.so
-pylib: all
+.PHONY: all clean debug
 
 all: CFLAGS += -O2 -DNDEBUG
 all: maf2synteny
@@ -21,10 +16,6 @@ maf2synteny: ${objects}
 %.o: %.cpp *.h
 	${CPP} -c ${CFLAGS} $< -o $@
 
-pyclean:
-	rm *.o
-	rm ../cmaf2synteny.so
-
 clean:
 	rm *.o
-	rm ../maf2synteny
+	rm ${OUT_BIN}

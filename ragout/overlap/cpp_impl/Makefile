@@ -1,31 +1,21 @@
-CPP = g++ -std=c++0x
-CFLAGS += -Wall 
-OUT_BIN := overlap
+CFLAGS += -Wall
+OUT_BIN := ${BIN_DIR}/overlap
 
-.PHONY: all clean overlap_python debug pylib pyclean
+.PHONY: all clean debug
 
 all: CFLAGS += -O2 -DNDEBUG
-all: overlap_python
-
-pylib: CFLAGS += -fPIC -I${PYTHON_INCLUDE} -DPYTHON_LIB
-pylib: LDFLAGS += -shared
-pylib: OUT_BIN := ../coverlap.so
-pylib: all
+all: maf2synteny
 
 debug: CFLAGS += -g -D_GLIBCXX_DEBUG -D_DEBUG
-debug: overlap_python
+debug: maf2synteny
 
 objects := ${patsubst %.cpp,%.o,${wildcard *.cpp}}
-overlap_python: ${objects}
+maf2synteny: ${objects}
 	${CPP} ${LDFLAGS} ${objects} -o ${OUT_BIN}
 
 %.o: %.cpp *.h
 	${CPP} -c ${CFLAGS} $< -o $@
 
-pyclean:
-	rm *.o
-	rm ../coverlap.so
-
 clean:
 	rm *.o
-	rm overlap
+	rm ${OUT_BIN}

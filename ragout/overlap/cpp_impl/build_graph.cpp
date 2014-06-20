@@ -96,6 +96,7 @@ std::vector<Overlap> filterByKmer(std::vector<Overlap>& overlapsIn)
 	return overlapsOut;
 }
 
+/*
 void drawHistogram(std::vector<Overlap>& overlaps)
 {
 	std::map<int, int> hist;
@@ -108,6 +109,7 @@ void drawHistogram(std::vector<Overlap>& overlaps)
 		std::cerr << histPair.first << " " << histPair.second << std::endl;
 	}
 }
+*/
 
 }	//end anonymous namespace
 

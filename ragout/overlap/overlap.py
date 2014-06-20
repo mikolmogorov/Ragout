@@ -1,25 +1,34 @@
-#This module recovers an assembly graph
-#by overlapping contigs
-################################################
+"""
+This module executes overlap native binary
+which reconstructs overlap graph from contigs
+"""
 
-from collections import namedtuple
 import logging
-
-from Bio import SeqIO
+import subprocess
 
 from ragout.shared import config
-from ragout.coverlap import _build_overlap_graph
+from ragout.shared.utils import which
 
 logger = logging.getLogger()
 
-#PUBLIC:
-#################################################
+OVERLAP_EXEC = "overlap"
 
-#builds assembly graph and outputs it in "dot" format
 def make_overlap_graph(contigs_file, dot_file):
+    """
+    Builds assembly graph and outputs it in "dot" format
+    """
     logger.info("Building overlap graph...")
-    res = _build_overlap_graph(contigs_file, dot_file,
-                               config.ASSEMBLY_MIN_OVERLAP,
-                               config.ASSEMBLY_MAX_OVERLAP,
-                               config.ASSEMBLY_EXACTLY_K)
-    return res
+    if not which(OVERLAP_EXEC):
+        logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
+        return False
+
+    cmdline = [OVERLAP_EXEC, contigs_file, dot_file,
+               str(config.ASSEMBLY_MIN_OVERLAP),
+               str(config.ASSEMBLY_MAX_OVERLAP)]
+    try:
+        subprocess.check_call(cmdline)
+    except subprocess.CalledProcessError as e:
+        logger.error("Some error inside native {0} module".format(OVERLAP_EXEC))
+        return False
+
+    return True
