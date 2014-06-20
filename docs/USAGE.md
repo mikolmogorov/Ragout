@@ -93,7 +93,7 @@ or, if using *MAF* as input:
 ###Parameters description:
 
 Each parameter could be "global" or "local" (for a particular genome).
-Global parameters starts from dot:
+Global parameters start from dot:
 
     .global_param_name = value
 
@@ -103,20 +103,21 @@ To set local parameter, use:
 
 ###Global parameters
 
-* tree: phylogenetic tree in NEWICK format [required]
-* target: target genome name [required]
-* blocks: comma-separated list of minimum synteny block sizes [required]
-* maf: path to multiple alignment in *MAF* format [default = not set]
+* __tree__: phylogenetic tree in NEWICK format [required]
+* __target__: target genome name [required]
+* __blocks__: comma-separated list of minimum synteny block sizes [required]
+* __maf__: path to multiple alignment in *MAF* format [default = not set]
 
 ###Local parameters
 
-* fasta: path to *FASTA* with genomic sequences [default = not set]
-* circular: indicates that reference chromosomes are circular [default = false]
-* draft: indicated that reference is in draft form (contigs/scaffolds) [default = false]
+* __fasta__: path to *FASTA* with genomic sequences [default = not set]
+* __circular__: indicates that reference chromosomes are circular [default = false]
+* __draft__: indicated that reference is in draft form (contigs/scaffolds) [default = false]
 
 ###Default values
 
-You can change default values for local parameters assigning parameter value to '*' genome.
+You can change default values for local parameters assigning parameter 
+value to the special object -- __*__.
 For instance, if all input references except one are in draft form, you can write:
 
     *.draft = true
