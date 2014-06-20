@@ -17,7 +17,7 @@ Runtime depenencies
 -------------------
 
 * Python 2.7
-* biopython [http://biopython.org]
+* Biopython [http://biopython.org]
 * Sibelia [https://github.com/bioinf/Sibelia] or Progresssive Cactus [https://github.com/glennhickey/progressiveCactus]
 
 
@@ -26,11 +26,11 @@ Building
 
 1. To build Ragout native modules type
     
-    make
+        make
 
 2. To build and install Sibelia, use
 
-    python scripts/install-sibelia.py
+        python scripts/install-sibelia.py
 
 If you already have Sibelia installed, you can skip second step.
 
@@ -38,7 +38,7 @@ After this, you can test your installation by typing:
 
     bin/ragout --help
 
-If you got no errors, installation was successful and you can start using Ragout!
+If no errors occured, installation was successful and you can start using Ragout!
 
 
 Binary distribution
