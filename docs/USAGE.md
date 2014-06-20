@@ -1,9 +1,9 @@
 Usage instructions for Ragout
 =============================
 
-    Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
-                  [--overwrite] [--debug] [--version]
-                  recipe_file
+    Usage: ragout.py [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
+                     [--overwrite] [--debug] [--version]
+                     recipe_file
     
 Supported arguments:
 
@@ -29,10 +29,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    bin/ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-    bin/ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-    bin/ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-    bin/ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
+    python ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    python ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    python ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    python ragout.py examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
 
 Algorithm overview
 ------------------

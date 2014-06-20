@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2.7
 """
 This script does all the necessary preparations
 and invokes Ragout
@@ -16,7 +16,7 @@ if sys.version_info[:2] != (2, 7):
     sys.exit(-1)
 
 #Setting executable paths
-ragout_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ragout_root = os.path.dirname(os.path.realpath(__file__))
 lib_absolute = os.path.join(ragout_root, LIB_DIR)
 sys.path.extend([ragout_root, lib_absolute])
 os.environ["PATH"] += os.pathsep + lib_absolute
