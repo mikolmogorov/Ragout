@@ -1,6 +1,6 @@
-OVLP_DIR := ragout/overlap/cpp_impl/
-M2S_DIR := ragout/maf2synteny/cpp_impl/
-BIN_DIR := $(shell pwd)/lib/
+OVLP_DIR := ragout/overlap/cpp_impl
+M2S_DIR := ragout/maf2synteny/cpp_impl
+BIN_DIR := $(shell pwd)/lib
 
 UNAME := $(shell uname -s)
 IS_CLANG := $(shell which clang++ 1>&2 2>/dev/null; echo $$?)
