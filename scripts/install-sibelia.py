@@ -57,7 +57,7 @@ def install_sibelia(prefix):
 
     sibelia_bin_src = os.path.join(tmp_dir, "bin", "Sibelia")
     sibelia_bin_dst = os.path.join(initial_dir, prefix, "Sibelia")
-    shutil.copyfile(sibelia_bin_src, sibelia_bin_dst)
+    shutil.copy(sibelia_bin_src, sibelia_bin_dst)
 
     os.chdir(initial_dir)
     shutil.rmtree(tmp_dir)
