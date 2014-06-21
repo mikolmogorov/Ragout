@@ -176,8 +176,8 @@ def main():
 
     backends = SyntenyBackend.get_available_backends()
     if args.synteny_backend not in backends:
-        sys.stderr.write(args.synteny_backend + " is not installed. "
-                         "You can use provided scripts to install it.\n")
+        sys.stderr.write("\"{0}\" is not installed. You can use provided scripts "
+                         "to install it.\n".format(args.synteny_backend))
         return 1
 
     return do_job(args.recipe, args.output_dir, args.synteny_backend,

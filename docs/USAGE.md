@@ -117,7 +117,7 @@ To set local parameter, use:
 ###Default values
 
 You can change default values for local parameters assigning parameter 
-value to the special object -- __*__.
+value to the special "star" object.
 For instance, if all input references except one are in draft form, you can write:
 
     *.draft = true
@@ -125,7 +125,7 @@ For instance, if all input references except one are in draft form, you can writ
 
 ###Detailed description
 
-Genome names are picked form the terminal nodes of the phylogenetic tree.
+Genomes names are picked form the terminal nodes of the phylogenetic tree.
 All those names should be uniqe. If the branch length is ommited, it would be set to 1.
 
 Paths to *FASTA*/*MAF* can be both relative and absolute. Running with Sibelia requires
@@ -172,7 +172,7 @@ The tools should be installed in your system -- see docs/INSTALL.md for detailed
 "progressiveCactus" can be used for bigger genomes, up to multuple mammalian species.
 Please note, that current implementation is still experimental. The tool also 
 should be properly installed. Do not forget to mask repeats (with RepeatMasker, for instance)
-before applying progressiveCactus to genomes with big fraction of repetitive sequences.
+before applying progressiveCactus to genomes with a big fraction of repetitive sequences.
 
 ### alignment in *MAF* format
 
@@ -181,7 +181,7 @@ Alignment should be in *MAF* format and sequence names should follow UCSC notati
 
     genome_name.sequence_name
 
-In case you are working with *MAF* input you should not specify reference *FASTA* files.
+In case you are working with *MAF* input you should not specify *FASTA* files for references.
 All you need is to set *FASTA* for target genome (which will be used for output generation).
 
 

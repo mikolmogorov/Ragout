@@ -3,7 +3,7 @@ Installation instructions for Ragout
 
 Availability
 ------------
-Ragout is tested under Mac OS and Linux. While it *should* work
+Ragout is tested under Mac OS and Linux. While it should work
 under Windows, we currently do not provide an official support.
 
 
@@ -17,23 +17,23 @@ Runtime depenencies
 -------------------
 
 * Python 2.7
-* Sibelia [https://github.com/bioinf/Sibelia] or Progresssive Cactus [https://github.com/glennhickey/progressiveCactus]
+* Sibelia [http://github.com/bioinf/Sibelia] or Progresssive Cactus [http://github.com/glennhickey/progressiveCactus]
 
 
 Building
 --------
 
-1. To build Ragout native modules type
+1. To build Ragout native modules, type:
     
         make
 
-2. To build and install Sibelia, use
+2. To build and install Sibelia, use:
 
         python scripts/install-sibelia.py
 
 If you already have Sibelia installed, you can skip second step.
 
-After this, you can test your installation by typing:
+After this, you can test your installation by running:
 
     python ragout.py --help
 
@@ -53,7 +53,7 @@ progressiveCactus
 
 Ragout can use both Sibelia and Progressive Cactus for synteny block decomposition.
 Cactus support is still in early stage, however you already can try it with genomes,
-that are too bif for Sibelia.
+that are too big for Sibelia.
 
 First, download and build Progressive Cactus: https://github.com/glennhickey/progressiveCactus
 Then set "CACTUS_INSTALL" environment variable pointing to Cactus installation directory:
