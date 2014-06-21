@@ -7,14 +7,14 @@ IS_CLANG := $(shell which clang++ 1>&2 2>/dev/null; echo $$?)
 IS_GCC := $(shell which g++ 1>&2 2>/dev/null; echo $$?)
 
 ifeq (${IS_CLANG},0)
-	CXX := clang++ -std=c++11
+	CXX := clang++ -std=c++0x
 
 	ifeq ($(UNAME),Darwin) #for macos
 		CXX += -stdlib=libc++
 	endif
 
 else ifeq (${IS_GCC},0)
-	CXX := g++ -std=c++11
+	CXX := g++ -std=c++0x
 
 else
 err:
