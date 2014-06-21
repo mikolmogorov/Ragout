@@ -93,9 +93,9 @@ Ragout uses some third-patry software;
 License
 -------
 Ragout is a distribution package that contains several
-other pieces of free software.  Most of this
+other pieces of free software. Most of this
 software is completely free to redistribute, but some such as Sibelia
-or Newick parser are released under the GPL.  We therefore release the
-Progressive Cactus distribution under the GPL and note that the
+or Newick parser are released under the GPL. We therefore release
+Ragout distribution under the GPL and note that the
 licenses of the constituent packages can be viewed in their
 subfolders. (see *LICENSE* file)
