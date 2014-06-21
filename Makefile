@@ -3,17 +3,25 @@ M2S_DIR := ragout/maf2synteny/cpp_impl/
 BIN_DIR := $(shell pwd)/lib/
 
 UNAME := $(shell uname -s)
-ifneq ($(wildcard /usr/bin/clang),)
-	CPP := clang++ -std=c++11
+IS_CLANG := $(shell which clang++ 1>&2 2>/dev/null; echo $$?)
+IS_GCC := $(shell which g++ 1>&2 2>/dev/null; echo $$?)
+
+ifeq (${IS_CLANG},0)
+	CXX := clang++ -std=c++11
 
 	ifeq ($(UNAME),Darwin) #for macos
-		CPP += -stdlib=libc++
+		CXX += -stdlib=libc++
 	endif
+
+else ifeq (${IS_GCC},0)
+	CXX := g++ -std=c++11
+
 else
-	CPP := g++ -std=c++11
+err:
+	$(error Neither gcc nor clang compilers were detected.)
 endif
 
-export CPP
+export CXX
 export BIN_DIR
 
 .PHONY: all overlap dependencies clean maf2synteny
