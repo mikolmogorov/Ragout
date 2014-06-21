@@ -81,14 +81,21 @@ We would like to thank:
 - Aleksey Gurevich (testing)
 
 
-License
--------
-The program is distributed under BSD license (see *LICENSE* file)
-
-
 Third-party
 -----------
 Ragout uses some third-patry software;
 
-* Networkx Python library [https://networkx.github.io/]
-* Sibelia [https://github.com/bioinf/Sibelia]
+* Networkx Python library [http://networkx.github.io/]
+* Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]
+* Sibelia [http://github.com/bioinf/Sibelia]
+
+
+License
+-------
+Ragout is a distribution package that contains several
+other pieces of free software.  Most of this
+software is completely free to redistribute, but some such as Sibelia
+or Newick parser are released under the GPL.  We therefore release the
+Progressive Cactus distribution under the GPL and note that the
+licenses of the constituent packages can be viewed in their
+subfolders. (see *LICENSE* file)

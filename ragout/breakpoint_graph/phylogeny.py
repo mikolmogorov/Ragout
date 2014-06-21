@@ -5,16 +5,10 @@ problem
 
 import math
 from collections import defaultdict
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
 
-from Bio import Phylo
+from ragout.parsers.phylogeny_parser import (parse_tree, is_terminal,
+                                             PhyloException)
 
-
-class PhyloException(Exception):
-    pass
 
 class Phylogeny:
     """
@@ -22,9 +16,8 @@ class Phylogeny:
     given half-breakpoint states
     """
     def __init__(self, recipe):
-        self.tree = Phylo.read(StringIO(recipe["tree"]), "newick")
-        self.tree.clade.branch_length = 0
         self.tree_string = recipe["tree"]
+        self.tree = parse_tree(self.tree_string)
 
     def validate_tree(self, recipe_genomes):
         pass
@@ -50,26 +43,26 @@ def _tree_score(tree, leaf_states):
 
     #recursive
     def rec_helper(root):
-        if root.is_terminal():
-            leaf_score = (lambda s: 0.0 if s == leaf_states[root.name]
+        if is_terminal(root):
+            leaf_score = (lambda s: 0.0 if s == leaf_states[root.identifier]
                                         else float("inf"))
             return {s : leaf_score(s) for s in all_states}
 
         nodes_scores = {}
-        for node in root.clades:
+        for node, _bootstrap, _length  in root.edges:
             nodes_scores[node] = rec_helper(node)
 
         root_scores = defaultdict(float)
         for root_state in all_states:
-            for node in root.clades:
+            for node, _bootstrap, branch_length in root.edges:
                 min_score = float("inf")
                 for child_state in all_states:
                     score = (nodes_scores[node][child_state] +
                             branch_score(root_state, child_state,
-                                         node.branch_length))
+                                         branch_length))
                     min_score = min(min_score, score)
                 root_scores[root_state] += min_score
 
         return root_scores
 
-    return min(rec_helper(tree.clade).values())
+    return min(rec_helper(tree).values())

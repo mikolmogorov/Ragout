@@ -17,7 +17,6 @@ Runtime depenencies
 -------------------
 
 * Python 2.7
-* Biopython [http://biopython.org]
 * Sibelia [https://github.com/bioinf/Sibelia] or Progresssive Cactus [https://github.com/glennhickey/progressiveCactus]
 
 

@@ -6,11 +6,8 @@ from collections import namedtuple
 import re
 import os
 import logging
-from Bio import Phylo
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
+
+from ragout.parsers.phylogeny_parser import get_leaves_names, PhyloException
 
 logger = logging.getLogger()
 
@@ -83,8 +80,10 @@ def parse_ragout_recipe(filename):
     genomes = None
     for param, value in recipe_dict.items():
         if param == "tree":
-            tree = Phylo.read(StringIO(value), "newick")
-            genomes = list(map(lambda n: n.name, tree.get_terminals()))
+            try:
+                genomes = get_leaves_names(value)
+            except PhyloException as e:
+                raise RecipeException(e)
 
     for g in genomes:
         recipe_dict["genomes"].setdefault(g, {})
