@@ -32,8 +32,8 @@ genome. Even if each reference is structurally divergent, it is possible
 to assemble the target into the correct set of scaffolds. Enlarge your
 contigs with Ragout!
 
-The current version of Ragout is limited to genomes of bacterial size,
-but we are working on expanding it to mammalian-scaled ones.
+Current version of Ragout was mostly tested on bacterial genomes,
+however it also contains an experimental support of mamalian-scaled ones.
 
 
 Install
