@@ -34,6 +34,23 @@ You can try Ragout on the provided ready-to-use examples:
     python ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
     python ragout.py examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine
 
+
+Input data
+----------
+
+Ragout takes as input contigs from a short-read assembly. We preformed our tests with
+SPAdes, ABySS and SOAPdenovo assemblers, however Ragout should work with others,
+if their output satisfy the following conditions:
+
+* The contigs should cover the most fraction of the genome and should not overlap
+  (except ends, see below)
+* For the better performance of refinment module, contigs that were connected in
+  a graph used by assembler should overlap on a certain constant value (k-mer or
+  (k-1)-mer usually). For the most of assemblers which utilize de Bruijn graphs
+  this holds true. Currently, support of other types of assembler (such as SGA)
+  is not perfect (for refinement module only, other parts of Ragout work fine).
+
+
 Algorithm overview
 ------------------
 
