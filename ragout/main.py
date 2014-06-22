@@ -182,7 +182,7 @@ def main():
     parser.add_argument("--debug", action="store_const",
                         dest="debug", default=False, const=True,
                         help="enable debug output")
-    parser.add_argument("--version", action="version", version="Ragout v0.2b")
+    parser.add_argument("--version", action="version", version="Ragout v0.3b")
     args = parser.parse_args()
 
     return do_job(args.recipe, args.output_dir, args.synteny_backend,
