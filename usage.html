@@ -36,9 +36,9 @@
         <section id="main_content">
 
 <h1>Usage instructions for Ragout</h1>
-<pre><code>Usage: ragout [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
-              [--overwrite] [--debug] [--version]
-              recipe_file</code></pre>
+<pre><code>Usage: ragout.py [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
+                 [--overwrite] [--debug] [--version]
+                 recipe_file</code></pre>
 <p>Supported arguments:</p>
 <pre><code>positional arguments:
   recipe_file           path to recipe file
@@ -57,10 +57,24 @@ optional arguments:
   --version             show program&#39;s version number and exit</code></pre>
 <h2>Examples</h2>
 <p>You can try Ragout on the provided ready-to-use examples:</p>
-<pre><code>ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-ragout examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine</code></pre>
+<pre><code>python ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+python ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+python ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+python ragout.py examples/V.Cholerea/cholerea.rcp --outdir examples/V.Cholerae/out/ --refine</code></pre>
+<h2>Input data</h2>
+<p>Ragout takes as input contigs from a short-read assembly. We preformed our tests with
+SPAdes, ABySS and SOAPdenovo assemblers, however Ragout should work with others,
+if their output satisfy the following conditions:</p>
+<ul>
+<li>The contigs should cover the most fraction of the genome and should not overlap
+(except ends, see below)</li>
+<li>One should use <em>all</em> contigs/scaffolds output by assembler</li>
+<li>For the better performance of refinment module, contigs that were connected in
+a graph used by assembler should overlap on a certain constant value (k-mer or
+(k-1)-mer usually). For the most of assemblers which utilize de Bruijn graphs
+this holds true. Currently, support of other types of assembler (such as SGA)
+is not perfect (for refinement module only, other parts of Ragout work fine).</li>
+</ul>
 <h2>Algorithm overview</h2>
 <p>This is a very brief description of the algorithm. See our paper 
 for the detailed explanation.</p>
@@ -103,32 +117,34 @@ usa.fasta = usa300_contigs.fasta</code></pre>
 yakuba.fasta = genomes/D.yakuba_contigs.fasta</code></pre>
 <h3>Parameters description:</h3>
 <p>Each parameter could be &quot;global&quot; or &quot;local&quot; (for a particular genome).
-Global parameters starts from dot:</p>
+Global parameters start from dot:</p>
 <pre><code>.global_param_name = value</code></pre>
 <p>To set local parameter, use:</p>
 <pre><code>genome_name.param_name = value</code></pre>
 <h3>Global parameters</h3>
 <ul>
-<li>tree: phylogenetic tree in NEWICK format [required]</li>
-<li>target: target genome name [required]</li>
-<li>blocks: comma-separated list of minimum synteny block sizes [required]</li>
-<li>maf: path to multiple alignment in <em>MAF</em> format [default = not set]</li>
+<li><strong>tree</strong>: phylogenetic tree in NEWICK format [required]</li>
+<li><strong>target</strong>: target genome name [required]</li>
+<li><strong>blocks</strong>: comma-separated list of minimum synteny block sizes [required]</li>
+<li><strong>maf</strong>: path to multiple alignment in <em>MAF</em> format [default = not set]</li>
 </ul>
 <h3>Local parameters</h3>
 <ul>
-<li>fasta: path to <em>FASTA</em> with genomic sequences [default = not set]</li>
-<li>circular: indicates that reference chromosomes are circular [default = false]</li>
-<li>draft: indicated that reference is in draft form (contigs/scaffolds) [default = false]</li>
+<li><strong>fasta</strong>: path to <em>FASTA</em> with genomic sequences [default = not set]</li>
+<li><strong>circular</strong>: indicates that reference chromosomes are circular [default = false]</li>
+<li><strong>draft</strong>: indicated that reference is in draft form (contigs/scaffolds) [default = false]</li>
 </ul>
 <h3>Default values</h3>
-<p>You can change default values for local parameters assigning parameter value to &#39;*&#39; genome.
+<p>You can change default values for local parameters assigning parameter 
+value to the special &quot;star&quot; object.
 For instance, if all input references except one are in draft form, you can write:</p>
 <pre><code>*.draft = true
 complete_ref.draft = false</code></pre>
 <h3>Detailed description</h3>
-<p>Genome names are picked form the terminal nodes of the phylogenetic tree.
+<p>Genomes names are picked form the terminal nodes of the phylogenetic tree.
 All those names should be uniqe. If the branch length is ommited, it would be set to 1.</p>
-<p>Paths to <em>FASTA</em>/<em>MAF</em> can be both relative and absolute.</p>
+<p>Paths to <em>FASTA</em>/<em>MAF</em> can be both relative and absolute. Running with Sibelia requires
+all sequence headers among ALL <em>FASTA</em> files to be unique.</p>
 <p>Ragout firstly decomposes genomes into set of synteny blocks.
 You can use either a set of <em>FASTA</em> files corresponding to each input genome
 or multiple alignment of all the genomes in <em>MAF</em> format.
@@ -160,12 +176,12 @@ The tools should be installed in your system -- see docs/INSTALL.md for detailed
 <p>&quot;progressiveCactus&quot; can be used for bigger genomes, up to multuple mammalian species.
 Please note, that current implementation is still experimental. The tool also 
 should be properly installed. Do not forget to mask repeats (with RepeatMasker, for instance)
-before applying progressiveCactus to genomes with big fraction of repetitive sequences.</p>
+before applying progressiveCactus to genomes with a big fraction of repetitive sequences.</p>
 <h3>alignment in <em>MAF</em> format</h3>
 <p>If you already have a multiple alignment, you also can use it for synteny blocks decomposition.
 Alignment should be in <em>MAF</em> format and sequence names should follow UCSC notation:</p>
 <pre><code>genome_name.sequence_name</code></pre>
-<p>In case you are working with <em>MAF</em> input you should not specify reference <em>FASTA</em> files.
+<p>In case you are working with <em>MAF</em> input you should not specify <em>FASTA</em> files for references.
 All you need is to set <em>FASTA</em> for target genome (which will be used for output generation).</p>
 <h2>The parameters choice</h2>
 <h3>Minimum synteny block size</h3>

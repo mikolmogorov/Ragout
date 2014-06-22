@@ -37,97 +37,47 @@
         
 <h1>Installation instructions for Ragout</h1>
 <h2>Availability</h2>
-<p>Ragout is tested under Mac OS and Linux. While it <em>should</em> work
+<p>Ragout is tested under Mac OS and Linux. While it should work
 under Windows, we currently do not provide an official support.</p>
 <h2>Build requirements</h2>
 <ul>
-<li>Python 2.7 (with developer headers)</li>
 <li>C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)</li>
 <li>GNU make / Cmake (for building Sibelia)</li>
 </ul>
 <h2>Runtime depenencies</h2>
 <ul>
 <li>Python 2.7</li>
-<li>biopython [<a href="http://biopython.org">http://biopython.org</a>]</li>
-<li>networkx 1.8+ [<a href="http://networkx.github.io">http://networkx.github.io</a>]</li>
-<li>Sibelia [<a href="https://github.com/bioinf/Sibelia">https://github.com/bioinf/Sibelia</a>]</li>
+<li>Sibelia [<a href="http://github.com/bioinf/Sibelia">http://github.com/bioinf/Sibelia</a>] or Progresssive Cactus [<a href="http://github.com/glennhickey/progressiveCactus">http://github.com/glennhickey/progressiveCactus</a>]</li>
 </ul>
-<p>You can install Ragout as a Python package, which is recommended.
-Alternatively, you can build and run it from a source directory.</p>
-<p>Buildng Ragout requires Python headers, which should be
-explicitly installed on some OS. For instance, Ubuntu
-users should check that package &quot;python-dev&quot; is installed.</p>
-<h2>Installation from PyPI (recommended)</h2>
-<p>The easies way to install Ragout is to use Python package index database:</p>
-<pre><code>pip install ragout</code></pre>
-<p>Note, that this may require superuser privileges:</p>
-<pre><code>sudo pip install ragout</code></pre>
-<p>If you do not have <em>pip</em> installed, you can get it from here:
-<a href="http://www.pip-installer.org/">http://www.pip-installer.org/</a></p>
-<h2>Binary packages</h2>
-<p>Pre-compiled binary packages for Linux and Mac OS are available at:
-<a href="https://pypi.python.org/pypi/ragout">https://pypi.python.org/pypi/ragout</a> as binary <em>eggs</em>.
-You can install them via <em>easy_install</em>:
-<a href="http://pythonhosted.org/setuptools/easy_install.html">http://pythonhosted.org/setuptools/easy_install.html</a></p>
-<h2>Installing from source</h2>
-<p>To install Ragout as a Python package, run:</p>
-<pre><code>python2.7 setup.py install</code></pre>
-<p>If you don&#39;t have permission to install software on your system, you can 
-install into another directory using the --user, --prefix, or --home flags to setup.py.</p>
-<pre><code>python2.7 setup.py install --user</code></pre>
-<p>or</p>
-<pre><code>python2.7 setup.py install --prefix=~/.local</code></pre>
-<p>or</p>
-<pre><code>python2.7 setup.py install --home=~</code></pre>
-<p>If you didn&#39;t install in the standard Python site-packages directory you will 
-need to set your PYTHONPATH variable to the alternate location. 
-See <a href="http://docs.python.org/2/install/index.html#search-path">http://docs.python.org/2/install/index.html#search-path</a> for further details.</p>
-<p>After installation with custom prefix you may need to add the corresponding 
-&quot;bin&quot; directory to your executable path (to run Ragout from any working directory). 
-For example, if your prefix was &quot;~/.local&quot;, run:</p>
-<pre><code>export PATH=$PATH:~/.local/bin</code></pre>
-<p>setup.py script also will install all necessary Python dependencies, if neded.
-After installation process you can test your installation by running:</p>
-<pre><code>ragout --help</code></pre>
-<p>If it works, you can try Ragout on the provided examples (refer to USAGE.md for this)</p>
-<h2>Using without installation</h2>
-<p>To build Ragout inside the source directory, run:</p>
-<pre><code>python2.7 setup.py inplace</code></pre>
-<p>In this case, you should manually install all dependencies using <em>pip</em>
-or your OS-specific package manager:</p>
-<pre><code>pip install biopython networkx</code></pre>
-<p>or</p>
-<pre><code>sudo apt-get install biopython networkx</code></pre>
-<h2>Sibelia</h2>
-<p>Ragout requires Sibelia for synteny block decomposition.
-You can download and install it from the website: <a href="https://github.com/bioinf/Sibelia">https://github.com/bioinf/Sibelia</a></p>
-<p>Otherwise, you can use our script for a quick installation:</p>
-<pre><code>sudo scripts/install-sibelia.py</code></pre>
-<p>or</p>
-<pre><code>scripts/install-sibelia.py --prefix=your_prefix</code></pre>
-<p>Alternatively, if you have installed Ragout with <em>pip</em> and do not have
-&quot;scripts&quot; directory:</p>
-<pre><code>curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | python</code></pre>
-<p>or, if you want more control:</p>
-<pre><code>curl https://raw.github.com/fenderglass/Ragout/master/scripts/install-sibelia.py -o - | [sudo] python [- --prefix=your_prefix]</code></pre>
-<p>Do not forget that &quot;your_prefix/bin&quot; folder also should be in your PATH.
-Alternatively, you can set SIBELIA_INSTALL variable to directory
-containing <em>Sibelia</em> excecutable.</p>
+<h2>Building</h2>
+<ol>
+<li><p>To build Ragout native modules, type:</p>
+<pre><code> make</code></pre>
+</li>
+<li><p>To build and install Sibelia, use:</p>
+<pre><code> python scripts/install-sibelia.py</code></pre>
+</li>
+</ol>
+<p>If you already have Sibelia installed, you can skip second step.</p>
+<p>After this, you can test your installation by running:</p>
+<pre><code>python ragout.py --help</code></pre>
+<p>If no errors occured, installation was successful and you can start using Ragout!</p>
+<h2>Binary distribution</h2>
+<p>While we recommend to build Ragout from source on each machine, you also can
+use pre-compiled binaries which are available for Linux and Mac OS on our
+website: <a href="http://fenderglass.github.io/Ragout/">http://fenderglass.github.io/Ragout/</a></p>
 <h2>progressiveCactus</h2>
+<p>Ragout can use both Sibelia and Progressive Cactus for synteny block decomposition.
+Cactus support is still in early stage, however you already can try it with genomes,
+that are too big for Sibelia.</p>
 <p>First, download and build Progressive Cactus: <a href="https://github.com/glennhickey/progressiveCactus">https://github.com/glennhickey/progressiveCactus</a>
-Then set &quot;CACTUS_INSTALL&quot; variable pointing to cactus installation directory:</p>
+Then set &quot;CACTUS_INSTALL&quot; environment variable pointing to Cactus installation directory:</p>
+<pre><code>export CACTUS_INSTALL=path_to_cactus</code></pre>
 <h2>Troubleshooting</h2>
-<p>Q: I get compilation error &quot;Python.h: No such file or directory&quot;:</p>
-<p>A: You do not have Python developer headers installed. On some
-systems/distributions you have to install them explicitly, i.e. in Ubuntu:</p>
-<pre><code>sudo apt-get install python-dev</code></pre>
-<p>Q: Multiple errors during compilation, possibly with 
+<p>Q: Tons of errors during compilation, possibly with 
 &quot;unrecognized command line option &#39;-std=c++0x&#39;&quot; message:</p>
 <p>A: Probably your compiler is too old and does not support C++0x. Minimum
-versions of GCC and Clang are mentioned above.</p>
-<p>Q: clang error: unknown argument: &#39;-mno-fused-madd&#39;</p>
-<p>A: This is a python/clang issue on Mac OS. To resolve it, update
-your Python to version 2.7.6+ </p>
+versions of GCC and Clang are mentioned at the beginnig of this documtent.</p>
 
         </section>
 
