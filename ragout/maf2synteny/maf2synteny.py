@@ -8,15 +8,24 @@ import subprocess
 
 from ragout.shared.utils import which
 
+logger = logging.getLogger()
+
 M2S_EXEC = "ragout-maf2synteny"
+
+
+def check_binary():
+    binary = which(M2S_EXEC)
+    if not binary:
+        logger.error("\"{0}\" native module not found".format(M2S_EXEC))
+        return False
+    return True
 
 
 def make_synteny(maf_file, out_dir, min_blocks_list):
     """
     Builds synteny blocks from MAF file
     """
-    if not which(M2S_EXEC):
-        logger.error("\"{0}\" native module not found".format(M2S_EXEC))
+    if not check_binary():
         return False
 
     cmdline = [M2S_EXEC, maf_file, out_dir]

@@ -5,13 +5,16 @@ formats
 """
 
 from collections import defaultdict
+import os
 import copy
 import logging
 
+from ragout.shared.debug import DebugConfig
 from ragout.shared.datatypes import Contig, Scaffold
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 
 logger = logging.getLogger()
+debugger = DebugConfig.get_instance()
 
 
 def get_scaffolds(adjacencies, perm_container):
@@ -167,6 +170,11 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
     for contig in contigs:
         if contig not in visited:
             extend_scaffold(contig)
+
+    if debugger.debugging:
+        file_out = os.path.join(debugger.debug_dir, "scaffolds.ord")
+        output_order(scaffolds, file_out)
+
     return scaffolds
 
 

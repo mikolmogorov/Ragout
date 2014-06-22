@@ -13,13 +13,20 @@ logger = logging.getLogger()
 
 OVERLAP_EXEC = "ragout-overlap"
 
+def check_binary():
+    binary = which(OVERLAP_EXEC)
+    if not binary:
+        logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
+        return False
+    return True
+
+
 def make_overlap_graph(contigs_file, dot_file):
     """
     Builds assembly graph and outputs it in "dot" format
     """
     logger.info("Building overlap graph...")
-    if not which(OVERLAP_EXEC):
-        logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
+    if not check_binary():
         return False
 
     cmdline = [OVERLAP_EXEC, contigs_file, dot_file,

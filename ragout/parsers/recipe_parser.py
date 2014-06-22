@@ -42,12 +42,12 @@ def parse_ragout_recipe(filename):
 
             m = param_matcher.match(line)
             if not m or not "." in m.group(1):
-                raise RecipeException("Parse error on line {1}"
+                raise RecipeException("Error parsing recipe on line {1}"
                                       .format(filename, lineno + 1))
 
             (obj, param_name), value = m.group(1).split("."), m.group(2)
             if param_name not in known_params:
-                raise RecipeException("Unknown parameter '{0}' on line {1}"
+                raise RecipeException("Unknown recipe parameter '{0}' on line {1}"
                                       .format(param_name, lineno, filename))
 
             #casting if necessary
@@ -57,8 +57,8 @@ def parse_ragout_recipe(filename):
                 elif value in ["False", "false", "0"]:
                     value = False
                 else:
-                    raise RecipeException("Error on line {0}: wrong value "
-                                          "'{1}' for bool param"
+                    raise RecipeException("Error parsing recipe on line "
+                                          "{0}: wrong value '{1}' for bool param"
                                           .format(lineno, value))
             if param_name in cast_int_list:
                 value = list(map(int, value.split(",")))
@@ -93,14 +93,16 @@ def parse_ragout_recipe(filename):
             g_params.setdefault(def_key, def_val)
 
     if len(recipe_dict["blocks"]) != len(set(recipe_dict["blocks"])):
-        raise RecipeException("Found duplicated synteny block sizes")
+        raise RecipeException("Found similar synteny block sizes in recipe")
 
     if not recipe_dict["genomes"]:
-        raise RecipeException("No genomes in terminal nodes of the tree")
+        raise RecipeException("No genomes detected in recipe")
 
     if recipe_dict["target"] not in recipe_dict["genomes"]:
-        raise RecipeException("Target genome is not in tree")
+        raise RecipeException("Error parsing recipe: target genome "
+                              "is not in tree")
     if "fasta" not in recipe_dict["genomes"][recipe_dict["target"]]:
-        raise RecipeException("FASTA file for target genome is not specified")
+        raise RecipeException("Error parsing recipe: FASTA file for "
+                              "target genome is not specified")
 
     return recipe_dict
