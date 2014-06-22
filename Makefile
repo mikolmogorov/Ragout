@@ -23,13 +23,13 @@ endif
 CXXFLAGS += -std=c++0x
 UNAME := $(shell uname -s)
 ifeq ($(UNAME),Darwin)
-	ifeq (${CXX},clang++)
-		CXXFLAGS += -stdlib=libc++
-	endif
+	CXXFLAGS += -stdlib=libc++
+	LDFLAGS += -lc++
 endif
 
 export CXX
 export CXXFLAGS
+export LDFLAGS
 export BIN_DIR
 
 .PHONY: all overlap dependencies clean maf2synteny
