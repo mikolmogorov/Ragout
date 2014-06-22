@@ -81,9 +81,6 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     """
     Top-level logic of program
     """
-    if not os.path.isdir(out_dir):
-        os.mkdir(out_dir)
-
     out_log = os.path.join(out_dir, "ragout.log")
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
@@ -92,6 +89,11 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     debug_root = os.path.join(out_dir, "debug")
+
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
+    if debug and not os.path.isdir(debug_root):
+        os.mkdir(debug_root)
 
     enable_logging(out_log, debug)
     logger.info("Cooking Ragout...")

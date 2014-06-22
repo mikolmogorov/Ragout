@@ -32,7 +32,7 @@ genome. Even if each reference is structurally divergent, it is possible
 to assemble the target into the correct set of scaffolds. Enlarge your
 contigs with Ragout!
 
-Current version of Ragout was mostly tested on bacterial genomes,
+The current version of Ragout was mostly tested on bacterial genomes,
 however it also contains an experimental support of mamalian-scaled ones.
 
 
@@ -75,7 +75,7 @@ Also, you can send your feedback at fenderglass@gmail.com
 
 Acknowledgements
 ----------------
-The work was supported by VP Foundation.
+The work was partially supported by VP Foundation.
 
 We would like to thank:
 - Nikolay Vyahhi (testing and some useful suggestions)
