@@ -44,6 +44,7 @@ if their output satisfy the following conditions:
 
 * The contigs should cover the most fraction of the genome and should not overlap
   (except ends, see below)
+* One should use *all* contigs/scaffolds output by assembler
 * For the better performance of refinment module, contigs that were connected in
   a graph used by assembler should overlap on a certain constant value (k-mer or
   (k-1)-mer usually). For the most of assemblers which utilize de Bruijn graphs
