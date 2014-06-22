@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module provides PermutationContainer class
 which stores permutations and provides some filtering
@@ -19,6 +23,9 @@ class PermException(Exception):
     pass
 
 class Block:
+    """
+    Represents synteny block
+    """
     def __init__(self, block_id, sign, start=None, end=None):
         self.block_id = block_id
         self.sign = sign
@@ -37,6 +44,9 @@ class Block:
 
 
 class Permutation:
+    """
+    Represents signed permutation
+    """
     def __init__(self, genome_name, chr_name, chr_id, chr_len, blocks):
         self.genome_name = genome_name
         self.chr_name = chr_name
@@ -119,7 +129,7 @@ def _find_duplications(ref_perms, target_perms):
 
 def _filter_perm(perm, to_hold):
     """
-    Filters duplications
+    Filters duplications from permutaion
     """
     new_perm = Permutation(perm.genome_name, perm.chr_name, perm.chr_id,
                            perm.chr_len, [])

@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module assembles contigs into scaffolds with respect
 to given adjacencies. Also, it outputs scaffolds in different
@@ -25,6 +29,11 @@ def get_scaffolds(adjacencies, perm_container):
     contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index)
     scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
+
+    if debugger.debugging:
+        file_out = os.path.join(debugger.debug_dir, "scaffolds.ord")
+        output_order(scaffolds, file_out)
+
     return scaffolds
 
 
@@ -170,10 +179,6 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
     for contig in contigs:
         if contig not in visited:
             extend_scaffold(contig)
-
-    if debugger.debugging:
-        file_out = os.path.join(debugger.debug_dir, "scaffolds.ord")
-        output_order(scaffolds, file_out)
 
     return scaffolds
 

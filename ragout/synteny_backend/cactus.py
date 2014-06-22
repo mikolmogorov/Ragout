@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module runs progressiveCactus
 """
@@ -14,6 +18,8 @@ import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
+MAX_THREADS = 10
+
 try:
     CACTUS_INSTALL = os.environ["CACTUS_INSTALL"]
 except:
@@ -85,6 +91,9 @@ def _make_permutations(recipe, output_dir, overwrite):
 
 
 def _make_cactus_config(recipe, directory):
+    """
+    Creates cactus' "seq" file
+    """
     CONF_NAME = "cactus.cfg"
     file = open(os.path.join(directory, CONF_NAME), "w")
     file.write(recipe["tree"] + "\n")
@@ -101,7 +110,6 @@ def _run_cactus(config_path, ref_genome, out_dir):
     CACTUS_OUT = "alignment.hal"
     HAL2MAF = "submodules/hal/bin/hal2maf"
     MAF_OUT = "cactus.maf"
-    MAX_THREADS = 10
 
     logger.info("Running progressiveCactus...")
     work_dir = os.path.abspath(out_dir)

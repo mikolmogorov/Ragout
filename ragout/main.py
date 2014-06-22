@@ -1,7 +1,9 @@
-#!/usr/bin/env python
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
 
 """
-The main Ragout module
+The main Ragout module. It defines top-level logic of the program
 """
 
 import os
@@ -56,6 +58,9 @@ def enable_logging(log_file, debug):
 
 
 def check_extern_modules(backend):
+    """
+    Checks if all neccessary native modules are available
+    """
     backends = SyntenyBackend.get_available_backends()
     if backend not in backends:
         logger.error("\"{0}\" is not installed. You can use provided scripts "
@@ -182,6 +187,3 @@ def main():
 
     return do_job(args.recipe, args.output_dir, args.synteny_backend,
                   args.assembly_refine, args.overwrite, args.debug)
-
-if __name__ == "__main__":
-    main()

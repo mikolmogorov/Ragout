@@ -1,3 +1,12 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
+"""
+This module parses newick string and contains some helper function
+to deal with trees
+"""
+
 import newick
 
 class PhyloException(Exception):
@@ -14,6 +23,9 @@ def parse_tree(newick_str):
 
 
 def get_leaves_names(newick_str):
+    """
+    Get names of treminal tree nodes
+    """
     tree = parse_tree(newick_str)
     if tree is None:
         return None

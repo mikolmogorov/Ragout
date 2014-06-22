@@ -1,5 +1,9 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
-This module performs refinement with the assembly graph
+This module performs refinement with the assembly (overlap) graph
 """
 
 import networkx as nx

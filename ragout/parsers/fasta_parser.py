@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module provides some basic FASTA I/O
 """
@@ -6,32 +10,42 @@ class FastaError(Exception):
     pass
 
 def read_fasta_dict(filename):
+    """
+    Reads fasta file into dictionary. Also preforms some validation
+    """
     header = None
     seq = ""
     fasta_dict = {}
 
-    with open(filename, "r") as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith(">"):
-                if header:
-                    fasta_dict[header] = seq
-                    seq = ""
-                header = line[1:].split(" ")[0]
-            else:
-                line = line.upper()
-                if not _validate_seq(line):
-                    raise FastaError("Non-ACGTN charcter in \"{0}\""
-                                     .format(filename))
-                seq += line
+    try:
+        with open(filename, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith(">"):
+                    if header:
+                        fasta_dict[header] = seq
+                        seq = ""
+                    header = line[1:].split(" ")[0]
+                else:
+                    line = line.upper()
+                    if not _validate_seq(line):
+                        raise FastaError("Non-ACGTN charcter in \"{0}\""
+                                         .format(filename))
+                    seq += line
 
-        if header and len(seq):
-            fasta_dict[header] = seq
+            if header and len(seq):
+                fasta_dict[header] = seq
+
+    except IOError as e:
+        raise FastaError(e)
 
     return fasta_dict
 
 
 def write_fasta_dict(fasta_dict, filename):
+    """
+    Writes dictionary with fasta to file
+    """
     with open(filename, "w") as f:
         for header, seq in _iter_dict(fasta_dict):
             f.write(">{0}\n".format(header))
@@ -53,6 +67,9 @@ def _validate_seq(sequence):
 
 
 def _iter_dict(d):
+    """
+    Helper fundtion to iterate through dictionary in both Python 2 and 3
+    """
     iter_d = None
     try:
         iter_d = d.iteritems()

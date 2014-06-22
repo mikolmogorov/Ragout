@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module runs Sibelia
 """
@@ -81,6 +85,10 @@ else:
 
 
 def _get_chr2genome(recipe):
+    """
+    Reads fasta files and constructs a correspondence table
+    between sequence name and genome name
+    """
     chr2genome = {}
     for gen_name, gen_params in recipe["genomes"].items():
         if not os.path.exists(gen_params["fasta"]):
@@ -100,6 +108,10 @@ def _get_chr2genome(recipe):
 
 
 def _postprocess_perms(chr2genome, file):
+    """
+    Converts Sibelia's permutation file to UCSC naming convention:
+    genome.chromosome
+    """
     new_file = file + "_new"
     with open(file, "r") as fin, open(new_file, "w") as fout:
         for line in fin:
@@ -114,6 +126,10 @@ def _postprocess_perms(chr2genome, file):
 
 
 def _postprocess_coords(chr2genome, file):
+    """
+    Converts Sibelia's blocks_coords file to UCSC naming convention:
+    genome.chromosome
+    """
     new_file = file + "_new"
     with open(file, "r") as fin, open(new_file, "w") as fout:
         header = True

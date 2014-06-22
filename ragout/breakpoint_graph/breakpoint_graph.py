@@ -1,6 +1,10 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module implements a breakpoint graph
-as well as the main algorithm that recovers missing
+as well as the main algorithm which recovers missing
 adjacencies
 """
 
@@ -16,6 +20,7 @@ from ragout.shared.debug import DebugConfig
 Adjacency = namedtuple("Adjacency", ["block", "distance"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
+
 DEFAULT_DISTANCE = 42   #just an arbitrary number
 
 class BreakpointGraph:
@@ -242,6 +247,9 @@ def _split_graph(graph):
 
 
 def _update_edge(graph, v1, v2, weight):
+    """
+    Helper function to update edge's weight
+    """
     if not graph.has_edge(v1, v2):
         graph.add_edge(v1, v2, weight=weight)
     else:
@@ -249,15 +257,17 @@ def _update_edge(graph, v1, v2, weight):
 
 
 def _median(values):
-    #not a true median, but we keep real distances
+    """
+    Not a true median, but we keep real distances
+    """
     sorted_values = sorted(values)
     return sorted_values[(len(values) - 1) / 2]
 
-"""
-Output generators
-"""
 
 def _output_graph(graph, out_file):
+    """
+    Outputs graph in dot format
+    """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
         for v1, v2, data in graph.edges_iter(data=True):
@@ -271,6 +281,9 @@ def _output_graph(graph, out_file):
 
 
 def _output_edges(edges, out_file):
+    """
+    Outputs list of edges in dot format
+    """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
         for (v1, v2) in edges:
@@ -279,6 +292,9 @@ def _output_edges(edges, out_file):
 
 
 def _output_phylogeny(tree_string, target_name, out_file):
+    """
+    Outputs phylogenetic tree in plain text
+    """
     with open(out_file, "w") as fout:
         fout.write(tree_string + "\n")
         fout.write(target_name)

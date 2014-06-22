@@ -1,3 +1,7 @@
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
 """
 This module executes overlap native binary
 which reconstructs overlap graph from contigs
@@ -14,6 +18,9 @@ logger = logging.getLogger()
 OVERLAP_EXEC = "ragout-overlap"
 
 def check_binary():
+    """
+    Checks if the native binary is available
+    """
     binary = which(OVERLAP_EXEC)
     if not binary:
         logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
