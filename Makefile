@@ -3,8 +3,8 @@ M2S_DIR := ragout/maf2synteny/cpp_impl
 BIN_DIR := $(shell pwd)/lib
 
 UNAME := $(shell uname -s)
-IS_CLANG := $(shell which clang++ 1>&2 2>/dev/null; echo $$?)
-IS_GCC := $(shell which g++ 1>&2 2>/dev/null; echo $$?)
+IS_CLANG := $(shell which clang++ >/dev/null 2>&1; echo $$?)
+IS_GCC := $(shell which g++ >/dev/null 2>&1; echo $$?)
 
 ifeq (${IS_CLANG},0)
 	CXX := clang++ -std=c++0x
