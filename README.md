@@ -7,6 +7,9 @@ Release date: 22 Jun 2014
 
 Website: http://fenderglass.github.io/Ragout/
 
+[![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
+)](https://travis-ci.org/fenderglass/Ragout)
+
 
 
        	         (
