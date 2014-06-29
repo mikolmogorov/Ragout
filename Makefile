@@ -2,26 +2,34 @@ OVLP_DIR := ragout/overlap/cpp_impl
 M2S_DIR := ragout/maf2synteny/cpp_impl
 BIN_DIR := $(shell pwd)/lib
 
-UNAME := $(shell uname -s)
-IS_CLANG := $(shell which clang++ >/dev/null 2>&1; echo $$?)
-IS_GCC := $(shell which g++ >/dev/null 2>&1; echo $$?)
+#setting compiler (if not set)
+ifeq (${CXX},)
+	IS_CLANG := $(shell which clang++ >/dev/null 2>&1; echo $$?)
+	IS_GCC := $(shell which g++ >/dev/null 2>&1; echo $$?)
 
-ifeq (${IS_CLANG},0)
-	CXX := clang++ -std=c++0x
+	ifeq (${IS_CLANG},0)
+		CXX := clang++
+		
+	else ifeq (${IS_GCC},0)
+		CXX := g++
 
-	ifeq ($(UNAME),Darwin) #for macos
-		CXX += -stdlib=libc++
+	else
+	err:
+		$(error Neither gcc nor clang compilers were detected.)
 	endif
+endif
 
-else ifeq (${IS_GCC},0)
-	CXX := g++ -std=c++0x
-
-else
-err:
-	$(error Neither gcc nor clang compilers were detected.)
+#adding necessary flags
+CXXFLAGS += -std=c++0x
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Darwin)
+	ifeq (${CXX},clang++)
+		CXXFLAGS += -stdlib=libc++
+	endif
 endif
 
 export CXX
+export CXXFLAGS
 export BIN_DIR
 
 .PHONY: all overlap dependencies clean maf2synteny
