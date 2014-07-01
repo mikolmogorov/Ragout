@@ -45,6 +45,9 @@ maf2synteny:
 dependencies:
 	scripts/install-sibelia.py
 
+test:
+	scripts/run-tests.py
+
 clean:
 	make -C ${OVLP_DIR} clean
 	make -C ${M2S_DIR} clean
