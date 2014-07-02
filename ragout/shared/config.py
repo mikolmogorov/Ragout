@@ -3,10 +3,27 @@
 #Released under the BSD license (see LICENSE file)
 
 """
-This module just contains some constants to store
+This module stores some configuration parameters
 """
 
-ASSEMBLY_MIN_OVERLAP = 33
-ASSEMBLY_MAX_OVERLAP = 200
-ASSEMBLY_MAX_PATH_LEN = 30
-ASSEMBLY_EXACTLY_K = True
+vals =  {
+            "overlap" :
+            {
+                "min_overlap" : 33,
+                "max_overlap" : 200,
+                "max_path_len" : 30,
+                "only_on_k" : True
+            },
+
+            "maf2synteny" :
+            {
+                (0, 0)
+            },
+
+            "sibelia" :
+            [
+                (30, 150),
+                (100, 500),
+                (500, 1500)
+            ]
+        }

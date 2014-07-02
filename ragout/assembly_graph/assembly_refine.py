@@ -20,7 +20,7 @@ def refine_scaffolds(graph_file, scaffolds, contigs_fasta):
     """
     Does the job
     """
-    max_path_len = config.ASSEMBLY_MAX_PATH_LEN
+    max_path_len = config.vals["overlap"]["max_path_len"]
     logger.info("Refining with assembly graph")
     logger.debug("Max path len = {0}".format(max_path_len))
     graph = _load_dot(graph_file)
