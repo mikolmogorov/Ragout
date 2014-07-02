@@ -32,7 +32,7 @@ export CXX
 export CXXFLAGS
 export BIN_DIR
 
-.PHONY: all overlap dependencies clean maf2synteny
+.PHONY: all overlap dependencies clean maf2synteny test
 
 all: overlap maf2synteny
 
