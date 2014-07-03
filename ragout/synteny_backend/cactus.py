@@ -14,11 +14,11 @@ import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend, BackendException
+from ragout.shared import config
 import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
-MAX_THREADS = 10
 
 try:
     CACTUS_INSTALL = os.environ["CACTUS_INSTALL"]
@@ -118,7 +118,8 @@ def _run_cactus(config_path, ref_genome, out_dir):
     config_file = os.path.abspath(config_path)
     prev_dir = os.getcwd()
 
-    num_proc = min(MAX_THREADS, multiprocessing.cpu_count())
+    num_proc = min(config.vals["cactus_max_threads"],
+                   multiprocessing.cpu_count())
     threads_param = "--maxThreads=" + str(num_proc)
 
     os.chdir(CACTUS_INSTALL)

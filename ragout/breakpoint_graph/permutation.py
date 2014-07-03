@@ -14,6 +14,7 @@ import os
 import math
 
 from ragout.shared.debug import DebugConfig
+from ragout.shared import config
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -33,7 +34,7 @@ class Block:
         self.end = end
 
     def length(self):
-        if not self.start or self.end:
+        if self.start is None or self.end is None:
             return None
 
         assert self.end >= self.start
@@ -67,7 +68,7 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
 
-        logging.info("Reading permutation file")
+        logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
         if not permutations:
             raise PermException("Error reading permutations")
@@ -79,6 +80,7 @@ class PermutationContainer:
                 self.target_perms.append(p)
             else:
                 self.ref_perms.append(p)
+        _check_coverage(self.ref_perms)
 
         logger.debug("Read {0} reference sequences"
                      .format(len(self.ref_perms)))
@@ -224,6 +226,36 @@ def _parse_blocks_coords(filename):
 
     out_perms = list(filter(lambda b: len(b.blocks), perm_by_id.values()))
     return out_perms
+
+
+def _check_coverage(permutations):
+    """
+    Checks if synteny blocks coverage is acceptable
+    """
+    by_genome = defaultdict(list)
+    for perm in permutations:
+        by_genome[perm.genome_name].append(perm)
+
+    for genome_name, genome_perms in by_genome.items():
+        total_length = 0
+        total_covered = 0
+        for perm in genome_perms:
+            total_length += perm.chr_len
+            for block in perm.blocks:
+                total_covered += block.length()
+
+        coverage = float(total_covered) / total_length
+        logger.debug("\"{0}\" synteny blocks coverage: {1:2.4}%"
+                     .format(genome_name, 100 * coverage))
+        if coverage < config.vals["min_synteny_coverage"]:
+            logger.warning("\"{0}\" synteny blocks coverage ({1:2.4}%) "
+                           "is too low -- results can be inaccurate. "
+                           "Possible reasons are: \n\n"
+                           "1. Genome is too distant from others\n"
+                           "2. Synteny block parameters are chosen incorrectly"
+                           "\n\nTry to change synteny blocks paramsters or "
+                           "remove this genome from the comparison"
+                           .format(genome_name, 100 * coverage))
 
 
 def _write_permutations(permutations, out_stream):

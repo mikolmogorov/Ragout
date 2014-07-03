@@ -37,7 +37,7 @@ class BreakpointGraph:
         """
         Builds breakpoint graph from permutations
         """
-        logger.info("Building breakpoint graph")
+        logger.debug("Building breakpoint graph")
 
         for perm in perm_container.ref_perms_filtered:
             if perm.genome_name not in self.references:

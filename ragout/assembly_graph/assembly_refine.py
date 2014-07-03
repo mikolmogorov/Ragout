@@ -24,6 +24,7 @@ def refine_scaffolds(graph_file, scaffolds, contigs_fasta):
     logger.info("Refining with assembly graph")
     logger.debug("Max path len = {0}".format(max_path_len))
     graph = _load_dot(graph_file)
+    _check_overaps_number(graph, contigs_fasta)
     new_scaffolds = _insert_from_graph(graph, scaffolds, max_path_len)
     _reestimate_distances(graph, new_scaffolds, max_path_len, contigs_fasta)
     return new_scaffolds
@@ -44,6 +45,18 @@ def _load_dot(filename):
         assert not graph.has_edge(v1, v2)
         graph.add_edge(v1, v2, label=m.group(3))
     return graph
+
+
+def _check_overaps_number(graph, contigs_fasta):
+    rate = float(len(graph.edges())) / len(contigs_fasta)
+    if rate < config.vals["min_overlap_rate"]:
+        logger.warning("Too few overlaps ({0}) between contigs were detected "
+                       "-- refine procedure will be useless. Possible reasons:"
+                       "\n\n1. Some contigs output by assembler are missing\n"
+                       "2. Contigs overlap not on a constant value "
+                       "(like k-mer for assemblers which use debruijn graph)\n"
+                       "3. Contigs ends are trimmed/postprocessed\n"
+                       .format(len(graph.edges())))
 
 
 def _insert_from_graph(graph, scaffolds_in, max_path_len):

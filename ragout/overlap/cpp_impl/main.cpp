@@ -9,21 +9,37 @@
 #endif
 
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "build_graph.h"
 
 
 int main(int argc, char** argv)
 {
-	if (argc != 5)
+	if (argc < 5)
 	{
 		std::cerr 	<< "overlap: constructs overlap graph from input contigs\n"
-					<< "and outputs it in dot format\n"
-					<< "Usage: overlap <fasta_in> <dot_out> <min_k> <max_k>\n";
+					<< "and outputs it in dot format\n\n"
+					<< "Usage: overlap fasta_in dot_out min_k "
+					<< "max_k [--detect-kmer]\n";
 		return 1;
 	}
-	return !makeOverlapGraph(argv[1], argv[2], atoi(argv[3]),
-							 atoi(argv[4]), true);
+
+	std::vector<std::string> args(argv, argv + argc);
+	bool detectKmer = false;
+	for (auto itArg = args.begin(); itArg != args.end(); ++itArg)
+	{
+		if (*itArg == "--detect-kmer")
+		{
+			detectKmer = true;
+			args.erase(itArg);
+			break;
+		}
+	}
+
+	return !makeOverlapGraph(args[1], args[2], atoi(args[3].c_str()),
+							 atoi(args[4].c_str()), detectKmer);
 }
 
 #ifdef PYTHON_LIB

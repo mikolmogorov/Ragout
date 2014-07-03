@@ -12,7 +12,7 @@ vals =  {
                 "min_overlap" : 33,
                 "max_overlap" : 200,
                 "max_path_len" : 30,
-                "only_on_k" : True
+                "detect_kmer" : True
             },
 
             "maf2synteny" :
@@ -29,5 +29,9 @@ vals =  {
                 (30, 150),
                 (100, 500),
                 (500, 1500)
-            ]
+            ],
+
+            "min_synteny_coverage" : 0.6,
+            "min_overlap_rate" : 0.5,
+            "cactus_max_threads" : 10
         }
