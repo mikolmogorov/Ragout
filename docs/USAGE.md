@@ -134,8 +134,8 @@ To set local parameter, use:
 
 ###Default values
 
-You can change default values for local parameters assigning parameter 
-value to the special "star" object.
+You can change default values for local parameters by assigning the 
+parameter value to the special "star" object.
 For instance, if all input references except one are in draft form, you can write:
 
     *.draft = true
@@ -143,7 +143,7 @@ For instance, if all input references except one are in draft form, you can writ
 
 ###Detailed description
 
-Genomes names are picked form the terminal nodes of the phylogenetic tree.
+Genomes are picked form the terminal nodes of the phylogenetic tree.
 All those names should be uniqe. If the branch length is ommited, it would be set to 1.
 
 Paths to *FASTA*/*MAF* can be both relative and absolute. Running with Sibelia requires
@@ -160,10 +160,10 @@ Output files
 
 After running Ragout, an output directory will contain:
 
-* "scaffolds.ord" with a resulting order of contigs
-* "scaffolds.fasta" with scaffold sequences (contigs are separated by 11 Ns)
-* "scaffolds_refined.ord" with a contigs order after refinement (if --refine was specified)
-* "scaffolds_refined.fasta" with refined scaffold sequences (if --refine was specified)
+* __scaffolds.ord__: contigs order
+* __scaffolds.fasta__: scaffolds sequences
+* __scaffolds_refined.ord__: contigs order after refinement (if --refine was specified)
+* __scaffolds_refined.fasta__: refined scaffolds sequences (if --refine was specified)
 
 
 Synteny backends
@@ -173,7 +173,7 @@ Ragout have three different options for synteny block decomposition:
 
 * Decompoition with *Sibelia*
 * Decomposition with *progressiveCactus*
-* Use of finished alignment in *MAF* format
+* Use of external multiple sequence alignment (in *MAF* format)
 
 You can choose between backends by specifying --synteny (-s) option.
 If you use *Sibelia* or *progressiveCactus*, you should specify separate *FASTA*
@@ -183,14 +183,13 @@ only a path to *MAF* itself and a path to targset's *FASTA* (see below).
 ### Sibelia
 
 "Sibelia" option is set by default and is recommended for small genomes (like bacterial ones).
-The tools should be installed in your system -- see docs/INSTALL.md for detailed instructions.
 
 ### progressiveCactus
 
 "progressiveCactus" can be used for bigger genomes, up to multuple mammalian species.
 Please note, that current implementation is still experimental. The tool also 
 should be properly installed. Do not forget to mask repeats (with RepeatMasker, for instance)
-before applying progressiveCactus to genomes with a big fraction of repetitive sequences.
+before applying *progressiveCactus* to genomes with a big fraction of repetitive sequences.
 
 ### alignment in *MAF* format
 
@@ -200,7 +199,8 @@ Alignment should be in *MAF* format and sequence names should follow UCSC notati
     genome_name.sequence_name
 
 In case you are working with *MAF* input you should not specify *FASTA* files for references.
-All you need is to set *FASTA* for target genome (which will be used for output generation).
+All you need is to set *FASTA* for target genome (which will be used for output generation
+and refinement).
 
 
 The parameters choice
@@ -211,7 +211,7 @@ The parameters choice
 Because the decomposition procedure is parameter-dependent, the assembly
 is performed in multiple iterations with different synteny block
 scale. Intuitively, the algorithm firstly considers only contigs
-that are long enough and then puts shorter ones into the analysis.
+that are long enough and then insert shorter ones in the assembly.
 
 For bacterial genomes, we recommend to run Ragout in three
 iterations with the block size equal to 5000, 500, 100.
@@ -228,7 +228,7 @@ If the phylogeny is unknown or ambiguous, you are still able run Ragout assuming
 the "star" phylogeny and specifying the evolutionary distance between
 target and references (which is easier to find out):
 
-    .tree = (target,ref1:0.1,ref2:0.05,ref3:0.003);
+    .tree = (target, ref1:0.1, ref2:0.05, ref3:0.003);
 
 
 Useful scripts
@@ -238,8 +238,8 @@ Scripts are located in "scripts" directory
 
 **verify-order.py:**
 
-Tests the correctness of the infered order of contigs if a closely related reference
-is available. First, contigs should be mapped on this reference using *nucmer* software:
+Tests the correctness of the infered contigs order if a "true" reference
+is available. First, contigs should be mapped on that reference using *nucmer* software:
 
     nucmer --maxmatch --coords reference contigs
 

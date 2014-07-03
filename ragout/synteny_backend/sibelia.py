@@ -194,5 +194,6 @@ def _run_sibelia(fasta_files, block_size, out_dir):
     cmdline.extend(fasta_files)
     subprocess.check_call(cmdline, stdout=devnull)
 
+    os.remove(stagefile)
     os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
     shutil.rmtree(os.path.join(out_dir, "circos"))
