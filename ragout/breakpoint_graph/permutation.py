@@ -4,8 +4,8 @@
 
 """
 This module provides PermutationContainer class
-which stores permutations and provides some filtering
-procedures
+which parses files, stores permutations and
+provides some other usefull functions
 """
 
 from collections import defaultdict
@@ -80,7 +80,7 @@ class PermutationContainer:
                 self.target_perms.append(p)
             else:
                 self.ref_perms.append(p)
-        _check_coverage(self.ref_perms)
+        _check_coverage(self.ref_perms + self.target_perms)
 
         logger.debug("Read {0} reference sequences"
                      .format(len(self.ref_perms)))

@@ -110,6 +110,7 @@ def do_job(nucmer_coords, scaffolds_ord):
                     total_breaks += 1
                     miss_strand = True
                     prev_strand = None
+                    increasing = None
 
             if gap_count(prev_aln, entry_ord[contig.name]) > 0:
                 total_gaps += 1
