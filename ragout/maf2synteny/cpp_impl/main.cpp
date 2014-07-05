@@ -9,6 +9,7 @@
 #endif
 #include <iostream>
 #include <stdexcept>
+#include <fstream>
 
 #include "breakpoint_graph.h"
 #include "compress_algorithms.h"
@@ -77,15 +78,39 @@ struct ParamPair
 	int maxGap;
 };
 
+
+std::vector<ParamPair> parseSimplParamsFile(const std::string& filename)
+{
+	std::vector<ParamPair> out;
+	std::ifstream fin(filename);
+	if (!fin) throw std::runtime_error("Could not open " + filename);
+
+	std::string buffer;
+	while(!fin.eof())
+	{
+		std::getline(fin, buffer);
+		if (buffer.empty()) break;
+
+		size_t sep = buffer.find_first_of(" \t");
+		if (sep == std::string::npos)
+		{
+			throw std::runtime_error("Error parsing " + filename);
+		}
+		
+		int k = atoi(buffer.substr(0, sep).c_str());
+		int d = atoi(buffer.substr(sep + 1).c_str());
+		out.push_back({k, d});
+	}
+	return out;
+}
+
 void doJob(const std::string& inputMaf, const std::string& outDir, 
-		   std::vector<int> minBlockSizes)
+		   std::vector<ParamPair> simplParams, std::vector<int> minBlockSizes)
 {
 
 	const int MIN_ALIGNMENT = 1;
 	const int MAX_ALIGNMENT_GAP = 0;
 	const auto EMPTY_GROUP = BlockGroups();
-	const std::vector<ParamPair> PARAMS = {{30, 10}, {100, 100}, {500, 1000},
-										  {1000, 5000}, {5000, 15000}};
 
 	BlockGroups blockGroups = EMPTY_GROUP;
 	PermVec currentBlocks;
@@ -99,7 +124,7 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 	compressPaths(mafBlocks, MAX_ALIGNMENT_GAP, currentBlocks, blockGroups);
 
 	//iterative simplification
-	for (const ParamPair& ppair : PARAMS)
+	for (const ParamPair& ppair : simplParams)
 	{
 		if (minBlockSizes.empty()) break;
 		//output blocks of certain size
@@ -134,22 +159,24 @@ int main(int argc, char** argv)
 {
 	if (argc < 4)
 	{
-		std::cerr << "Usage: maf2synteny <maf_file> <out_dir> "
-				  << "<block_size_1> [<block_size_2> ...]\n";
+		std::cerr << "Usage: maf2synteny maf_file out_dir simpl_params "
+				  << "block_size_1 [block_size_2 ...]\n";
 		return 1;
 	}
 	std::string inputMaf = argv[1];
 	std::string outDir = argv[2];
+	std::string paramsFile = argv[3];
 
 	std::vector<int> sizes;
-	for (int i = 3; i < argc; ++i)
+	for (int i = 4; i < argc; ++i)
 	{
 		sizes.push_back(atoi(argv[i]));
 	}
 
 	try
 	{
-		doJob(inputMaf, outDir, sizes);
+		std::vector<ParamPair> simplParams = parseSimplParamsFile(paramsFile);
+		doJob(inputMaf, outDir, simplParams, sizes);
 	}
 	catch (std::runtime_error& e)
 	{

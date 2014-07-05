@@ -9,8 +9,10 @@ which recovers synteny blocks from multiple alignment
 
 import logging
 import subprocess
+import os
 
 from ragout.shared.utils import which
+from ragout.shared import config
 
 logger = logging.getLogger()
 
@@ -35,12 +37,22 @@ def make_synteny(maf_file, out_dir, min_blocks_list):
     if not check_binary():
         return False
 
-    cmdline = [M2S_EXEC, maf_file, out_dir]
+    params_file = os.path.join(out_dir, "simpl_params.txt")
+    _make_params_file(config.vals["maf2synteny"], params_file)
+    cmdline = [M2S_EXEC, maf_file, out_dir, params_file]
     cmdline.extend(list(map(str, min_blocks_list)))
     try:
         subprocess.check_call(cmdline)
     except subprocess.CalledProcessError as e:
         logger.error("Some error inside native {0} module".format(M2S_EXEC))
         return False
+    os.remove(params_file)
 
     return True
+
+def _make_params_file(params, out_file):
+    assert len(params)
+
+    with open(out_file, "w") as f:
+        for k, d in params:
+            f.write("{0} {1}\n".format(k, d))

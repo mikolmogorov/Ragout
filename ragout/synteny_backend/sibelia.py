@@ -14,12 +14,15 @@ import copy
 import logging
 
 from ragout.shared import utils
+from ragout.shared import config
 from .synteny_backend import SyntenyBackend, BackendException
 
 logger = logging.getLogger()
 
 SIBELIA_EXEC = "Sibelia"
 SIBELIA_WORKDIR = "sibelia-workdir"
+SIBELIA_MAX_INPUT = 100 * 1024 * 1024
+
 try:
     SIBELIA_INSTALL = os.environ["SIBELIA_INSTALL"]
     os.environ["PATH"] += os.pathsep + SIBELIA_INSTALL
@@ -50,13 +53,15 @@ class SibeliaBackend(SyntenyBackend):
                 files[block_size] = os.path.abspath(coords_file)
 
         else:
-            for genome, params in recipe["genomes"].items():
-                if "fasta" not in params:
-                    raise BackendException("FASTA file for '{0}' is not "
-                                           "specified".format(genome))
+            chr2genome, total_size = _get_sequence_info(recipe)
+            if total_size > SIBELIA_MAX_INPUT:
+                logger.warning("Total size of input ({0}MB) is more "
+                               "than 100MB. Processing could take a "
+                               "very long time. It is recommended to use "
+                               "some other synteny backend for your data."
+                               .format(total_size / 1024 / 1024))
 
             os.mkdir(work_dir)
-            chr2genome = _get_chr2genome(recipe)
             for block_size in recipe["blocks"]:
                 block_dir = os.path.join(work_dir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
@@ -84,17 +89,23 @@ else:
     logger.debug("Sibelia is not installed")
 
 
-def _get_chr2genome(recipe):
+def _get_sequence_info(recipe):
     """
     Reads fasta files and constructs a correspondence table
-    between sequence name and genome name
+    between sequence name and genome name. Also returns
+    the total size of input in nucleotides
     """
     chr2genome = {}
     for gen_name, gen_params in recipe["genomes"].items():
+        if "fasta" not in gen_params:
+            raise BackendException("FASTA file for '{0}' is not "
+                                    "specified".format(gen_name))
+
         if not os.path.exists(gen_params["fasta"]):
             raise BackendException("Can't open '{0}'"
                                    .format(gen_params["fasta"]))
 
+        total_size = 0
         with open(gen_params["fasta"], "r") as f:
             for line in f:
                 line = line.strip()
@@ -104,7 +115,11 @@ def _get_chr2genome(recipe):
                         raise BackendException("Some fasta files contain "
                                                "sequences with similar names")
                     chr2genome[chr_name] = gen_name
-    return chr2genome
+
+                else:
+                    total_size += len(line)
+
+    return chr2genome, total_size
 
 
 def _postprocess_perms(chr2genome, file):
@@ -156,15 +171,29 @@ def _postprocess_coords(chr2genome, file):
     os.rename(new_file, file)
 
 
+def _make_stagefile(stages, out_file):
+    assert len(stages)
+
+    with open(out_file, "w") as f:
+        f.write("{0}\n".format(len(stages)))
+        for stage_k, stage_d in stages:
+            f.write("{0} {1}\n".format(stage_k, stage_d))
+
+
 def _run_sibelia(fasta_files, block_size, out_dir):
     logger.info("Running Sibelia with block size " + str(block_size))
     if not utils.which(SIBELIA_EXEC):
         raise BackendException("Sibelia is not installed")
 
+    stagefile = os.path.join(out_dir, "stagefile.txt")
+    _make_stagefile(config.vals["sibelia"], stagefile)
+
     devnull = open(os.devnull, "w")
-    cmdline = [SIBELIA_EXEC, "-s", "fine", "-m", str(block_size), "-o", out_dir]
+    cmdline = [SIBELIA_EXEC, "--nopostprocess", "--stagefile", stagefile,
+               "--minblocksize", str(block_size), "--outdir", out_dir]
     cmdline.extend(fasta_files)
     subprocess.check_call(cmdline, stdout=devnull)
 
+    os.remove(stagefile)
     os.remove(os.path.join(out_dir, "d3_blocks_diagram.html"))
     shutil.rmtree(os.path.join(out_dir, "circos"))

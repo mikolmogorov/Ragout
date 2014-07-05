@@ -61,7 +61,6 @@ def run_test(parameters):
 
     with open(ord_simple_out, "r") as f:
         for line in f:
-            #print(line, end="")
             if line.startswith("Total miss-ordered: "):
                 value = int(line.strip()[20:])
                 print("Errors:", value)
@@ -96,7 +95,7 @@ def main():
         run_test(params)
 
     print("\n********All tests were succesfully completed********")
-    shutil.rmtree(TEST_DIR)
+    #shutil.rmtree(TEST_DIR)
 
 
 if __name__ == "__main__":

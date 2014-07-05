@@ -37,8 +37,11 @@ def make_overlap_graph(contigs_file, dot_file):
         return False
 
     cmdline = [OVERLAP_EXEC, contigs_file, dot_file,
-               str(config.ASSEMBLY_MIN_OVERLAP),
-               str(config.ASSEMBLY_MAX_OVERLAP)]
+               str(config.vals["overlap"]["min_overlap"]),
+               str(config.vals["overlap"]["max_overlap"])]
+    if config.vals["overlap"]["detect_kmer"]:
+        cmdline.append("--detect-kmer")
+
     try:
         subprocess.check_call(cmdline)
     except subprocess.CalledProcessError as e:

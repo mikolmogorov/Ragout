@@ -3,10 +3,35 @@
 #Released under the BSD license (see LICENSE file)
 
 """
-This module just contains some constants to store
+This module stores some configuration parameters
 """
 
-ASSEMBLY_MIN_OVERLAP = 33
-ASSEMBLY_MAX_OVERLAP = 200
-ASSEMBLY_MAX_PATH_LEN = 30
-ASSEMBLY_EXACTLY_K = True
+vals =  {
+            "overlap" :
+            {
+                "min_overlap" : 33,
+                "max_overlap" : 200,
+                "max_path_len" : 30,
+                "detect_kmer" : True
+            },
+
+            "maf2synteny" :
+            [
+                (30, 10),
+                (100, 100),
+                (500, 1000),
+                (1000, 5000),
+                (5000, 15000)
+            ],
+
+            "sibelia" :
+            [
+                (30, 150),
+                (100, 500),
+                (500, 1500)
+            ],
+
+            "min_synteny_coverage" : 0.6,
+            "min_overlap_rate" : 0.5,
+            "cactus_max_threads" : 10
+        }
