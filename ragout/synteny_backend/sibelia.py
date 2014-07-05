@@ -171,13 +171,16 @@ def _postprocess_coords(chr2genome, file):
     os.rename(new_file, file)
 
 
-def _make_stagefile(stages, out_file):
+def _make_stagefile(stages, block_sizes, out_file):
     assert len(stages)
 
     with open(out_file, "w") as f:
-        f.write("{0}\n".format(len(stages)))
+        f.write("{0}\n".format(len(stages) + len(block_sizes)))
         for stage_k, stage_d in stages:
             f.write("{0} {1}\n".format(stage_k, stage_d))
+
+        for block in block_sizes:
+            f.write("{0} 0\n".format(block))
 
 
 def _run_sibelia(fasta_files, block_size, out_dir):
@@ -189,7 +192,7 @@ def _run_sibelia(fasta_files, block_size, out_dir):
     _make_stagefile(config.vals["sibelia"], stagefile)
 
     devnull = open(os.devnull, "w")
-    cmdline = [SIBELIA_EXEC, "--stagefile", stagefile,
+    cmdline = [SIBELIA_EXEC, "--nopostprocess", "--stagefile", stagefile,
                "--minblocksize", str(block_size), "--outdir", out_dir]
     cmdline.extend(fasta_files)
     subprocess.check_call(cmdline, stdout=devnull)

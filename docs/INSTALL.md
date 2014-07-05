@@ -44,8 +44,8 @@ Binary distribution
 -------------------
 
 While we recommend to build Ragout from source on each machine, you also can
-use pre-compiled binaries which are available for Linux and Mac OS on our
-website: http://fenderglass.github.io/Ragout/
+use pre-compiled binaries which are available for Linux and Mac OS from 
+Releases page on Github: https://github.com/fenderglass/Ragout/releases
 
 
 progressiveCactus
