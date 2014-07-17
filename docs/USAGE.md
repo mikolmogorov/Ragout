@@ -124,13 +124,13 @@ To set local parameter, use:
 * __tree__: phylogenetic tree in NEWICK format [required]
 * __target__: target genome name [required]
 * __blocks__: comma-separated list of minimum synteny block sizes [required]
-* __maf__: path to multiple alignment in *MAF* format [default = not set]
+* __maf__: path to local multiple sequence alignment in *MAF* format [default = not set]
 
 ###Local parameters
 
 * __fasta__: path to *FASTA* with genomic sequences [default = not set]
 * __circular__: indicates that reference chromosomes are circular [default = false]
-* __draft__: indicated that reference is in draft form (contigs/scaffolds) [default = false]
+* __draft__: indicates that reference is in draft form (contigs/scaffolds) [default = false]
 
 ###Default values
 
@@ -151,7 +151,7 @@ all sequence headers among ALL *FASTA* files to be unique.
 
 Ragout firstly decomposes genomes into set of synteny blocks.
 You can use either a set of *FASTA* files corresponding to each input genome
-or multiple alignment of all the genomes in *MAF* format.
+or local multiple alignment of all the genomes in *MAF* format.
 In both cases you should specify target's *FASTA* since it will be
 used to generate output. See "Synteny backends" section for more information.
 
@@ -173,7 +173,7 @@ Ragout have three different options for synteny block decomposition:
 
 * Decompoition with *Sibelia*
 * Decomposition with *progressiveCactus*
-* Use of external multiple sequence alignment (in *MAF* format)
+* Use of external local multiple sequence alignment (in *MAF* format)
 
 You can choose between backends by specifying --synteny (-s) option.
 If you use *Sibelia* or *progressiveCactus*, you should specify separate *FASTA*
@@ -191,9 +191,9 @@ Please note, that current implementation is still experimental. The tool also
 should be properly installed. Do not forget to mask repeats (with RepeatMasker, for instance)
 before applying *progressiveCactus* to genomes with a big fraction of repetitive sequences.
 
-### alignment in *MAF* format
+### local alignment in *MAF* format
 
-If you already have a multiple alignment, you also can use it for synteny blocks decomposition.
+If you already have a local multiple alignment, you also can use it for synteny blocks decomposition.
 Alignment should be in *MAF* format and sequence names should follow UCSC notation:
 
     genome_name.sequence_name
