@@ -38,18 +38,18 @@ You can try Ragout on the provided ready-to-use examples:
 Input data
 ----------
 
-Ragout takes as input contigs from a short-read assembly. We preformed our tests with
-SPAdes, ABySS and SOAPdenovo assemblers, however Ragout should work with others,
+Ragout takes as input contigs from a short-read assembly. We performed our tests with
+SPAdes, ABySS and SOAPdenovo assemblers, others should work fine too,
 if their output satisfy the following conditions:
 
-* The contigs should cover the most fraction of the genome and should not overlap
-  (except ends, see below)
-* One should use *all* contigs/scaffolds output by assembler
-* For the better performance of refinment module, contigs that were connected in
-  a graph used by assembler should overlap on a certain constant value (k-mer or
-  (k-1)-mer usually). For the most of assemblers which utilize de Bruijn graphs
-  this holds true. Currently, support of other types of assembler (such as SGA)
-  is not perfect (for refinement module only, other parts of Ragout work fine).
+* Assembly coverage should be acceptable (80-90%+) and contigs/scaffolds should not overlap
+  (except by ends, see below)
+* *All* contigs/scaffolds output by assembler should be used (including small ones)
+* For the better performance of the refinment module, contigs/scaffolds that were 
+  connected in a graph used by assembler should overlap on a certain constant value 
+  (usully k-mer or (k-1)-mer). This holds true for the most of assemblers which utilize 
+  de Bruijn graphs. Currently, for other types of assemblers (such as SGA) support of
+  refinement procedure is limited.
 
 
 Algorithm overview
