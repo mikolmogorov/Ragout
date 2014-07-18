@@ -23,9 +23,13 @@ class DebugConfig():
         """
         self.debug_dir = debug_dir
         self.debugging = True
-        if os.path.isdir(debug_dir):
-            shutil.rmtree(debug_dir)
-        os.mkdir(debug_dir)
+        if not os.path.isdir(debug_dir):
+            os.mkdir(debug_dir)
+
+    def clear_debug_dir(self):
+        if os.path.isdir(self.debug_dir):
+            shutil.rmtree(self.debug_dir)
+            os.mkdir(self.debug_dir)
 
     @staticmethod
     def get_instance():

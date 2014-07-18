@@ -8,6 +8,7 @@ The main Ragout module. It defines top-level logic of the program
 
 import os
 import sys
+import shutil
 import logging
 import argparse
 
@@ -85,15 +86,15 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
-    out_colored_overlap = os.path.join(out_dir, "colored_contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     debug_root = os.path.join(out_dir, "debug")
 
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
-    if debug and not os.path.isdir(debug_root):
-        os.mkdir(debug_root)
+    if debug:
+        debugger.set_debug_dir(debug_root)
+        debugger.clear_debug_dir()
 
     enable_logging(out_log, debug)
     logger.info("Cooking Ragout...")
@@ -143,6 +144,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         else:
             last_scaffolds = scaffolds
 
+    debugger.set_debug_dir(debug_root)
     scfldr.output_order(last_scaffolds, out_order)
     scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
@@ -155,9 +157,14 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_fasta(target_fasta_dict, refined_scaffolds,
                             out_refined_scaffolds)
-        asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
-                                                  refined_scaffolds,
-                                                  out_colored_overlap)
+        if debug:
+            shutil.copy(out_overlap, debugger.debug_dir)
+            out_colored_overlap = os.path.join(debugger.debug_dir,
+                                               "colored_overlap.dot")
+            asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
+                                                      refined_scaffolds,
+                                                      out_colored_overlap)
+        os.remove(out_overlap)
 
     logger.info("Your Ragout is ready!")
 

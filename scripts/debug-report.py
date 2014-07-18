@@ -232,7 +232,7 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
     used_contigs = os.path.join(debug_dir, "used_contigs.txt")
     true_adj_out = os.path.join(debug_dir, "true_edges.dot")
     base_dot = os.path.join(debug_dir, "breakpoint_graph.dot")
-    overlap_dot = os.path.join(debug_dir, "../../contigs_overlap.dot")
+    overlap_dot = os.path.join(debug_dir, "../contigs_overlap.dot")
     predicted_dot = os.path.join(debug_dir, "predicted_edges.dot")
     phylogeny_in = os.path.join(debug_dir, "phylogeny.txt")
     phylogeny_out = os.path.join(debug_dir, "phylogeny.png")
