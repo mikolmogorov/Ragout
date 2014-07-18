@@ -13,7 +13,7 @@ import argparse
 
 import ragout.overlap.overlap as ovlp
 import ragout.assembly_graph.assembly_refine as asref
-#import ragout.assembly_graph.assembly_graph as asgraph
+import ragout.assembly_graph.assembly_graph as asgraph
 import ragout.breakpoint_graph.breakpoint_graph as bg
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
@@ -85,7 +85,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     out_order = os.path.join(out_dir, "scaffolds.ord")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
-    #out_colored_overlap = os.path.join(out_dir, "colored_contigs_overlap.dot")
+    out_colored_overlap = os.path.join(out_dir, "colored_contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     debug_root = os.path.join(out_dir, "debug")
@@ -155,9 +155,9 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         scfldr.output_order(refined_scaffolds, out_refined_order)
         scfldr.output_fasta(target_fasta_dict, refined_scaffolds,
                             out_refined_scaffolds)
-        #asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
-        #                                          refined_scaffolds,
-        #                                          out_colored_overlap)
+        asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
+                                                  refined_scaffolds,
+                                                  out_colored_overlap)
 
     logger.info("Your Ragout is ready!")
 

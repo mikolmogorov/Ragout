@@ -129,7 +129,8 @@ class BreakpointGraph:
         """
         Processes a connected component of the breakpoint graph
         """
-        trimmed_graph = self._trim_known_edges(subgraph)
+        weighted_graph = self._make_weighted(subgraph, phylogeny)
+        trimmed_graph = self._trim_known_edges(weighted_graph)
         unused_nodes = set(trimmed_graph.nodes())
 
         chosen_edges = []
@@ -143,9 +144,8 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
                 continue
 
-            weighted_graph = self._make_weighted(trim_subgraph, phylogeny)
+            matching_edges = _split_graph(trim_subgraph)
 
-            matching_edges = _split_graph(weighted_graph)
             for edge in matching_edges:
                 for n in edge:
                     unused_nodes.remove(n)
@@ -160,6 +160,7 @@ class BreakpointGraph:
 
         return chosen_edges
 
+
     def _trim_known_edges(self, graph):
         """
         Removes edges with known adjacencies in target (red edges from paper)
@@ -170,7 +171,7 @@ class BreakpointGraph:
                 continue
 
             genome_ids = list(map(lambda e: e["genome_id"],
-                                  graph[v1][v2].values()))
+                                  self.bp_graph[v1][v2].values()))
             target_id = self.targets[0]
             if target_id in genome_ids:
                 for node in [v1, v2]:
@@ -184,7 +185,7 @@ class BreakpointGraph:
         """
         Converts a breakpoint graph into a weighted graph
         """
-        assert len(graph) > 2
+        assert len(graph) >= 2
         g = nx.Graph()
         g.add_nodes_from(graph.nodes())
         target_id = self.targets[0]
