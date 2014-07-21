@@ -105,6 +105,7 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
             if graph.has_edge(src, dst):
                 overlap = graph[src][dst]["label"]
                 prev_cont.link.gap = -int(overlap)
+                prev_cont.link.supporting_genomes.append("~>")
 
             else:
                 paths = _all_simple_paths(graph, src, dst,
@@ -122,6 +123,7 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
                             path_len -= int(overlap)
                         paths_lens.append(path_len)
                     prev_cont.link.gap = _median(paths_lens)
+                    prev_cont.link.supporting_genomes.append("~>")
 
 
 def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,

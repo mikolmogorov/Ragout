@@ -48,22 +48,24 @@ def output_order(scaffolds, out_order):
             out_order_stream.write(str(contig) + "\n")
 
 
-def output_supporting_genomes(scaffolds, out_supporting_genomes):
+def output_links(scaffolds, out_supporting_genomes):
     """
     Outputs supporting genomes for every link between contigs
     in "links" format
     """
     out_stream = open(out_supporting_genomes, "w")
-    out_stream.write("contig1\tcontig2\tgap\tsupporing_genomes\n"
-                     "=====================================\n")
+    out_stream.write("contig1\t|\tcontig2\t|\tgap\t|\tref_support\n"
+                     "===========================================\n")
     for scf in scaffolds:
-        out_stream.write(">" + scf.name + "\n")
+        out_stream.write("\n>{0}\n{1}\n".format(scf.name, "-" * 50))
         for left, right in zip(scf.contigs[:-1], scf.contigs[1:]):
+            #if not left.link.supporting_genomes:
+            #    supporting_genomes = "*"
+            #else:
             supporting_genomes = ",".join(left.link.supporting_genomes)
-            if supporting_genomes == "":
-                supporting_genomes = "*"
-            out_stream.write("{0}\t{1}\t{2}\t{3}\n"
-                             .format(str(left), str(right), 
+
+            out_stream.write("{0}\t|\t{1}\t|\t{2:7}\t|\t{3}\n"
+                             .format(str(left), str(right),
                                      str(left.link.gap), supporting_genomes))
 
 
