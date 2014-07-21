@@ -90,8 +90,8 @@ All these parameters should be described in a single recipe file.
 See the example of such file below.
 
 
-Output files
-------------
+Output
+------
 
 After running Ragout, an output directory will contain:
 
