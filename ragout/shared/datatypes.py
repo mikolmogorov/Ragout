@@ -29,7 +29,7 @@ class Contig:
     def __init__(self, name, sign=1):
         self.name = name
         self.sign = sign
-        self.gap = 0
+        self.link = Link(0, [])
         self.blocks = []
 
     def reverse(self):
@@ -40,3 +40,9 @@ class Contig:
     def __str__(self):
         sign = "+" if self.sign > 0 else "-"
         return sign + self.name
+
+class Link:
+    def __init__(self, gap, supporting_genomes):
+        self.gap = gap
+        self.supporting_genomes = supporting_genomes
+

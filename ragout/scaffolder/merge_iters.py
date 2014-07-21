@@ -72,7 +72,7 @@ def merge(big_scaffolds, small_scaffolds):
                 contigs = contigs[::-1]
                 contigs = list(map(lambda c: c.reverse(), contigs))
             #keeping gap from new contigs
-            result[-1].gap = scf_prev.contigs[begin].gap
+            result[-1].link = scf_prev.contigs[begin].link
             result.extend(contigs)
 
         result.append(new_cont)

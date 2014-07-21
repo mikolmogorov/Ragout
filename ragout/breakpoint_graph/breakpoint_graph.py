@@ -17,7 +17,7 @@ import networkx as nx
 
 from ragout.shared.debug import DebugConfig
 
-Adjacency = namedtuple("Adjacency", ["block", "distance"])
+Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
@@ -112,8 +112,14 @@ class BreakpointGraph:
             #infinity edges correspond to joined chromosome ends -- ignore them
             if not self._is_infinity(edge[0], edge[1]):
                 distance = self._get_distance(edge[0], edge[1])
-                adjacencies[-edge[0]] = Adjacency(edge[1], distance)
-                adjacencies[-edge[1]] = Adjacency(edge[0], distance)
+                supporting_genomes = []
+                if self.bp_graph.has_edge(edge[0], edge[1]):
+                    for e in self.bp_graph[edge[0]][edge[1]].values():
+                        supporting_genomes.append(e["genome_id"])
+                adjacencies[-edge[0]] = Adjacency(edge[1], distance, 
+                                                  supporting_genomes)
+                adjacencies[-edge[1]] = Adjacency(edge[0], distance, 
+                                                  supporting_genomes)
 
         if debugger.debugging:
             phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")

@@ -84,9 +84,11 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     """
     out_log = os.path.join(out_dir, "ragout.log")
     out_order = os.path.join(out_dir, "scaffolds.ord")
+    out_sup_genomes = os.path.join(out_dir, "scaffolds.links")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
     out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
+    out_refined_sup_genomes = os.path.join(out_dir, "scaffolds_refined.links")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     debug_root = os.path.join(out_dir, "debug")
 
@@ -146,6 +148,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
 
     debugger.set_debug_dir(debug_root)
     scfldr.output_order(last_scaffolds, out_order)
+    scfldr.output_supporting_genomes(last_scaffolds, out_sup_genomes)
     scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
@@ -155,6 +158,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds,
                                                    target_fasta_dict)
         scfldr.output_order(refined_scaffolds, out_refined_order)
+        scfldr.output_supporting_genomes(refined_scaffolds, out_refined_sup_genomes)
         scfldr.output_fasta(target_fasta_dict, refined_scaffolds,
                             out_refined_scaffolds)
         if debug:

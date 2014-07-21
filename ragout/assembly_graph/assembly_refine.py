@@ -104,7 +104,7 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
             src, dst =  str(prev_cont), str(next_cont)
             if graph.has_edge(src, dst):
                 overlap = graph[src][dst]["label"]
-                prev_cont.gap = -int(overlap)
+                prev_cont.link.gap = -int(overlap)
 
             else:
                 paths = _all_simple_paths(graph, src, dst,
@@ -121,7 +121,7 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
                             overlap = graph[n1][n2]["label"]
                             path_len -= int(overlap)
                         paths_lens.append(path_len)
-                    prev_cont.gap = _median(paths_lens)
+                    prev_cont.link.gap = _median(paths_lens)
 
 
 def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,

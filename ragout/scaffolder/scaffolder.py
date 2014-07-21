@@ -14,7 +14,7 @@ import copy
 import logging
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import Contig, Scaffold
+from ragout.shared.datatypes import Contig, Scaffold, Link
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 
 logger = logging.getLogger()
@@ -48,6 +48,25 @@ def output_order(scaffolds, out_order):
             out_order_stream.write(str(contig) + "\n")
 
 
+def output_supporting_genomes(scaffolds, out_supporting_genomes):
+    """
+    Outputs supporting genomes for every link between contigs
+    in "links" format
+    """
+    out_stream = open(out_supporting_genomes, "w")
+    out_stream.write("contig1\tcontig2\tgap\tsupporing_genomes\n"
+                     "=====================================\n")
+    for scf in scaffolds:
+        out_stream.write(">" + scf.name + "\n")
+        for left, right in zip(scf.contigs[:-1], scf.contigs[1:]):
+            supporting_genomes = ",".join(left.link.supporting_genomes)
+            if supporting_genomes == "":
+                supporting_genomes = "*"
+            out_stream.write("{0}\t{1}\t{2}\t{3}\n"
+                             .format(str(left), str(right), 
+                                     str(left.link.gap), supporting_genomes))
+
+
 def output_fasta(contigs_fasta, scaffolds, out_file):
     """
     Outputs scaffodls to file in "fasta" format
@@ -66,11 +85,11 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
 
-            if contig.gap >= 0:
+            if contig.link.gap >= 0:
                 scf_seqs.append(cont_seq)
-                scf_seqs.append("N" * contig.gap)
+                scf_seqs.append("N" * contig.link.gap)
             else:
-                scf_seqs.append(cont_seq[:contig.gap])
+                scf_seqs.append(cont_seq[:contig.link.gap])
 
         scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
@@ -129,6 +148,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
         while scf.right in adjacencies:
             adj_block = adjacencies[scf.right].block
             adj_distance = adjacencies[scf.right].distance
+            adj_supporting_genomes = adjacencies[scf.right].supporting_genomes
             assert len(contig_index[abs(adj_block)]) == 1
 
             contig = contig_index[abs(adj_block)][0]
@@ -136,7 +156,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                 break
 
             if adj_block in [contig.blocks[0], -contig.blocks[-1]]:
-                scf.contigs[-1].gap = adj_distance
+                scf.contigs[-1].link = Link(adj_distance, adj_supporting_genomes)
                 scf.contigs.append(contig)
                 visited.add(contig)
 
@@ -154,6 +174,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
         while -scf.left in adjacencies:
             adj_block = -adjacencies[-scf.left].block
             adj_distance = adjacencies[-scf.left].distance
+            adj_supporting_genomes = adjacencies[-scf.left].supporting_genomes
             assert len(contig_index[abs(adj_block)]) == 1
 
             contig = contig_index[abs(adj_block)][0]
@@ -162,7 +183,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
 
             if adj_block in [contig.blocks[-1], -contig.blocks[0]]:
                 scf.contigs.insert(0, contig)
-                scf.contigs[0].gap = adj_distance
+                scf.contigs[0].link = Link(adj_distance, adj_supporting_genomes)
                 visited.add(contig)
 
                 if contig.blocks[-1] == adj_block:
