@@ -87,7 +87,7 @@ We would like to thank:
 
 Third-party
 -----------
-Ragout uses some third-patry software;
+Ragout includes some third-patry software (see INSTALL.md for details)
 
 * Networkx Python library [http://networkx.github.io/]
 * Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]
