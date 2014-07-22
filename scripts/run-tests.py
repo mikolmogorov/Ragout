@@ -50,16 +50,16 @@ def run_test(parameters):
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
-    ord_simple = os.path.join(outdir, "scaffolds.ord")
-    ord_simple_out = os.path.join(outdir, "scaffolds.ord_verify")
-    ord_refined = os.path.join(outdir, "scaffolds_refined.ord")
-    ord_refined_out = os.path.join(outdir, "scaffolds_refined.ord_verify")
+    links_simple = os.path.join(outdir, "scaffolds.links")
+    links_simple_out = os.path.join(outdir, "scaffolds.links_verify")
+    links_refined = os.path.join(outdir, "scaffolds_refined.links")
+    links_refined_out = os.path.join(outdir, "scaffolds_refined.links_verify")
 
-    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], ord_simple]
+    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
     print("Running:", " ".join(cmd), "\n")
-    subprocess.check_call(cmd, stdout=open(ord_simple_out, "w"))
+    subprocess.check_call(cmd, stdout=open(links_simple_out, "w"))
 
-    with open(ord_simple_out, "r") as f:
+    with open(links_simple_out, "r") as f:
         for line in f:
             if line.startswith("Total miss-ordered: "):
                 value = int(line.strip()[20:])
@@ -79,9 +79,9 @@ def run_test(parameters):
                 if value > parameters["max_scaffolds"]:
                     raise RuntimeError("Too much scaffolds")
 
-    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], ord_refined]
+    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_refined]
     print("Running:", " ".join(cmd), "\n")
-    subprocess.check_call(cmd, stdout=open(ord_refined_out, "w"))
+    subprocess.check_call(cmd, stdout=open(links_refined_out, "w"))
 
 
 def main():

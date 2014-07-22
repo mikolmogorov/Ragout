@@ -82,10 +82,16 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 continue
 
             #insert contigs along the path
+            supp_genomes = prev_cont.link.supporting_genomes
             for node in path_nodes:
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
+
                 new_scaffolds[-1].contigs.append(Contig(name, sign))
+                new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
+                new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
+                (new_scaffolds[-1].contigs[-1].link
+                    .supporting_genomes) = supp_genomes
 
         new_scaffolds[-1].contigs.append(new_cont)
     return new_scaffolds
@@ -105,7 +111,6 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
             if graph.has_edge(src, dst):
                 overlap = graph[src][dst]["label"]
                 prev_cont.link.gap = -int(overlap)
-                prev_cont.link.supporting_genomes.append("~>")
 
             else:
                 paths = _all_simple_paths(graph, src, dst,
@@ -123,7 +128,6 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
                             path_len -= int(overlap)
                         paths_lens.append(path_len)
                     prev_cont.link.gap = _median(paths_lens)
-                    prev_cont.link.supporting_genomes.append("~>")
 
 
 def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,

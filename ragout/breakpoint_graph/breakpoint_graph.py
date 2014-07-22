@@ -21,7 +21,7 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-DEFAULT_DISTANCE = 42   #just an arbitrary number
+DEFAULT_DISTANCE = 0   #just an arbitrary number
 
 class BreakpointGraph:
     """
@@ -110,16 +110,18 @@ class BreakpointGraph:
         adjacencies = {}
         for edge in chosen_edges:
             #infinity edges correspond to joined chromosome ends -- ignore them
-            if not self._is_infinity(edge[0], edge[1]):
-                distance = self._get_distance(edge[0], edge[1])
-                supporting_genomes = []
-                if self.bp_graph.has_edge(edge[0], edge[1]):
-                    for e in self.bp_graph[edge[0]][edge[1]].values():
-                        supporting_genomes.append(e["genome_id"])
-                adjacencies[-edge[0]] = Adjacency(edge[1], distance, 
-                                                  supporting_genomes)
-                adjacencies[-edge[1]] = Adjacency(edge[0], distance, 
-                                                  supporting_genomes)
+            if self._is_infinity(edge[0], edge[1]):
+                continue
+
+            distance = self._get_distance(edge[0], edge[1])
+            supporting_genomes = []
+            if self.bp_graph.has_edge(edge[0], edge[1]):
+                for e in self.bp_graph[edge[0]][edge[1]].values():
+                    supporting_genomes.append(e["genome_id"])
+            adjacencies[-edge[0]] = Adjacency(edge[1], distance,
+                                              supporting_genomes)
+            adjacencies[-edge[1]] = Adjacency(edge[0], distance,
+                                              supporting_genomes)
 
         if debugger.debugging:
             phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")

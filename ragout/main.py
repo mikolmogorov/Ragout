@@ -18,6 +18,7 @@ import ragout.assembly_graph.assembly_graph as asgraph
 import ragout.breakpoint_graph.breakpoint_graph as bg
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
+import ragout.scaffolder.output_generator as out_gen
 import ragout.overlap.overlap as overlap
 import ragout.maf2synteny.maf2synteny as m2s
 from ragout.breakpoint_graph.phylogeny import Phylogeny, PhyloException
@@ -83,11 +84,9 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     Top-level logic of program
     """
     out_log = os.path.join(out_dir, "ragout.log")
-    out_order = os.path.join(out_dir, "scaffolds.ord")
     out_links = os.path.join(out_dir, "scaffolds.links")
     out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(out_dir, "contigs_overlap.dot")
-    out_refined_order = os.path.join(out_dir, "scaffolds_refined.ord")
     out_refined_links = os.path.join(out_dir, "scaffolds_refined.links")
     out_refined_scaffolds = os.path.join(out_dir, "scaffolds_refined.fasta")
     debug_root = os.path.join(out_dir, "debug")
@@ -147,9 +146,8 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             last_scaffolds = scaffolds
 
     debugger.set_debug_dir(debug_root)
-    scfldr.output_order(last_scaffolds, out_order)
-    scfldr.output_links(last_scaffolds, out_links)
-    scfldr.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
+    out_gen.output_links(last_scaffolds, out_links)
+    out_gen.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
         if not ovlp.make_overlap_graph(target_fasta_file, out_overlap):
@@ -157,9 +155,8 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             return 1
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds,
                                                    target_fasta_dict)
-        scfldr.output_order(refined_scaffolds, out_refined_order)
-        scfldr.output_links(refined_scaffolds, out_refined_links)
-        scfldr.output_fasta(target_fasta_dict, refined_scaffolds,
+        out_gen.output_links(refined_scaffolds, out_refined_links)
+        out_gen.output_fasta(target_fasta_dict, refined_scaffolds,
                             out_refined_scaffolds)
         if debug:
             shutil.copy(out_overlap, debugger.debug_dir)

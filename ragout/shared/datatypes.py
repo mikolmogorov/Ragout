@@ -45,4 +45,5 @@ class Link:
     def __init__(self, gap, supporting_genomes):
         self.gap = gap
         self.supporting_genomes = supporting_genomes
+        self.supporting_assembly = False
 

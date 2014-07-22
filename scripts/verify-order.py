@@ -13,19 +13,31 @@ from itertools import product
 from utils.nucmer_parser import *
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
-Contig = namedtuple("Contig", ["name", "sign", "gap"])
+Contig = namedtuple("Contig", ["name", "sign"])
 
 
 def parse_contigs_order(filename):
     scaffolds = []
-    for line in open(filename, "r"):
-        if line.startswith(">"):
-            scaffolds.append(Scaffold(line.strip()[1:], []))
-        else:
-            name = line.strip("\n").replace("=", "_") #fix for nucmer
-            without_sign = name[1:].strip()
-            sign = 1 if name[0] == "+" else -1
-            scaffolds[-1].contigs.append(Contig(without_sign, sign, 0))
+
+    def add_contig(string):
+        name = string.replace("=", "_")      #fix for nucmer
+        without_sign = name[1:].strip()
+        sign = 1 if name[0] == "+" else -1
+        scaffolds[-1].contigs.append(Contig(without_sign, sign))
+
+    with open(filename, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("--") or line.startswith("contig_1"):
+                continue
+
+            if line[0] not in ["+", "-"]:
+                scaffolds.append(Scaffold(line, []))
+            else:
+                left_cont, right_cont = line.split()[0:2]
+                add_contig(left_cont)
+        add_contig(right_cont)
+
     return scaffolds
 
 

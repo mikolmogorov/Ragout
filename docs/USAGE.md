@@ -95,10 +95,26 @@ Output
 
 After running Ragout, an output directory will contain:
 
-* __scaffolds.ord__: contigs order
+* __scaffolds.links__: detailed description of adjacencies
 * __scaffolds.fasta__: scaffolds sequences
-* __scaffolds_refined.ord__: contigs order after refinement (if --refine was specified)
-* __scaffolds_refined.fasta__: refined scaffolds sequences (if --refine was specified)
+* __scaffolds_refined.links__: contigs order after refinement (if --refine was specified)
+* __scaffolds_refined.fasta__: adjacencies description after refinement (if --refine was specified)
+
+
+Links file
+----------
+
+Ragout outputs information about generated adjacencies in "*.links" file.
+It is organized as a table for each scaffold and includes values described below:
+
+* __contig_1__ : first contig in adjacency
+* __contig_2__ : second contig in adjacency
+* __gap__ : estimated gap between contigs ()
+* __~>__ : indicates that this adjacency was generated during the refinement procedure
+* __ref_support__ : reference genomes that support this adjacency
+
+Gap < 0 means overlap on corresponding value. "~>" does not 
+apply for assemblies before refinement procedure.
 
 
 Recipe file
