@@ -16,6 +16,7 @@ import logging
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared.datatypes import Contig, Scaffold, Link
+from .output_generator import output_links
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -32,7 +33,7 @@ def get_scaffolds(adjacencies, perm_container):
 
     if debugger.debugging:
         file_out = os.path.join(debugger.debug_dir, "scaffolds.ord")
-        output_order(scaffolds, file_out)
+        output_links(scaffolds, file_out)
 
     return scaffolds
 

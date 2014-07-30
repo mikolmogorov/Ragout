@@ -10,6 +10,10 @@ import networkx as nx
 import re
 import logging
 from collections import namedtuple
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 from ragout.shared import config
 from ragout.shared.datatypes import Contig, Scaffold
@@ -67,6 +71,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
     ordered_contigs = set()
     for scf in scaffolds_in:
         ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
+    reverse_graph = graph.reverse()
 
     for scf in scaffolds_in:
         new_scaffolds.append(Scaffold(scf.name))
@@ -75,8 +80,9 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
             new_scaffolds[-1].contigs.append(prev_cont)
 
             #find contigs to insert
-            path_nodes = _get_cut_vertices(graph, prev_cont, new_cont,
-                                           max_path_len, ordered_contigs)
+            path_nodes = _get_cut_vertices(graph, reverse_graph, prev_cont,
+                                           new_cont, max_path_len,
+                                           ordered_contigs)
 
             if not path_nodes:
                 continue
@@ -97,47 +103,14 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
     return new_scaffolds
 
 
-def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
-    """
-    Estimates distances between contigs using overlap graph
-    """
-    ordered_contigs = set()
-    for scf in scaffolds:
-        ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
-
-    for scf in scaffolds:
-        for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            src, dst =  str(prev_cont), str(next_cont)
-            if graph.has_edge(src, dst):
-                overlap = graph[src][dst]["label"]
-                prev_cont.link.gap = -int(overlap)
-
-            else:
-                paths = _all_simple_paths(graph, src, dst,
-                                          ordered_contigs, max_path_len)
-                if not paths:
-                    continue
-                else:
-                    paths_lens = []
-                    for p in paths:
-                        path_len = 0
-                        for node in p[1:-1]:
-                            path_len += len(contigs_fasta[node[1:]])
-                        for n1, n2 in zip(p[:-1], p[1:]):
-                            overlap = graph[n1][n2]["label"]
-                            path_len -= int(overlap)
-                        paths_lens.append(path_len)
-                    prev_cont.link.gap = _median(paths_lens)
-
-
-def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,
-                      ordered_contigs):
+def _get_cut_vertices(graph, reverse_graph, prev_cont, next_cont,
+                      max_path_len, ordered_contigs):
     """
     Finds cut vertices on a subgraph of all possible paths from one
     node to another. Corresponding contigs will be inserted into scaffolds
     between src and dst. This is a generalized version of what we have in paper
     """
-    src, dst =  str(prev_cont), str(next_cont)
+    src, dst = str(prev_cont), str(next_cont)
 
     if not (graph.has_node(src) and graph.has_node(dst)):
         logger.debug("contigs {0} / {1} are not in the graph"
@@ -148,61 +121,168 @@ def _get_cut_vertices(graph, prev_cont, next_cont, max_path_len,
         logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
         return None
 
-    paths = _all_simple_paths(graph, src, dst, ordered_contigs, max_path_len)
-    if not paths:
-        logger.debug("no path between {0} -- {1}".format(prev_cont, next_cont))
-        return None
+    restricted_nodes = set()
+    for contig in ordered_contigs:
+        restricted_nodes.add("+" + contig)
+        restricted_nodes.add("-" + contig)
 
-    cut_vertices = None
-    for path in paths:
-        p_nodes = list(map(str, path[1:-1]))
+    induced_subgraph = _get_induced_subgraph(graph, reverse_graph, src, dst,
+                                             max_path_len, restricted_nodes)
 
-        if not cut_vertices:
-            cut_vertices = p_nodes
-        else:
-            cut_vertices = [p for p in cut_vertices if p in p_nodes]
+    if (not induced_subgraph.has_node(src) or
+        not induced_subgraph.has_node(dst) or
+        not nx.has_path(induced_subgraph, src, dst)):
+        return []
 
-    if len(cut_vertices):
+    cut_vertices = set()
+    for node in induced_subgraph.nodes():
+        if node in [src, dst] or node in restricted_nodes:
+            continue
+
+        restricted_nodes.add(node)
+        if (not _test_connectivity(induced_subgraph, src, dst,
+                                   max_path_len, restricted_nodes)):
+            cut_vertices.add(node)
+        restricted_nodes.remove(node)
+
+    path = _shortest_path(induced_subgraph, src, dst, restricted_nodes)
+    assert path is not None
+
+    ordered_cut_vertexes = []
+    for node in path:
+        if node in cut_vertices:
+            ordered_cut_vertexes.append(node)
+
+    if len(ordered_cut_vertexes):
         logger.debug("found {0} cut vertixes between {1} -- {2}"
-                     .format(len(cut_vertices), prev_cont, next_cont))
+                     .format(len(ordered_cut_vertexes), prev_cont, next_cont))
 
-    return cut_vertices
+    return ordered_cut_vertexes
 
 
-def _all_simple_paths(graph, src, dst, ordered_contigs, max_path_len):
+def _get_induced_subgraph(input_graph, reverse_graph, src, dst,
+                          max_path_len, restricted_nodes):
     """
-    Finds all possible simple paths between two nodes, that do not
-    pass through the contigs (nodes) that already belong to scaffolds
+    Finds subgraphs in which all possible paths between two nodes lie
     """
-    answer = []
-
-    def dfs(vertex, visit):
-        for _, u in graph.edges(vertex):
-            if u in visited:
-                continue
-            if u == dst:
-                visit.append(dst)
-                answer.append(list(visit))
-                visit.pop()
-                return
-
-        if len(visit) >= max_path_len:
+    def dfs(graph, vertex, end_vertex, depth, visited):
+        visited.add(vertex)
+        if depth == max_path_len:
             return
 
         for _, u in graph.edges(vertex):
-            if u not in visit and str(u)[1:] not in ordered_contigs:
-                visit.append(u)
-                dfs(u, visit)
-                visit.pop()
+            if u == end_vertex:
+                visited.add(u)
+                continue
 
-    visited = [src]
-    dfs(src, visited)
-    return answer
+            if u not in visited and u not in restricted_nodes:
+                dfs(graph, u, end_vertex, depth + 1, visited)
+
+    visited_fwd = set()
+    dfs(input_graph, src, dst, 0, visited_fwd)
+
+    visited_back = set()
+    dfs(reverse_graph, dst, src, 0, visited_back)
+
+    result = list(visited_fwd.intersection(visited_back))
+
+    induced_digraph = nx.DiGraph()
+    for node in result:
+        for u, v in input_graph.edges(node):
+            if v in result:
+                induced_digraph.add_edge(u, v)
+    return induced_digraph
 
 
-def _median(values):
+def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
     """
-    Not a true median, but we keep real distances
+    Estimates distances between contigs using overlap graph
     """
-    sorted_values = sorted(values)
-    return sorted_values[(len(values) - 1) / 2]
+    restricted_nodes = set()
+    for scf in scaffolds:
+        for contig in scf.contigs:
+            restricted_nodes.add("+" + contig.name)
+            restricted_nodes.add("-" + contig.name)
+
+    for scf in scaffolds:
+        for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
+            src, dst =  str(prev_cont), str(next_cont)
+            if graph.has_edge(src, dst):
+                overlap = graph[src][dst]["label"]
+                prev_cont.link.gap = -int(overlap)
+
+            else:
+                path = _shortest_path(graph, src, dst, restricted_nodes)
+                if not path:
+                    continue
+
+                path_len = 0
+                for node in path[1:-1]:
+                    path_len += len(contigs_fasta[node[1:]])
+                for n1, n2 in zip(path[:-1], path[1:]):
+                    overlap = graph[n1][n2]["label"]
+                    path_len -= int(overlap)
+
+                prev_cont.link.gap = path_len
+
+
+def _shortest_path(graph, src, dst, restricted_nodes):
+    """
+    Finds shortest path wrt to restricted nodes
+    """
+    queue = Queue.Queue()
+    queue.put(src)
+    visited = set([src])
+    parent = {src : src}
+    found = False
+
+    while not queue.empty():
+        node = queue.get()
+
+        for _, u in graph.edges(node):
+            if u == dst:
+                parent[u] = node
+                found = True
+                break
+
+            if u not in visited and u not in restricted_nodes:
+                visited.add(u)
+                queue.put(u)
+                parent[u] = node
+
+    if not found:
+        return None
+
+    path = [dst]
+    cur_node = dst
+    while parent[cur_node] != cur_node:
+        path.append(parent[cur_node])
+        cur_node = parent[cur_node]
+    return path[::-1]
+
+
+def _test_connectivity(graph, start, end, max_path_len, restricted_nodes):
+    """
+    Quickly tests if there is a path between two nodes
+    """
+    class ExitSuccess(Exception):
+        pass
+
+    def dfs(node, depth):
+        visited.add(node)
+        if depth == max_path_len:
+            return
+
+        for _, u in graph.edges(node):
+            if u == end:
+                raise ExitSuccess
+
+            if u not in visited and u not in restricted_nodes:
+                dfs(u, depth + 1)
+
+    visited = set()
+    try:
+        dfs(start, 0)
+    except ExitSuccess:
+        return True
+    return False
