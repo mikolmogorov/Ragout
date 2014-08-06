@@ -134,30 +134,24 @@ def _get_cut_vertices(graph, reverse_graph, prev_cont, next_cont,
         not nx.has_path(induced_subgraph, src, dst)):
         return []
 
-    cut_vertices = set()
-    for node in induced_subgraph.nodes():
-        if node in [src, dst] or node in restricted_nodes:
-            continue
+    path = _shortest_path(induced_subgraph, src, dst, restricted_nodes)
+    assert path is not None
 
+    cut_vertices = set()
+    for node in path[1:-1]:
         restricted_nodes.add(node)
         if (not _test_connectivity(induced_subgraph, src, dst,
                                    max_path_len, restricted_nodes)):
             cut_vertices.add(node)
         restricted_nodes.remove(node)
 
-    path = _shortest_path(induced_subgraph, src, dst, restricted_nodes)
-    assert path is not None
+    ordered_cut_vertices = [p for p in path if p in cut_vertices]
 
-    ordered_cut_vertexes = []
-    for node in path:
-        if node in cut_vertices:
-            ordered_cut_vertexes.append(node)
-
-    if len(ordered_cut_vertexes):
+    if len(ordered_cut_vertices):
         logger.debug("found {0} cut vertixes between {1} -- {2}"
-                     .format(len(ordered_cut_vertexes), prev_cont, next_cont))
+                     .format(len(ordered_cut_vertices), prev_cont, next_cont))
 
-    return ordered_cut_vertexes
+    return ordered_cut_vertices
 
 
 def _get_induced_subgraph(input_graph, reverse_graph, src, dst,
