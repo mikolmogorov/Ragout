@@ -107,6 +107,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         recipe = parse_ragout_recipe(recipe_file)
         phylogeny = Phylogeny(recipe)
         target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
+        logger.info("Reading FASTA with contigs")
         target_fasta_dict = read_fasta_dict(target_fasta_file)
 
     except (RecipeException, FastaError, PhyloException) as e:
