@@ -3,7 +3,7 @@ Installation instructions for Ragout
 
 Availability
 ------------
-Ragout is tested under Mac OS and Linux. While it should work
+Ragout was tested under Mac OS and Linux. While it should work
 under Windows, we currently do not provide an official support.
 
 
@@ -18,6 +18,19 @@ Runtime depenencies
 
 * Python 2.7
 * Sibelia [http://github.com/bioinf/Sibelia] or Progresssive Cactus [http://github.com/glennhickey/progressiveCactus]
+
+
+Binary distribution
+-------------------
+
+While we recommend to build Ragout from source on each machine, you also can
+use pre-compiled binaries which are available for Linux and Mac OS from 
+Releases page on Github: https://github.com/fenderglass/Ragout/releases
+
+In this case, you do not need any installation procedures. If you are unsure,
+which version (binary or source) you have downloaded, you can check for
+binary files in "lib" directory. If they exist - you have obtained a binary
+version, otherwise it is source.
 
 
 Building
@@ -38,14 +51,6 @@ After this, you can test your installation by running:
     python ragout.py --help
 
 If no errors occured, installation was successful and you can start using Ragout!
-
-
-Binary distribution
--------------------
-
-While we recommend to build Ragout from source on each machine, you also can
-use pre-compiled binaries which are available for Linux and Mac OS from 
-Releases page on Github: https://github.com/fenderglass/Ragout/releases
 
 
 progressiveCactus
@@ -69,3 +74,11 @@ Q: Tons of errors during compilation, possibly with
 
 A: Probably your compiler is too old and does not support C++0x. Minimum
 versions of GCC and Clang are mentioned at the beginnig of this documtent.
+
+
+Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" when running
+or something similar
+
+A: Ensure, that version of libc++ which was used to compile Ragout is similar
+to one which is used to run it. You can specify an extra search path
+to a specific library by setting "LD_LIBRARY_PATH" variable.

@@ -32,8 +32,10 @@ def get_scaffolds(adjacencies, perm_container):
     scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
 
     if debugger.debugging:
-        file_out = os.path.join(debugger.debug_dir, "scaffolds.ord")
-        output_links(scaffolds, file_out)
+        links_out = os.path.join(debugger.debug_dir, "scaffolds.links")
+        output_links(scaffolds, links_out)
+        perms_out = os.path.join(debugger.debug_dir, "scaffolds_perms.txt")
+        _output_scaffold_premutations(scaffolds, perms_out)
 
     return scaffolds
 
@@ -113,6 +115,24 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
             extend_scaffold(contig)
 
     return scaffolds
+
+
+def _output_scaffold_premutations(scaffolds, out_file):
+    with open(out_file, "w") as f:
+        permutations = []
+        for scf in scaffolds:
+            blocks = []
+            for contig in scf.contigs:
+                if contig.sign > 0:
+                    blocks.extend(contig.blocks)
+                else:
+                    rev_compl = map(lambda b: -b, contig.blocks[::-1])
+                    blocks.extend(rev_compl)
+
+            f.write(">" + scf.name + "\n")
+            for block in blocks:
+                f.write("{0:+} ".format(block))
+            f.write("$\n")
 
 
 def _make_contigs(perm_container):

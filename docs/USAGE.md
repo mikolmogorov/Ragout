@@ -109,12 +109,12 @@ It is organized as a table for each scaffold and includes values described below
 
 * __contig_1__ : first contig in adjacency
 * __contig_2__ : second contig in adjacency
-* __gap__ : estimated gap between contigs ()
-* __~>__ : indicates that this adjacency was generated during the refinement procedure
+* __gap__ : estimated gap between contigs
 * __ref_support__ : reference genomes that support this adjacency
+* __~>__ : indicates that this adjacency was generated during the refinement procedure
 
-Gap < 0 means overlap on corresponding value. "~>" does not 
-apply for assemblies before refinement procedure.
+Gap < 0 means overlap on corresponding value. "~>" does not
+apply for assemblies without refinement.
 
 
 Recipe file

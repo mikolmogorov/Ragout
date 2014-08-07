@@ -13,7 +13,7 @@ def output_links(scaffolds, out_links):
     """
     Outputs pretty table with information about adjacencies
     """
-    HEADER = ["contig_1", "contig_2", "gap", "~>", "ref_support"]
+    HEADER = ["contig_1", "contig_2", "gap", "ref_support", "~>"]
     COL_GAP = 4
 
     with open(out_links, "w") as f:
@@ -23,7 +23,7 @@ def output_links(scaffolds, out_links):
                 supp_genomes = ",".join(sorted(left.link.supporting_genomes))
                 supp_assembly = "*" if left.link.supporting_assembly else " "
                 rows.append([str(left), str(right), str(left.link.gap),
-                            supp_assembly, supp_genomes])
+                            supp_genomes, supp_assembly])
 
             col_widths = repeat(0)
             for row in [HEADER] + rows:
@@ -105,17 +105,6 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
                         unused_count, unused_len, unused_perc,
                         _calc_n50(contigs_length, unused_len + used_len),
                         _calc_n50(scf_length, unused_len + used_len)))
-
-
-#def output_order(scaffolds, out_order):
-#    """
-#    Outputs scaffolds to file in "ord" format
-#    """
-#    with open(out_order, "w") as f:
-#        for scf in scaffolds:
-#            f.write(">" + scf.name + "\n")
-#            for contig in scf.contigs:
-#                f.write(str(contig) + "\n")
 
 
 def _calc_n50(scaffolds_lengths, assembly_len):
