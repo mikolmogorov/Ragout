@@ -7,26 +7,34 @@ import shutil
 
 TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                     "coords" : "examples/E.Coli/mg1655.coords",
-                    "max_errros" : 0,
+                    "max_errors" : 0,
+                    "max_errors_refine" : 0,
                     "min_contigs" : 79,
+                    "min_contigs_refine" : 119,
                     "max_scaffolds" : 1,
                     "outdir" : "ecoli-test"},
          "helicobacter" : {"recipe" : "examples/H.Pylori/helicobacter.rcp",
                            "coords" : "examples/H.Pylori/SJM180.coords",
-                           "max_errros" : 0,
+                           "max_errors" : 0,
+                           "max_errors_refine" : 0,
                            "min_contigs" : 45,
+                           "min_contigs_refine" : 100,
                            "max_scaffolds" : 1,
                            "outdir" : "helicobacter-test"},
          "cholerae" : {"recipe" : "examples/V.Cholerae/cholerae.rcp",
                        "coords" : "examples/V.Cholerae/h1.coords",
-                       "max_errros" : 0,
+                       "max_errors" : 0,
+                       "max_errors_refine" : 13,
                        "min_contigs" : 170,
+                       "min_contigs_refine" : 432,
                        "max_scaffolds" : 2,
                        "outdir" : "cholerae-test"},
          "aureus" : {"recipe" : "examples/S.Aureus/aureus.rcp",
                      "coords" : "examples/S.Aureus/usa300.coords",
-                     "max_errros" : 1,
+                     "max_errors" : 1,
+                     "max_errors_refine" : 3,
                      "min_contigs" : 100,
+                     "min_contigs_refine" : 155,
                      "max_scaffolds" : 1,
                      "outdir" : "aureus-test"}}
 
@@ -55,6 +63,7 @@ def run_test(parameters):
     links_refined = os.path.join(outdir, "scaffolds_refined.links")
     links_refined_out = os.path.join(outdir, "scaffolds_refined.links_verify")
 
+    #checking before refinement
     cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd, stdout=open(links_simple_out, "w"))
@@ -64,7 +73,7 @@ def run_test(parameters):
             if line.startswith("Total miss-ordered: "):
                 value = int(line.strip()[20:])
                 print("Errors:", value)
-                if value > parameters["max_errros"]:
+                if value > parameters["max_errors"]:
                     raise RuntimeError("Too much miss-ordered contigs")
 
             if line.startswith("Total contigs: "):
@@ -79,9 +88,30 @@ def run_test(parameters):
                 if value > parameters["max_scaffolds"]:
                     raise RuntimeError("Too much scaffolds")
 
+    #checking after refinement
     cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_refined]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd, stdout=open(links_refined_out, "w"))
+
+    with open(links_refined_out, "r") as f:
+        for line in f:
+            if line.startswith("Total miss-ordered: "):
+                value = int(line.strip()[20:])
+                print("Errors:", value)
+                if value > parameters["max_errors_refine"]:
+                    raise RuntimeError("Too much miss-ordered contigs")
+
+            if line.startswith("Total contigs: "):
+                value = int(line.strip()[15:])
+                print("Contigs:", value)
+                if value < parameters["min_contigs_refine"]:
+                    raise RuntimeError("Too few contigs")
+
+            if line.startswith("Total scaffolds: "):
+                value = int(line.strip()[17:])
+                print("Scaffolds:", value)
+                if value > parameters["max_scaffolds"]:
+                    raise RuntimeError("Too much scaffolds")
 
 
 def main():
