@@ -183,9 +183,9 @@ def main():
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
                         default="sibelia", choices=["sibelia", "cactus", "maf"],
                         help="which tool to use for synteny block decomposition")
-    parser.add_argument("--refine", action="store_const", metavar="assembly_refine",
-                        dest="assembly_refine", default=False, const=True,
-                        help="enable refinement with assembly graph")
+    parser.add_argument("--no-refine", action="store_const", metavar="no_refine",
+                        dest="no_refine", default=False, const=True,
+                        help="disable refinement with assembly graph")
     parser.add_argument("--overwrite", action="store_const",
                         dest="overwrite", default=False, const=True,
                         help="overwrite existing synteny blocks")
@@ -196,4 +196,4 @@ def main():
     args = parser.parse_args()
 
     return do_job(args.recipe, args.output_dir, args.synteny_backend,
-                  args.assembly_refine, args.overwrite, args.debug)
+                  not args.no_refine, args.overwrite, args.debug)

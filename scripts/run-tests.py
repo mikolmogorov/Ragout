@@ -10,7 +10,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                     "max_errors" : 0,
                     "max_errors_refine" : 0,
                     "min_contigs" : 79,
-                    "min_contigs_refine" : 119,
+                    "min_contigs_refine" : 146,
                     "max_scaffolds" : 1,
                     "outdir" : "ecoli-test"},
          "helicobacter" : {"recipe" : "examples/H.Pylori/helicobacter.rcp",
@@ -18,7 +18,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                            "max_errors" : 0,
                            "max_errors_refine" : 0,
                            "min_contigs" : 45,
-                           "min_contigs_refine" : 100,
+                           "min_contigs_refine" : 126,
                            "max_scaffolds" : 1,
                            "outdir" : "helicobacter-test"},
          "cholerae" : {"recipe" : "examples/V.Cholerae/cholerae.rcp",
@@ -26,7 +26,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                        "max_errors" : 0,
                        "max_errors_refine" : 13,
                        "min_contigs" : 170,
-                       "min_contigs_refine" : 432,
+                       "min_contigs_refine" : 720,
                        "max_scaffolds" : 2,
                        "outdir" : "cholerae-test"},
          "aureus" : {"recipe" : "examples/S.Aureus/aureus.rcp",
@@ -34,7 +34,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                      "max_errors" : 1,
                      "max_errors_refine" : 3,
                      "min_contigs" : 100,
-                     "min_contigs_refine" : 155,
+                     "min_contigs_refine" : 186,
                      "max_scaffolds" : 1,
                      "outdir" : "aureus-test"}}
 
@@ -54,7 +54,7 @@ def test_environment():
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
     cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--refine"]
+           "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 

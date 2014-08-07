@@ -7,6 +7,7 @@ This module executes overlap native binary
 which reconstructs overlap graph from contigs
 """
 
+import os
 import logging
 import subprocess
 
@@ -19,12 +20,21 @@ OVERLAP_EXEC = "ragout-overlap"
 
 def check_binary():
     """
-    Checks if the native binary is available
+    Checks if the native binary is available and runnable
     """
     binary = which(OVERLAP_EXEC)
     if not binary:
         logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
         return False
+
+    try:
+        devnull = open(os.devnull, "w")
+        subprocess.check_call([OVERLAP_EXEC, "--help"], stderr=devnull)
+    except subprocess.CalledProcessError as e:
+        logger.error("Some error inside native {0} module: {1}"
+                     .format(OVERLAP_EXEC, e))
+        return False
+
     return True
 
 
@@ -45,7 +55,8 @@ def make_overlap_graph(contigs_file, dot_file):
     try:
         subprocess.check_call(cmdline)
     except subprocess.CalledProcessError as e:
-        logger.error("Some error inside native {0} module".format(OVERLAP_EXEC))
+        logger.error("Some error inside native {0} module: {1}"
+                     .format(OVERLAP_EXEC, e))
         return False
 
     return True

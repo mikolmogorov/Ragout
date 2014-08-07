@@ -2,11 +2,6 @@
 //This file is a part of Ragout program.
 //Released under the BSD license (see LICENSE file)
 
-#ifdef PYTHON_LIB
-#include <Python.h>
-#include <signal.h>
-#include <setjmp.h>
-#endif
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
@@ -155,12 +150,15 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 	}
 }
 
+
 int main(int argc, char** argv)
 {
 	if (argc < 4)
 	{
 		std::cerr << "Usage: maf2synteny maf_file out_dir simpl_params "
-				  << "block_size_1 [block_size_2 ...]\n";
+			  	  << "block_size_1 [block_size_2 ...]\n";
+
+		if (argc == 2 && std::string(argv[1]) == "--help") return 0;
 		return 1;
 	}
 	std::string inputMaf = argv[1];
@@ -186,61 +184,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
-#ifdef PYTHON_LIB
-static jmp_buf g_jmpEnv;
-void sigintHandler(int s)
-{
-	longjmp(g_jmpEnv, 1);
-}
-
-static PyObject* _make_synteny(PyObject* self, PyObject* args)
-{
-	const char* mafFile = 0;
-	const char* outDir = 0;
-	std::vector<int> blockSizes;
-	int terminate = -1;
-
-	PyObject* listObj = nullptr;
-	if (!PyArg_ParseTuple(args, "ssO", &mafFile, &outDir, &listObj))
-	{
-		return Py_False;
-	}
-	int nBlocks = PyList_Size(listObj);
-	for (int i = 0; i < nBlocks; ++i)
-	{
-		blockSizes.push_back(PyInt_AsLong(PyList_GetItem(listObj, i)));
-	}
-
-	struct sigaction pythonSig;
-	sigaction(SIGINT, NULL, &pythonSig);
-	signal(SIGINT, sigintHandler);
-
-	bool result = true;
-	try
-	{
-		terminate = setjmp(g_jmpEnv);
-		if (terminate) throw std::runtime_error("SIGINT catched, exiting");
-		doJob(mafFile, outDir, blockSizes);
-	}
-	catch (std::runtime_error& e)
-	{
-		std::cerr << e.what() << std::endl;
-		result = false;
-	}
-	signal(SIGINT, pythonSig.sa_handler);
-	return PyBool_FromLong((long)result);
-}
-
-static PyMethodDef cmaf2syntenyMethods[] = 
-{
-	{"_make_synteny", _make_synteny,
-	 METH_VARARGS, "Make synteny blocks from maf alignment"},
-	{NULL, NULL, 0, NULL}
-};
-
-PyMODINIT_FUNC initcmaf2synteny()
-{
-	(void)Py_InitModule("cmaf2synteny", cmaf2syntenyMethods);
-}
-#endif

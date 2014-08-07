@@ -1,7 +1,7 @@
 Usage instructions for Ragout
 =============================
 
-    Usage: ragout.py [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--refine]
+    Usage: ragout.py [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--no-refine]
                      [--overwrite] [--debug] [--version]
                      recipe_file
     
@@ -17,7 +17,7 @@ Supported arguments:
       -s {sibelia,cactus,maf}, --synteny {sibelia,cactus,maf}
                             which tool to use for synteny block decomposition.
                             (default: sibelia)
-      --refine              refine with the assembly graph (default: False)
+      --no-refine           disable refinement with assembly graph (default: False)
       --overwrite           overwrite existing Sibelia/Cactus results (default:
                             False)
       --debug               enable debug output (default: False)
@@ -29,10 +29,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    python ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-    python ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-    python ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-    python ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
+    python ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/
+    python ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/
+    python ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/
+    python ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/
 
 
 Sequence data
@@ -301,6 +301,9 @@ of such errors should be very small or even zero. And even they exist,
 they are "local" and do not violate the genome structure (probably, most
 of them even will not be detected as missassembles by quality assesment
 tools like Quast).
+
+As this step may take a lot of time for assemblies with big number of contigs,
+you may skip it by specifying "--no-refine" option.
 
 
 Useful scripts

@@ -21,12 +21,21 @@ M2S_EXEC = "ragout-maf2synteny"
 
 def check_binary():
     """
-    Checks if native binary is available
+    Checks if native binary is available and runnable
     """
     binary = which(M2S_EXEC)
     if not binary:
         logger.error("\"{0}\" native module not found".format(M2S_EXEC))
         return False
+
+    try:
+        devnull = open(os.devnull, "w")
+        subprocess.check_call([M2S_EXEC, "--help"], stderr=devnull)
+    except subprocess.CalledProcessError as e:
+        logger.error("Some error inside native {0} module: {1}"
+                     .format(M2S_EXEC, e))
+        return False
+
     return True
 
 
