@@ -35,49 +35,58 @@
 
         <section id="main_content">
         
-<h1>Installation instructions for Ragout</h1>
-<h2>Availability</h2>
-<p>Ragout is tested under Mac OS and Linux. While it should work
+<h1 id="installation-instructions-for-ragout">Installation instructions for Ragout</h1>
+<h2 id="availability">Availability</h2>
+<p>Ragout was tested under Mac OS and Linux. While it should work
 under Windows, we currently do not provide an official support.</p>
-<h2>Build requirements</h2>
+<h2 id="build-requirements">Build requirements</h2>
 <ul>
 <li>C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)</li>
 <li>GNU make / Cmake (for building Sibelia)</li>
 </ul>
-<h2>Runtime depenencies</h2>
+<h2 id="runtime-depenencies">Runtime depenencies</h2>
 <ul>
 <li>Python 2.7</li>
 <li>Sibelia [<a href="http://github.com/bioinf/Sibelia">http://github.com/bioinf/Sibelia</a>] or Progresssive Cactus [<a href="http://github.com/glennhickey/progressiveCactus">http://github.com/glennhickey/progressiveCactus</a>]</li>
 </ul>
-<h2>Building</h2>
+<h2 id="binary-distribution">Binary distribution</h2>
+<p>While we recommend to build Ragout from source on each machine, you also can
+use pre-compiled binaries which are available for Linux and Mac OS from 
+Releases page on Github: <a href="https://github.com/fenderglass/Ragout/releases">https://github.com/fenderglass/Ragout/releases</a></p>
+<p>In this case, you do not need any installation procedures. If you are unsure,
+which version (binary or source) you have downloaded, you can check for
+binary files in &quot;lib&quot; directory. If they exist - you have obtained a binary
+version, otherwise it is source.</p>
+<h2 id="building">Building</h2>
 <ol>
 <li><p>To build Ragout native modules, type:</p>
-<pre><code> make</code></pre>
-</li>
+<pre><code> make
+</code></pre></li>
 <li><p>To build and install Sibelia, use:</p>
-<pre><code> python scripts/install-sibelia.py</code></pre>
-</li>
+<pre><code> python scripts/install-sibelia.py
+</code></pre></li>
 </ol>
 <p>If you already have Sibelia installed, you can skip second step.</p>
 <p>After this, you can test your installation by running:</p>
-<pre><code>python ragout.py --help</code></pre>
-<p>If no errors occured, installation was successful and you can start using Ragout!</p>
-<h2>Binary distribution</h2>
-<p>While we recommend to build Ragout from source on each machine, you also can
-use pre-compiled binaries which are available for Linux and Mac OS on our
-website: <a href="http://fenderglass.github.io/Ragout/">http://fenderglass.github.io/Ragout/</a></p>
-<h2>progressiveCactus</h2>
+<pre><code>python ragout.py --help
+</code></pre><p>If no errors occured, installation was successful and you can start using Ragout!</p>
+<h2 id="progressivecactus">progressiveCactus</h2>
 <p>Ragout can use both Sibelia and Progressive Cactus for synteny block decomposition.
 Cactus support is still in early stage, however you already can try it with genomes,
 that are too big for Sibelia.</p>
 <p>First, download and build Progressive Cactus: <a href="https://github.com/glennhickey/progressiveCactus">https://github.com/glennhickey/progressiveCactus</a>
 Then set &quot;CACTUS_INSTALL&quot; environment variable pointing to Cactus installation directory:</p>
-<pre><code>export CACTUS_INSTALL=path_to_cactus</code></pre>
-<h2>Troubleshooting</h2>
+<pre><code>export CACTUS_INSTALL=path_to_cactus
+</code></pre><h2 id="troubleshooting">Troubleshooting</h2>
 <p>Q: Tons of errors during compilation, possibly with 
 &quot;unrecognized command line option &#39;-std=c++0x&#39;&quot; message:</p>
 <p>A: Probably your compiler is too old and does not support C++0x. Minimum
 versions of GCC and Clang are mentioned at the beginnig of this documtent.</p>
+<p>Q: &quot;libstdc++.so.6: version `CXXABI_1.3.5&#39; not found&quot; when running
+or something similar</p>
+<p>A: Ensure, that version of libc++ which was used to compile Ragout is similar
+to one which is used to run it. You can specify an extra search path
+to a specific library by setting &quot;LD_LIBRARY_PATH&quot; variable.</p>
 
         </section>
 
