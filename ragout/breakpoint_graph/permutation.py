@@ -156,9 +156,9 @@ def _parse_permutations(filename):
             if line.startswith(">"):
                 tokens = line[1:].split(".", 1)
                 if len(tokens) != 2:
-                    PermException("permutation ids in " + filename + " do not "
-                                 "follow naming convention: 'genome.chromosome'")
-                    return None
+                    raise PermException("permutation ids in " + filename +
+                                        " do not follow naming convention: " +
+                                        "'genome.chromosome'")
 
                 genome_name, chr_name = tokens
             else:
@@ -196,9 +196,10 @@ def _parse_blocks_coords(filename):
                 chr_id, chr_size, seq_name = line.split("\t")
                 tokens = seq_name.split(".", 1)
                 if len(tokens) != 2:
-                    PermException("permutation ids in " + filename + " do not "
-                                  "follow naming convention: 'genome.chromosome'")
-                    return None
+                    raise PermException("permutation ids in " + filename +
+                                        " do not follow naming convention: " +
+                                        "'genome.chromosome'")
+
                 genome_name, chr_name = tokens
                 perm_by_id[chr_id] = Permutation(genome_name, chr_name,
                                                  chr_id, int(chr_size), [])
