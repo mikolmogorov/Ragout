@@ -5,33 +5,41 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <string.h>
 
 #include "build_graph.h"
 
 void printUsage()
 {
 	std::cerr << "Usage: overlap fasta_in dot_out min_k "
-			  << "max_k [--detect-kmer]\n"
+			  << "max_k [--detect-kmer] [--hist]\n"
 	 		  << "Constructs overlap graph from input contigs"
 			  << "and outputs it in dot format\n";
 }
 
 int main(int argc, char** argv)
 {
-	std::vector<std::string> args(argv, argv + argc);
+	std::vector<std::string> posArgs;
 	bool detectKmer = false;
-	for (auto itArg = args.begin(); itArg != args.end(); ++itArg)
+	bool drawHist = false;
+	for (char** arg = argv; arg != argv + argc; ++arg)
 	{
-		if (*itArg == "--detect-kmer")
+		if (strcmp(*arg, "--detect-kmer") == 0)
 		{
 			detectKmer = true;
-			args.erase(itArg);
-			break;
 		}
-		if (*itArg == "--help")
+		else if (strcmp(*arg, "--hist") == 0)
+		{
+			drawHist = true;
+		}
+		else if (strcmp(*arg, "--help") == 0)
 		{
 			printUsage();
 			return 0;
+		}
+		else
+		{
+			posArgs.push_back(*arg);
 		}
 	}
 
@@ -41,6 +49,6 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	return !makeOverlapGraph(args[1], args[2], atoi(args[3].c_str()),
-							 atoi(args[4].c_str()), detectKmer);
+	return !makeOverlapGraph(posArgs[1], posArgs[2], atoi(posArgs[3].c_str()),
+							 atoi(posArgs[4].c_str()), detectKmer, drawHist);
 }

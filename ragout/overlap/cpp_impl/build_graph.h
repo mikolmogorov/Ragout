@@ -8,6 +8,7 @@
 #include <string>
 
 bool makeOverlapGraph(const std::string& fileIn, const std::string& fileOut, 
-		  			  int minOverlap, int maxOverlap, bool filterKmer);
+		  			  int minOverlap, int maxOverlap, bool filterKmer,
+					  bool drawHist);
 
 #endif
