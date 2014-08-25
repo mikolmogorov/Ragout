@@ -244,8 +244,10 @@ def _split_graph(graph):
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
 
-    logger.debug("Finding perfect matching for a component of "
-                 "size {0}".format(len(graph)))
+    MIN_LOG_SIZE = 20
+    if len(graph) > MIN_LOG_SIZE:
+        logger.debug("Finding perfect matching for a component of "
+                     "size {0}".format(len(graph)))
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = set()
     for v1, v2 in edges.items():

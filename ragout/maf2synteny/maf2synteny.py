@@ -50,11 +50,17 @@ def make_synteny(maf_file, out_dir, min_blocks_list):
     _make_params_file(config.vals["maf2synteny"], params_file)
     cmdline = [M2S_EXEC, maf_file, out_dir, params_file]
     cmdline.extend(list(map(str, min_blocks_list)))
-    try:
-        subprocess.check_call(cmdline)
-    except subprocess.CalledProcessError as e:
-        logger.error("Some error inside native {0} module".format(M2S_EXEC))
+
+    logger.info("Running maf2synteny module")
+    proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)
+    for line in iter(proc.stderr.readline, ""):
+        logger.debug(line.strip())
+    ret_code = proc.wait()
+    if ret_code:
+        logger.error("Non-zero return code when calling {0} module: {1}"
+                     .format(M2S_EXEC, ret_code))
         return False
+
     os.remove(params_file)
 
     return True

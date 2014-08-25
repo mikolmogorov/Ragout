@@ -42,7 +42,6 @@ def make_overlap_graph(contigs_file, dot_file):
     """
     Builds assembly graph and outputs it in "dot" format
     """
-    logger.info("Building overlap graph...")
     if not check_binary():
         return False
 
@@ -52,11 +51,14 @@ def make_overlap_graph(contigs_file, dot_file):
     if config.vals["overlap"]["detect_kmer"]:
         cmdline.append("--detect-kmer")
 
-    try:
-        subprocess.check_call(cmdline)
-    except subprocess.CalledProcessError as e:
-        logger.error("Some error inside native {0} module: {1}"
-                     .format(OVERLAP_EXEC, e))
+    logger.info("Building overlap graph")
+    proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)
+    for line in iter(proc.stderr.readline, ""):
+        logger.debug(line.strip())
+    ret_code = proc.wait()
+    if ret_code:
+        logger.error("Non-zero return code when calling {0} module: {1}"
+                     .format(OVERLAP_EXEC, ret_code))
         return False
 
     return True

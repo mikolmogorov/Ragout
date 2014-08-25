@@ -113,12 +113,12 @@ def _get_cut_vertices(graph, reverse_graph, prev_cont, next_cont,
     src, dst = str(prev_cont), str(next_cont)
 
     if not (graph.has_node(src) and graph.has_node(dst)):
-        logger.debug("contigs {0} / {1} are not in the graph"
-                     .format(prev_cont, next_cont))
+        #logger.debug("contigs {0} / {1} are not in the graph"
+        #             .format(prev_cont, next_cont))
         return None
 
     if graph.has_edge(src, dst):
-        logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
+        #logger.debug("adjacent contigs {0} -- {1}".format(prev_cont, next_cont))
         return None
 
     restricted_nodes = set()
@@ -147,9 +147,9 @@ def _get_cut_vertices(graph, reverse_graph, prev_cont, next_cont,
 
     ordered_cut_vertices = [p for p in path if p in cut_vertices]
 
-    if len(ordered_cut_vertices):
-        logger.debug("found {0} cut vertixes between {1} -- {2}"
-                     .format(len(ordered_cut_vertices), prev_cont, next_cont))
+    #if len(ordered_cut_vertices):
+        #logger.debug("found {0} cut vertixes between {1} -- {2}"
+        #             .format(len(ordered_cut_vertices), prev_cont, next_cont))
 
     return ordered_cut_vertices
 
