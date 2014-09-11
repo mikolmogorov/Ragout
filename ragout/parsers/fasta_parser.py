@@ -19,7 +19,7 @@ def read_fasta_dict(filename):
 
     try:
         with open(filename, "r") as f:
-            for line in f:
+            for lineno, line in enumerate(f):
                 line = line.strip()
                 if line.startswith(">"):
                     if header:
@@ -29,8 +29,8 @@ def read_fasta_dict(filename):
                 else:
                     line = line.upper()
                     if not _validate_seq(line):
-                        raise FastaError("Non-ACGTN charcter in \"{0}\""
-                                         .format(filename))
+                        raise FastaError("Invalid char in \"{0}\" at line {1}"
+                                         .format(filename, lineno))
                     seq += line
 
             if header and len(seq):
@@ -61,7 +61,7 @@ def reverse_complement(string):
 
 def _validate_seq(sequence):
     for c in sequence:
-        if c not in "ACGTN":
+        if c not in "ACGTURYKMSWBDHVNX-":
             return False
     return True
 
@@ -78,6 +78,11 @@ def _iter_dict(d):
     return iter_d
 
 
-COMPL = {"A" : "T", "T" : "A", "G" : "C", "C" : "G", "N" : "N"}
+COMPL = {"A" : "T", "T" : "A", "G" : "C", "C" : "G",
+         "U" : "A", "R" : "Y", "Y" : "R", "K" : "M",
+         "M" : "K", "S" : "S", "W" : "W", "B" : "V",
+         "V" : "B", "D" : "H", "H" : "D", "N" : "N",
+         "X" : "X", "-" : "-"}
+
 def _comp_sym(char):
     return COMPL[char]
