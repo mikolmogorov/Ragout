@@ -7,6 +7,7 @@ if true reference is available
 
 from __future__ import print_function
 import sys
+import os
 from collections import namedtuple, defaultdict
 from itertools import product
 
@@ -16,7 +17,7 @@ Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
 
 
-def parse_contigs_order(filename):
+def parse_links_file(filename):
     scaffolds = []
 
     def add_contig(string):
@@ -39,6 +40,32 @@ def parse_contigs_order(filename):
         add_contig(right_cont)
 
     return scaffolds
+
+
+def parse_ord_file(filename):
+    scaffolds = []
+
+    with open(filename, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith(">"):
+                scaffolds.append(Scaffold(line[1:], []))
+            else:
+                sign = 1 if line[0] == "+" else -1
+                scaffolds[-1].contigs.append(Contig(line[1:], sign))
+
+    return scaffolds
+
+
+def parse_contigs_order(filename):
+    _filename, ext = os.path.splitext(filename)
+    if ext[1:] == "ord":
+        return parse_ord_file(filename)
+    else:
+        return parse_links_file(filename)
 
 
 def gap_count(lst_1, lst_2):
