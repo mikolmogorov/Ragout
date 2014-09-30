@@ -8,6 +8,7 @@ if true reference is available
 from __future__ import print_function
 import sys
 import os
+import argparse
 from collections import namedtuple, defaultdict
 from itertools import product
 
@@ -181,10 +182,19 @@ def do_job(nucmer_coords, scaffolds_ord):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: verify-order.py <nucmer_coords> <scaffolds_ord>")
-        return
-    do_job(sys.argv[1], sys.argv[2])
+    descr = ("A verification script for Ragout. It requires a contigs "
+            "alignment on \"true\" reference in nucmer coords format. "
+            "Given an alignment and a \"links\" file output by Ragout "
+            "the script finds missassembled contigs and calculates some "
+            "statistics.")
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("nucmer_coords", metavar="nucmer_coords",
+                        help="path to contigs alignment on 'true' reference")
+    parser.add_argument("links_file", metavar="links_file",
+                        help="path to 'links' file output by Ragout")
+    args = parser.parse_args()
+
+    do_job(args.nucmer_coords, args.links_file)
 
 
 if __name__ == "__main__":

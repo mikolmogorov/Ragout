@@ -2,9 +2,11 @@
 
 from __future__ import print_function
 import sys, os
+import argparse
 from collections import namedtuple, defaultdict
 from cStringIO import StringIO
 from itertools import combinations
+
 
 import networkx as nx
 import pylab
@@ -196,7 +198,8 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
             if my_has_path(overlap_graph, contigs, src, dst):
                 graph.add_edge(str(v1), str(v2), weight=0.1)
 
-            '''paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
+            """
+            paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
             for path in paths:
                 is_good = True
                 len_path = 0
@@ -210,7 +213,7 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
                     graph.add_edge(str(v1), str(v2), label=len_path,
                                        weight=0.1)
                     break
-            '''
+            """
 
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
@@ -260,16 +263,29 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: debug_report.py <nucmer_coords> <debug_dir> "
-              "[--circular] [--predicted]")
-        return
+    descr = ("A script which processes Ragout's debug output and draws some "
+            "fancy breakpoint graph pictures. It requires a contigs "
+            "alignment on \"true\" reference in nucmer coords format. "
+            "Also, Ragout should be run with --debug key to provide "
+            "necessary output. Please note, that one should point to "
+            "debug dir with a chosen synteny block size (for example "
+            "ragout_debug/5000). This script scipt draws only non-trivial "
+            "breakpoint graph components.")
 
-    nucmer_coords = sys.argv[1]
-    debug_dir = sys.argv[2]
-    circular = True if "--circular" in sys.argv else False
-    only_predicted = True if "--predicted" in sys.argv else False
-    do_job(nucmer_coords, debug_dir, circular, only_predicted)
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("nucmer_coords", metavar="nucmer_coords",
+                        help="path to contigs alignment on 'true' reference")
+    parser.add_argument("debug_dir", metavar="debug_dir",
+                        help="path to debug dir with chosen synteny block size")
+    parser.add_argument("--circular", action="store_const", metavar="circular",
+                        dest="circular", default=False, const=True,
+                        help="indicates that genomes are circular (like bacterial)")
+    parser.add_argument("--predicted", action="store_const", metavar="predicted",
+                        dest="predicted", default=False, const=True,
+                        help="draw only graph components which have predicted edges")
+    args = parser.parse_args()
+
+    do_job(args.nucmer_coords, args.debug_dir, args.circular, args.predicted)
 
 if __name__ == "__main__":
     main()
