@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
+"""
+A script that simulates inversions in a given genome.
+"""
+
 import sys
 import random
 from collections import defaultdict

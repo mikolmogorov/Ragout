@@ -1,4 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
+
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
+"""
+This script generates dot-plots of given set of synteny blocks
+for visual comparison.
+"""
 
 from __future__ import print_function
 from Bio import SeqIO

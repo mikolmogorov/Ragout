@@ -1,5 +1,13 @@
 from collections import namedtuple, defaultdict
 
+#(c) 2013-2014 by Authors
+#This file is a part of Ragout program.
+#Released under the BSD license (see LICENSE file)
+
+"""
+Some helper functions to parse/process nucmer output
+"""
+
 AlignmentInfo = namedtuple("AlignmentInfo", ["s_ref", "e_ref", "s_qry", "e_qry",
                             "len_ref", "len_qry", "ref_id", "contig_id"])
 
