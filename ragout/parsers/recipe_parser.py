@@ -67,6 +67,7 @@ def parse_ragout_recipe(filename):
             if param_name in cast_int_list:
                 value = list(map(int, value.split(",")))
             if param_name in fix_path:
+                value = os.path.expanduser(value)
                 value = os.path.join(prefix, value)
 
             if obj == "":
