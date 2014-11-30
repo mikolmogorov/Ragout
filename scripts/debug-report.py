@@ -29,7 +29,7 @@ def verify_alignment(alignment, contigs):
     problematic_contigs = []
     by_name = defaultdict(list)
     for entry in alignment:
-        by_name[entry.contig_id].append(entry)
+        by_name[entry.qry_id].append(entry)
     for name in contigs:
         if len(by_name[name]) > 1:
             hits = list(map(lambda e: (e.s_ref, e.len_qry), by_name[name]))
@@ -52,18 +52,18 @@ def get_true_adjacencies(alignment, contig_permutations,
 
         entries.append(entries[0])
         for hit in entries:
-            if prev_contig in break_contigs or hit.contig_id in break_contigs:
+            if prev_contig in break_contigs or hit.qry_id in break_contigs:
                 continue
 
             sign = 1 if hit.e_qry > hit.s_qry else -1
-            blocks = contig_permutations[hit.contig_id]
+            blocks = contig_permutations[hit.qry_id]
 
             if sign < 0:
                 blocks = list(map(lambda x: -x, blocks))[::-1]
             if prev_block:
                 adjacencies.append(Adjacency(-prev_block, blocks[0], False))
             prev_block = blocks[-1]
-            prev_contig = hit.contig_id
+            prev_contig = hit.qry_id
 
         if entries and not circular:
             adjacencies[-1] = Adjacency(adjacencies[-1].left,
@@ -253,7 +253,7 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
     contigs = get_contig_permutations(used_contigs)
     if nucmer_coords != "-":
         alignment = parse_nucmer_coords(nucmer_coords)
-        alignment = list(filter(lambda e: e.contig_id in contigs, alignment))
+        alignment = list(filter(lambda e: e.qry_id in contigs, alignment))
         #alignment = join_collinear(alignment)
         alignment = filter_by_coverage(alignment, 0.7)
         alignment = join_collinear(alignment)
