@@ -16,15 +16,16 @@ from utils.nucmer_parser import *
 import networkx as nx
 
 
-def get_blocks(nucmer_coords):
-    def sign(coord_1, coord_2):
-        return 1 if coord_1 < coord_2 else -1
+def filter_by_length(alignments, min_len=10000):
+    return list(filter(lambda a: abs(a.s_ref - a.e_ref) > min_len, alignments))
 
+
+def get_blocks(nucmer_coords):
     #TODO: filter repeats
-    #TODO: chech they don't intersect
+    #TODO: check they don't intersect
     alignment = parse_nucmer_coords(nucmer_coords)
     #alignment = join_collinear(alignment)
-    aln_with_id = list(enumerate(filter_by_coverage(alignment)))
+    aln_with_id = list(enumerate(filter_by_length(alignment)))
 
     #enumerating reference blocks
     ref_seqs = defaultdict(list)
@@ -78,8 +79,8 @@ def count_discord_adj(ref_blocks, qry_blocks):
 
 def main():
     ref_blocks, qry_blocks = get_blocks(sys.argv[1])
-    #output_blocks(ref_blocks)
-    #output_blocks(qry_blocks)
+    output_blocks(ref_blocks)
+    output_blocks(qry_blocks)
     print(count_discord_adj(ref_blocks, qry_blocks))
 
 
