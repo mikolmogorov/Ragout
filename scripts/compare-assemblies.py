@@ -10,22 +10,78 @@ thus evaluating 'agreement level' between them
 """
 
 from __future__ import print_function
+from collections import defaultdict
+from itertools import combinations
 import sys
+import os
+import argparse
 
-from utils.nucmer_parser import *
 import networkx as nx
 
+from utils.lastz_parser import parse_lastz_maf, run_lastz
 
-def filter_by_length(alignments, min_len=10000):
-    return list(filter(lambda a: abs(a.s_ref - a.e_ref) > min_len, alignments))
+MIN_ALIGNMENT = 5000
+
+def filter_intersecting(alignments):
+    to_filter = set()
+    for aln_1, aln_2 in combinations(alignments, 2):
+        if aln_1.ref_id != aln_2.ref_id:
+            continue
+
+        if aln_1.s_ref <= aln_2.s_ref <= aln_1.e_ref:
+            to_filter.add(aln_2)
+            if not (aln_1.s_ref <= aln_2.e_ref <= aln_1.e_ref):
+                to_filter.add(aln_1)
+
+        if aln_2.s_ref <= aln_1.s_ref <= aln_2.e_ref:
+            to_filter.add(aln_1)
+            if not (aln_2.s_ref <= aln_1.e_ref <= aln_2.e_ref):
+                to_filter.add(aln_2)
+
+    alignments = [a for a in alignments if a not in to_filter]
+
+    for aln_1, aln_2 in combinations(alignments, 2):
+        if aln_1.qry_id != aln_2.qry_id:
+            continue
+
+        if aln_1.s_qry <= aln_2.s_qry <= aln_1.e_qry:
+            to_filter.add(aln_2)
+            if not (aln_1.s_qry <= aln_2.e_qry <= aln_1.e_qry):
+                to_filter.add(aln_1)
+
+        if aln_2.s_qry <= aln_1.s_qry <= aln_2.e_qry:
+            to_filter.add(aln_1)
+            if not (aln_2.s_qry <= aln_1.e_qry <= aln_2.e_qry):
+                to_filter.add(aln_2)
+
+    return [a for a in alignments if a not in to_filter]
 
 
-def get_blocks(nucmer_coords):
-    #TODO: filter repeats
-    #TODO: check they don't intersect
-    alignment = parse_nucmer_coords(nucmer_coords)
+def filter_by_length(alignments, min_len):
+    func = (lambda a: abs(a.s_ref - a.e_ref) > min_len and
+                      abs(a.s_qry - a.e_qry) > min_len)
+    return list(filter(func, alignments))
+
+
+def get_alignment(reference, target, overwrite):
+    out_file = (os.path.basename(reference) + "_" +
+                os.path.basename(target) + ".maf")
+
+    if os.path.isfile(out_file) and not overwrite:
+        print("Alignment file already exists, lastz run skipped")
+    else:
+        run_lastz(reference, target, out_file)
+    alignment = parse_lastz_maf(out_file)
+
+    return alignment
+
+
+def get_blocks(reference, target, overwrite):
+    alignment = get_alignment(reference, target, overwrite)
+    alignment = filter_by_length(alignment, MIN_ALIGNMENT)
+    alignment = filter_intersecting(alignment)
+    aln_with_id = list(enumerate(alignment))
     #alignment = join_collinear(alignment)
-    aln_with_id = list(enumerate(filter_by_length(alignment)))
 
     #enumerating reference blocks
     ref_seqs = defaultdict(list)
@@ -70,17 +126,25 @@ def count_discord_adj(ref_blocks, qry_blocks):
     for node in graph.nodes():
         if len(graph.neighbors(node)) > 1:
             counter += 1
-            #print(node, graph.neighbors(node))
-            #for n in graph.neighbors(node):
-            #    print(graph[node][n])
 
     return counter
 
 
 def main():
-    ref_blocks, qry_blocks = get_blocks(sys.argv[1])
-    output_blocks(ref_blocks)
-    output_blocks(qry_blocks)
+    parser = argparse.ArgumentParser(description="Compare two assemblies")
+    parser.add_argument("assembly_1", metavar="assembly_1",
+                        help="path to first assembly")
+    parser.add_argument("assembly_2", metavar="assembly_2",
+                        help="path to second assembly")
+    parser.add_argument("--overwrite", action="store_const", metavar="overwrite",
+                        dest="overwrite", default=False, const=True,
+                        help="overwrite existing lastz alignment")
+    args = parser.parse_args()
+
+    ref_blocks, qry_blocks = get_blocks(args.assembly_1, args.assembly_2,
+                                        args.overwrite)
+    #output_blocks(ref_blocks)
+    #output_blocks(qry_blocks)
     print(count_discord_adj(ref_blocks, qry_blocks))
 
 

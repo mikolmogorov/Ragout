@@ -16,7 +16,9 @@ import argparse
 from collections import namedtuple, defaultdict
 from itertools import product
 
-from utils.nucmer_parser import *
+from utils.nucmer_parser import parse_nucmer_coords
+from utils.common import (join_collinear, filter_by_coverage,
+                          group_by_chr, get_order)
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])

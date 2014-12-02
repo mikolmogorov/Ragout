@@ -20,7 +20,9 @@ import networkx as nx
 import pylab
 from Bio import Phylo
 
-from utils.nucmer_parser import *
+from utils.nucmer_parser import parse_nucmer_coords
+from utils.common import (join_collinear, filter_by_coverage,
+                          group_by_chr, get_order)
 
 Edge = namedtuple("Edge", ["start", "end"])
 Adjacency = namedtuple("Adjacency", ["left", "right", "infinite"])
@@ -206,22 +208,6 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
             if my_has_path(overlap_graph, contigs, src, dst):
                 graph.add_edge(str(v1), str(v2), weight=0.1)
 
-            """
-            paths = list(nx.all_simple_paths(overlap_graph, src, dst, 10))
-            for path in paths:
-                is_good = True
-                len_path = 0
-                for p in path[1:-1]:
-                    len_path += 1
-                    if p[1:] in contigs:
-                        is_good = False
-                        break
-
-                if is_good:
-                    graph.add_edge(str(v1), str(v2), label=len_path,
-                                       weight=0.1)
-                    break
-            """
 
 def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
