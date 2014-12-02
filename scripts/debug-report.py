@@ -34,7 +34,7 @@ def verify_alignment(alignment, contigs):
         by_name[entry.qry_id].append(entry)
     for name in contigs:
         if len(by_name[name]) > 1:
-            hits = list(map(lambda e: (e.s_ref, e.len_qry), by_name[name]))
+            hits = list(map(lambda e: (e.ref_start, e.len_qry), by_name[name]))
             print("WARNING: Duplicated contig", name, hits, file=sys.stderr)
             problematic_contigs.append(name)
         if not by_name[name]:
@@ -57,7 +57,7 @@ def get_true_adjacencies(alignment, contig_permutations,
             if prev_contig in break_contigs or hit.qry_id in break_contigs:
                 continue
 
-            sign = 1 if hit.e_qry > hit.s_qry else -1
+            sign = 1 if hit.qry_end > hit.qry_start else -1
             blocks = contig_permutations[hit.qry_id]
 
             if sign < 0:

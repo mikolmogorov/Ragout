@@ -11,7 +11,6 @@ thus evaluating 'agreement level' between them
 
 from __future__ import print_function
 from collections import defaultdict
-from itertools import combinations
 import sys
 import os
 import argparse
@@ -19,48 +18,10 @@ import argparse
 import networkx as nx
 
 from utils.lastz_parser import parse_lastz_maf, run_lastz
+from utils.common import filter_intersecting, filter_by_length
+
 
 MIN_ALIGNMENT = 5000
-
-def filter_intersecting(alignments):
-    to_filter = set()
-    for aln_1, aln_2 in combinations(alignments, 2):
-        if aln_1.ref_id != aln_2.ref_id:
-            continue
-
-        if aln_1.s_ref <= aln_2.s_ref <= aln_1.e_ref:
-            to_filter.add(aln_2)
-            if not (aln_1.s_ref <= aln_2.e_ref <= aln_1.e_ref):
-                to_filter.add(aln_1)
-
-        if aln_2.s_ref <= aln_1.s_ref <= aln_2.e_ref:
-            to_filter.add(aln_1)
-            if not (aln_2.s_ref <= aln_1.e_ref <= aln_2.e_ref):
-                to_filter.add(aln_2)
-
-    alignments = [a for a in alignments if a not in to_filter]
-
-    for aln_1, aln_2 in combinations(alignments, 2):
-        if aln_1.qry_id != aln_2.qry_id:
-            continue
-
-        if aln_1.s_qry <= aln_2.s_qry <= aln_1.e_qry:
-            to_filter.add(aln_2)
-            if not (aln_1.s_qry <= aln_2.e_qry <= aln_1.e_qry):
-                to_filter.add(aln_1)
-
-        if aln_2.s_qry <= aln_1.s_qry <= aln_2.e_qry:
-            to_filter.add(aln_1)
-            if not (aln_2.s_qry <= aln_1.e_qry <= aln_2.e_qry):
-                to_filter.add(aln_2)
-
-    return [a for a in alignments if a not in to_filter]
-
-
-def filter_by_length(alignments, min_len):
-    func = (lambda a: abs(a.s_ref - a.e_ref) > min_len and
-                      abs(a.s_qry - a.e_qry) > min_len)
-    return list(filter(func, alignments))
 
 
 def get_alignment(reference, target, overwrite):
@@ -88,9 +49,9 @@ def get_blocks(reference, target, overwrite):
     for aln_id, aln in aln_with_id:
         ref_seqs[aln.ref_id].append((aln_id, aln))
     for seq_id in ref_seqs:
-        ref_seqs[seq_id].sort(key=lambda arec: arec[1].s_ref)
+        ref_seqs[seq_id].sort(key=lambda arec: arec[1].ref_start)
         to_block = (lambda (a_id, aln): (int(a_id) + 1) *
-                    (1 if aln.s_ref < aln.e_ref else -1))
+                    (1 if aln.ref_start < aln.ref_end else -1))
         ref_seqs[seq_id] = list(map(to_block, ref_seqs[seq_id]))
 
     #enumerating query blocks
@@ -98,9 +59,9 @@ def get_blocks(reference, target, overwrite):
     for aln_id, aln in aln_with_id:
         qry_seqs[aln.qry_id].append((aln_id, aln))
     for seq_id in qry_seqs:
-        qry_seqs[seq_id].sort(key=lambda arec: arec[1].s_qry)
+        qry_seqs[seq_id].sort(key=lambda arec: arec[1].qry_start)
         to_block = (lambda (a_id, aln): (int(a_id) + 1) *
-                    (1 if aln.s_qry < aln.e_qry else -1))
+                    (1 if aln.qry_start < aln.qry_end else -1))
         qry_seqs[seq_id] = list(map(to_block, qry_seqs[seq_id]))
 
     return ref_seqs, qry_seqs
