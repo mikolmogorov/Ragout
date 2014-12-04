@@ -17,11 +17,11 @@ import argparse
 
 import networkx as nx
 
-from utils.lastz_parser import parse_lastz_maf, run_lastz
-from utils.common import filter_intersecting, filter_by_length
+from utils.lastz_parser import (parse_lastz_maf, run_lastz,
+                                filter_intersecting, filter_by_length)
 
 
-MIN_ALIGNMENT = 5000
+MIN_ALIGNMENT = 1000
 
 
 def get_alignment(reference, target, overwrite):
@@ -41,36 +41,30 @@ def get_blocks(reference, target, overwrite):
     alignment = get_alignment(reference, target, overwrite)
     alignment = filter_by_length(alignment, MIN_ALIGNMENT)
     alignment = filter_intersecting(alignment)
-    aln_with_id = list(enumerate(alignment))
     #alignment = join_collinear(alignment)
 
-    #enumerating reference blocks
-    ref_seqs = defaultdict(list)
-    for aln_id, aln in aln_with_id:
-        ref_seqs[aln.ref_id].append((aln_id, aln))
-    for seq_id in ref_seqs:
-        ref_seqs[seq_id].sort(key=lambda arec: arec[1].ref_start)
-        to_block = (lambda (a_id, aln): (int(a_id) + 1) *
-                    (1 if aln.ref_start < aln.ref_end else -1))
-        ref_seqs[seq_id] = list(map(to_block, ref_seqs[seq_id]))
+    def enum_blocks(aln_rows):
+        blocks = defaultdict(list)
+        for r_id, row in enumerate(aln_rows):
+            blocks[row.seq_id].append((r_id, row))
+        for seq_id in blocks:
+            blocks[seq_id].sort(key=lambda pair: pair[1].start)
+            to_block = lambda (r_id, row): (r_id + 1) * row.strand
+            blocks[seq_id] = list(map(to_block, blocks[seq_id]))
 
-    #enumerating query blocks
-    qry_seqs = defaultdict(list)
-    for aln_id, aln in aln_with_id:
-        qry_seqs[aln.qry_id].append((aln_id, aln))
-    for seq_id in qry_seqs:
-        qry_seqs[seq_id].sort(key=lambda arec: arec[1].qry_start)
-        to_block = (lambda (a_id, aln): (int(a_id) + 1) *
-                    (1 if aln.qry_start < aln.qry_end else -1))
-        qry_seqs[seq_id] = list(map(to_block, qry_seqs[seq_id]))
+        return blocks
 
-    return ref_seqs, qry_seqs
+    #IMPORTANT: ref/qry rows should have corresponding order
+    ref_blocks = enum_blocks(list(map(lambda ap: ap.ref, alignment)))
+    qry_blocks = enum_blocks(list(map(lambda ap: ap.qry, alignment)))
+
+    return ref_blocks, qry_blocks
 
 
 def output_blocks(blocks):
     for seq, bl in blocks.items():
         print(">{0}".format(seq))
-        print(" ".join(map(str,bl)))
+        print(" ".join(map(lambda b: "{0:+d}".format(b),bl)))
 
 
 def count_discord_adj(ref_blocks, qry_blocks):
@@ -104,8 +98,8 @@ def main():
 
     ref_blocks, qry_blocks = get_blocks(args.assembly_1, args.assembly_2,
                                         args.overwrite)
-    #output_blocks(ref_blocks)
-    #output_blocks(qry_blocks)
+    output_blocks(ref_blocks)
+    output_blocks(qry_blocks)
     print(count_discord_adj(ref_blocks, qry_blocks))
 
 

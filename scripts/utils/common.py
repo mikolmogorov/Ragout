@@ -15,6 +15,11 @@ AlignmentInfo = namedtuple("AlignmentInfo", ["ref_start", "ref_end",
                             "qry_start", "qry_end", "len_ref",
                             "len_qry", "ref_id", "qry_id"])
 
+AlignmentColumn = namedtuple("PairAlignment", ["ref", "qry"])
+
+AlignmentRow = namedtuple("AlignmentRow", ["start", "end", "strand",
+                                           "seq_len", "seq_id"])
+
 
 def group_by_chr(alignment):
     by_chr = defaultdict(list)
@@ -73,47 +78,6 @@ def filter_by_coverage(alignment, threshold=0.45):
         filtered_alignment.extend(ent_lst)
 
     return filtered_alignment
-
-
-def filter_intersecting(alignments):
-    to_filter = set()
-    for aln_1, aln_2 in combinations(alignments, 2):
-        if aln_1.ref_id != aln_2.ref_id:
-            continue
-
-        if aln_1.ref_start <= aln_2.ref_start <= aln_1.ref_end:
-            to_filter.add(aln_2)
-            if not (aln_1.ref_start <= aln_2.ref_end <= aln_1.ref_end):
-                to_filter.add(aln_1)
-
-        if aln_2.ref_start <= aln_1.ref_start <= aln_2.ref_end:
-            to_filter.add(aln_1)
-            if not (aln_2.ref_start <= aln_1.ref_end <= aln_2.ref_end):
-                to_filter.add(aln_2)
-
-    alignments = [a for a in alignments if a not in to_filter]
-
-    for aln_1, aln_2 in combinations(alignments, 2):
-        if aln_1.qry_id != aln_2.qry_id:
-            continue
-
-        if aln_1.qry_start <= aln_2.qry_start <= aln_1.qry_end:
-            to_filter.add(aln_2)
-            if not (aln_1.qry_start <= aln_2.qry_end <= aln_1.qry_end):
-                to_filter.add(aln_1)
-
-        if aln_2.qry_start <= aln_1.qry_start <= aln_2.qry_end:
-            to_filter.add(aln_1)
-            if not (aln_2.qry_start <= aln_1.qry_end <= aln_2.qry_end):
-                to_filter.add(aln_2)
-
-    return [a for a in alignments if a not in to_filter]
-
-
-def filter_by_length(alignments, min_len):
-    func = (lambda a: abs(a.ref_start - a.ref_end) > min_len and
-                      abs(a.qry_start - a.qry_end) > min_len)
-    return list(filter(func, alignments))
 
 
 class Hit:
