@@ -21,9 +21,6 @@ from utils.lastz_parser import (parse_lastz_maf, run_lastz,
                                 filter_intersecting, filter_by_length)
 
 
-MIN_ALIGNMENT = 1000
-
-
 def get_alignment(reference, target, overwrite):
     out_file = (os.path.basename(reference) + "_" +
                 os.path.basename(target) + ".maf")
@@ -37,9 +34,9 @@ def get_alignment(reference, target, overwrite):
     return alignment
 
 
-def get_blocks(reference, target, overwrite):
+def get_blocks(reference, target, overwrite, min_alignmtnt):
     alignment = get_alignment(reference, target, overwrite)
-    alignment = filter_by_length(alignment, MIN_ALIGNMENT)
+    alignment = filter_by_length(alignment, min_alignmtnt)
     alignment = filter_intersecting(alignment)
     #alignment = join_collinear(alignment)
 
@@ -94,10 +91,13 @@ def main():
     parser.add_argument("--overwrite", action="store_const", metavar="overwrite",
                         dest="overwrite", default=False, const=True,
                         help="overwrite existing lastz alignment")
+    parser.add_argument("-b", "--block", dest="block_size",
+                        help="minimum synteny block size",
+                        default="5000")
     args = parser.parse_args()
 
     ref_blocks, qry_blocks = get_blocks(args.assembly_1, args.assembly_2,
-                                        args.overwrite)
+                                        args.overwrite, int(args.block_size))
     output_blocks(ref_blocks)
     output_blocks(qry_blocks)
     print(count_discord_adj(ref_blocks, qry_blocks))
