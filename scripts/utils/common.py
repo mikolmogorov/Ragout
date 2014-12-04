@@ -11,11 +11,7 @@ from collections import namedtuple, defaultdict
 from itertools import combinations
 
 
-AlignmentInfo = namedtuple("AlignmentInfo", ["ref_start", "ref_end",
-                            "qry_start", "qry_end", "len_ref",
-                            "len_qry", "ref_id", "qry_id"])
-
-AlignmentColumn = namedtuple("PairAlignment", ["ref", "qry"])
+AlignmentColumn = namedtuple("AlignmentColumn", ["ref", "qry"])
 
 AlignmentRow = namedtuple("AlignmentRow", ["start", "end", "strand",
                                            "seq_len", "seq_id"])
@@ -24,12 +20,14 @@ AlignmentRow = namedtuple("AlignmentRow", ["start", "end", "strand",
 def group_by_chr(alignment):
     by_chr = defaultdict(list)
     for entry in alignment:
-        by_chr[entry.ref_id].append(entry)
+        by_chr[entry.ref.seq_id].append(entry)
     for chr_id in by_chr:
-        by_chr[chr_id].sort(key=lambda e: e.ref_start)
+        by_chr[chr_id].sort(key=lambda e: e.ref.start)
     return by_chr
 
 
+##Don't use it, it's bugged!
+"""
 def join_collinear(alignment):
 #TODO: check for strand consistency
     new_entries = []
@@ -42,8 +40,9 @@ def join_collinear(alignment):
                            abs(last_entry.ref_end - start_entry.ref_start),
                            abs(last_entry.qry_end - start_entry.qry_start),
                            last_entry.ref_id, last_entry.qry_id))
+
     for chr_id in by_chr:
-        by_chr[chr_id].sort(key=lambda e: e.ref_start)
+        by_chr[chr_id].sort(key=lambda e: e.ref.start)
         start_entry = None
         last_entry = None
         for entry in by_chr[chr_id]:
@@ -60,18 +59,24 @@ def join_collinear(alignment):
             append_entry(start_entry, last_entry)
 
     return new_entries
+"""
 
 
-def filter_by_coverage(alignment, threshold=0.45):
+def aln_len(row):
+    assert row.end >= row.start
+    return row.end - row.start
+
+
+def filter_by_coverage(alignment, threshold):
     by_name = defaultdict(list)
     for entry in alignment:
-        by_name[entry.qry_id].append(entry)
+        by_name[entry.qry.seq_id].append(entry)
 
     for name in by_name:
-        by_name[name].sort(key=lambda e: e.len_qry, reverse=True)
-        len_filter = lambda e: e.len_qry > threshold * by_name[name][0].len_qry
+        by_name[name].sort(key=lambda e: aln_len(e.qry), reverse=True)
+        len_filter = (lambda e: aln_len(e.qry) > threshold *
+                                aln_len(by_name[name][0].qry))
         by_name[name] = list(filter(len_filter, by_name[name]))
-        #print(by_name[name])
 
     filtered_alignment = []
     for ent_lst in by_name.values():
@@ -96,8 +101,10 @@ def get_order(alignment):
     contig_len = defaultdict(int)
 
     for entry in alignment:
-        contig_len[entry.qry_id] = max(entry.len_qry, contig_len[entry.qry_id])
-        chr_len[entry.ref_id] = max(entry.ref_start, chr_len[entry.ref_id])
+        contig_len[entry.qry.seq_id] = max(entry.qry.end,
+                                           contig_len[entry.qry.seq_id])
+        chr_len[entry.ref.seq_id] = max(entry.ref.end,
+                                        chr_len[entry.ref.seq_id])
 
     by_chr = group_by_chr(alignment)
     entry_ord = defaultdict(list)
@@ -106,11 +113,11 @@ def get_order(alignment):
     prev_start = None
     for chr_id, alignment in by_chr.items():
         for e in alignment:
-            if prev_start is not None and e.ref_start > prev_start:
+            if prev_start is not None and e.ref.start > prev_start:
                     contig_pos += 1
-            prev_start = e.ref_start
-            sign = 1 if e.qry_end > e.qry_start else -1
-            entry_ord[e.qry_id].append(Hit(contig_pos, chr_id,
-                                           e.ref_start, sign))
+            prev_start = e.ref.start
+            sign = e.ref.strand * e.qry.strand
+            entry_ord[e.qry.seq_id].append(Hit(contig_pos, chr_id,
+                                               e.ref.start, sign))
 
     return entry_ord, chr_len, contig_len

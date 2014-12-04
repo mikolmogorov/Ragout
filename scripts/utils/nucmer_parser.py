@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 
-from .common import AlignmentInfo
+from .common import AlignmentRow, AlignmentColumn
 
 #(c) 2013-2014 by Authors
 #This file is a part of Ragout program.
@@ -26,10 +26,25 @@ def parse_nucmer_coords(filename):
         len_ref, len_qry = list(map(int, vals[2].split()))
         ref_id, qry_id = vals[4].split("\t")
 
+        if e_ref > s_ref:
+            ref_strand = 1
+        else:
+            ref_strand = -1
+            s_ref, e_ref = e_ref, s_ref
+
+        if e_qry > s_qry:
+            qry_strand = 1
+        else:
+            qry_strand = -1
+            s_qry, e_qry = e_qry, s_qry
+
         if ref_id not in chr_alias:
             chr_alias[ref_id] = "chr{0}".format(chr_num)
             chr_num += 1
-        alignment.append(AlignmentInfo(s_ref, e_ref, s_qry, e_qry,
-                            len_ref, len_qry, chr_alias[ref_id], qry_id))
+
+        ref_row = AlignmentRow(s_ref, e_ref, ref_strand, None,
+                                                chr_alias[ref_id])
+        qry_row = AlignmentRow(s_qry, e_qry, qry_strand, None, qry_id)
+        alignment.append(AlignmentColumn(ref_row, qry_row))
 
     return alignment

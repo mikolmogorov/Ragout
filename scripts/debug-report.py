@@ -21,8 +21,8 @@ import pylab
 from Bio import Phylo
 
 from utils.nucmer_parser import parse_nucmer_coords
-from utils.common import (join_collinear, filter_by_coverage,
-                          group_by_chr, get_order)
+from utils.common import (filter_by_coverage,
+                          group_by_chr, get_order, aln_len)
 
 Edge = namedtuple("Edge", ["start", "end"])
 Adjacency = namedtuple("Adjacency", ["left", "right", "infinite"])
@@ -31,10 +31,11 @@ def verify_alignment(alignment, contigs):
     problematic_contigs = []
     by_name = defaultdict(list)
     for entry in alignment:
-        by_name[entry.qry_id].append(entry)
+        by_name[entry.qry.seq_id].append(entry)
     for name in contigs:
         if len(by_name[name]) > 1:
-            hits = list(map(lambda e: (e.ref_start, e.len_qry), by_name[name]))
+            hits = list(map(lambda e: (e.ref.start, aln_len(e.qry)),
+                            by_name[name]))
             print("WARNING: Duplicated contig", name, hits, file=sys.stderr)
             problematic_contigs.append(name)
         if not by_name[name]:
@@ -54,18 +55,18 @@ def get_true_adjacencies(alignment, contig_permutations,
 
         entries.append(entries[0])
         for hit in entries:
-            if prev_contig in break_contigs or hit.qry_id in break_contigs:
+            if prev_contig in break_contigs or hit.qry.seq_id in break_contigs:
                 continue
 
-            sign = 1 if hit.qry_end > hit.qry_start else -1
-            blocks = contig_permutations[hit.qry_id]
+            sign = hit.qry.strand * hit.ref.strand
+            blocks = contig_permutations[hit.qry.seq_id]
 
             if sign < 0:
                 blocks = list(map(lambda x: -x, blocks))[::-1]
             if prev_block:
                 adjacencies.append(Adjacency(-prev_block, blocks[0], False))
             prev_block = blocks[-1]
-            prev_contig = hit.qry_id
+            prev_contig = hit.qry.seq_id
 
         if entries and not circular:
             adjacencies[-1] = Adjacency(adjacencies[-1].left,
@@ -239,10 +240,10 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
     contigs = get_contig_permutations(used_contigs)
     if nucmer_coords != "-":
         alignment = parse_nucmer_coords(nucmer_coords)
-        alignment = list(filter(lambda e: e.qry_id in contigs, alignment))
+        alignment = list(filter(lambda e: e.qry.seq_id in contigs, alignment))
         #alignment = join_collinear(alignment)
         alignment = filter_by_coverage(alignment, 0.7)
-        alignment = join_collinear(alignment)
+        #alignment = join_collinear(alignment)
         break_contigs = verify_alignment(alignment, contigs)
         true_adj = get_true_adjacencies(alignment, contigs,
                                         break_contigs, circular)
