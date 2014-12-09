@@ -21,7 +21,6 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-DEFAULT_DISTANCE = 0   #just an arbitrary number
 
 class BreakpointGraph:
     """
@@ -160,10 +159,10 @@ class BreakpointGraph:
             chosen_edges.extend(matching_edges)
 
         #check if there are only 2 nodes left
-        if len(unused_nodes) == 2:
-            self.guessed_count += 1
-            chosen_edges.append(tuple(unused_nodes))
-            unused_nodes.clear()
+        #if len(unused_nodes) == 2:
+        #    self.guessed_count += 1
+        #    chosen_edges.append(tuple(unused_nodes))
+        #    unused_nodes.clear()
         self.orphans_count += len(unused_nodes)
 
         return chosen_edges
@@ -230,6 +229,7 @@ class BreakpointGraph:
         Tries to guess the distance between synteny blocks
         in a target genome
         """
+        DEFAULT_DISTANCE = 0
         if not self.bp_graph.has_edge(node_1, node_2):
             return DEFAULT_DISTANCE
         distances = [e["distance"]
