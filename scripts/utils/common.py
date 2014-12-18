@@ -26,30 +26,41 @@ def group_by_chr(alignment):
     return by_chr
 
 
-##Don't use it, it's bugged!
-"""
 def join_collinear(alignment):
-#TODO: check for strand consistency
     new_entries = []
-    by_chr = group_by_chr(alignment)
 
     def append_entry(start_entry, last_entry):
-        new_entries.append(AlignmentInfo(start_entry.ref_start,
-                           last_entry.ref_end, start_entry.qry_start,
-                           last_entry.qry_end,
-                           abs(last_entry.ref_end - start_entry.ref_start),
-                           abs(last_entry.qry_end - start_entry.qry_start),
-                           last_entry.ref_id, last_entry.qry_id))
+        ref_row = AlignmentRow(start_entry.ref.start, last_entry.ref.end,
+                               start_entry.ref.strand, start_entry.ref.seq_len,
+                               start_entry.ref.seq_id)
+        qry_left, qry_right = sorted([start_entry.qry, last_entry.qry],
+                                     key=lambda r: r.start)
+        qry_row = AlignmentRow(qry_left.start, qry_right.end,
+                               qry_left.strand, qry_left.seq_len,
+                               qry_left.seq_id)
+        new_entries.append(AlignmentColumn(ref_row, qry_row))
 
+    by_chr = group_by_chr(alignment)
     for chr_id in by_chr:
         by_chr[chr_id].sort(key=lambda e: e.ref.start)
         start_entry = None
         last_entry = None
         for entry in by_chr[chr_id]:
-
             if not start_entry:
                 start_entry = entry
-            elif start_entry.qry_id != entry.qry_id:
+                last_entry = entry
+                continue
+
+            #checking for connection consistency
+            ref_type = last_entry.ref.strand * entry.ref.strand
+
+            qry_left, qry_right = sorted([last_entry.qry, entry.qry],
+                                         key=lambda r: r.start)
+            qry_type = qry_left.strand * qry_right.strand
+            ###
+
+            if (entry.qry.seq_id != last_entry.qry.seq_id or
+                ref_type != qry_type):
                 append_entry(start_entry, last_entry)
                 start_entry = entry
 
@@ -59,7 +70,6 @@ def join_collinear(alignment):
             append_entry(start_entry, last_entry)
 
     return new_entries
-"""
 
 
 def aln_len(row):

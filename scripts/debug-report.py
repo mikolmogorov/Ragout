@@ -21,7 +21,7 @@ import pylab
 from Bio import Phylo
 
 from utils.nucmer_parser import parse_nucmer_coords
-from utils.common import (filter_by_coverage,
+from utils.common import (filter_by_coverage, join_collinear,
                           group_by_chr, get_order, aln_len)
 
 Edge = namedtuple("Edge", ["start", "end"])
@@ -243,7 +243,7 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
         alignment = list(filter(lambda e: e.qry.seq_id in contigs, alignment))
         #alignment = join_collinear(alignment)
         alignment = filter_by_coverage(alignment, 0.7)
-        #alignment = join_collinear(alignment)
+        alignment = join_collinear(alignment)
         break_contigs = verify_alignment(alignment, contigs)
         true_adj = get_true_adjacencies(alignment, contigs,
                                         break_contigs, circular)
