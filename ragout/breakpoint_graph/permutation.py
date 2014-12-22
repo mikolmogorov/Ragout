@@ -74,13 +74,21 @@ class PermutationContainer:
         if not permutations:
             raise PermException("Error reading permutations")
 
+        has_sequences = set()
         for p in permutations:
             if p.genome_name not in recipe["genomes"]:
                 continue
+
+            has_sequences.add(p.genome_name)
             if p.genome_name == recipe["target"]:
                 self.target_perms.append(p)
             else:
                 self.ref_perms.append(p)
+
+        for genome in recipe["genomes"]:
+            if genome not in has_sequences:
+                raise PermException("No sequences read for genome {0}. Check "
+                                    "recipe for correctness.".format(genome))
         _check_coverage(self.ref_perms + self.target_perms)
 
         logger.debug("Read {0} reference sequences"

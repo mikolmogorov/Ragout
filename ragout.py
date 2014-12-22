@@ -23,7 +23,8 @@ if sys.version_info[:2] != (2, 7):
 #Setting executable paths
 ragout_root = os.path.dirname(os.path.realpath(__file__))
 lib_absolute = os.path.join(ragout_root, LIB_DIR)
-sys.path.extend([ragout_root, lib_absolute])
+sys.path.insert(0, lib_absolute)
+sys.path.insert(0, ragout_root)
 os.environ["PATH"] += os.pathsep + lib_absolute
 
 #Ragout entry point
