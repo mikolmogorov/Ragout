@@ -38,16 +38,16 @@ class BreakpointGraph:
         """
         logger.debug("Building breakpoint graph")
 
-        for perm in perm_container.ref_perms_filtered:
+        for perm in perm_container.ref_perms:
             if perm.genome_name not in self.references:
                 self.references.append(perm.genome_name)
 
-        for perm in perm_container.target_perms_filtered:
+        for perm in perm_container.target_perms:
             if perm.genome_name not in self.targets:
                 self.targets.append(perm.genome_name)
 
-        for perm in chain(perm_container.ref_perms_filtered,
-                          perm_container.target_perms_filtered):
+        for perm in chain(perm_container.ref_perms,
+                          perm_container.target_perms):
 
             if len(perm.blocks) < 2:
                 continue

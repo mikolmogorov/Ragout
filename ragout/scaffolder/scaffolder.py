@@ -141,7 +141,7 @@ def _make_contigs(perm_container):
     """
     contigs = []
     index = defaultdict(list)
-    for perm in perm_container.target_perms_filtered:
+    for perm in perm_container.target_perms:
         assert len(perm.blocks)
 
         contigs.append(Contig(perm.chr_name))

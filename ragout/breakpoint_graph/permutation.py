@@ -67,6 +67,7 @@ class PermutationContainer:
         """
         self.ref_perms = []
         self.target_perms = []
+        self.recipe = recipe
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
@@ -93,92 +94,100 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        self.target_blocks = set()
-        for perm in self.target_perms:
-            self.target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
+        #self.ref_perms_raw = copy(self.ref_perms)
+        #self.target_perms_raw = copy(self.target_perms)
 
-        #filter dupilcated/suspicious to missassembles blocks
-        duplications = _find_duplications(self.ref_perms, self.target_perms)
-        to_hold = self.target_blocks - duplications
-
-        ref_filtered = [_filter_perm(p, to_hold) for p in self.ref_perms]
-        target_filtered = [_filter_perm(p, to_hold) for p in self.target_perms]
-
-        suspicious = _find_missassembles(ref_filtered, target_filtered)
-        to_hold = to_hold - set(suspicious)
-        ref_filtered = [_filter_perm(p, to_hold) for p in self.ref_perms]
-        target_filtered = [_filter_perm(p, to_hold) for p in self.target_perms]
-
-        self.ref_perms_filtered = list(filter(lambda p: p.blocks, ref_filtered))
-        self.target_perms_filtered = list(filter(lambda p: p.blocks,
-                                                 target_filtered))
-        #############
+        self.filter_indels()
+        self.filter_repeats()
+        self.filter_fusions()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
-            _write_permutations(self.target_perms_filtered, open(file, "w"))
+            _write_permutations(self.target_perms, open(file, "w"))
 
+    def filter_indels(self):
+        """
+        Filters blocks that don't appear in target
+        """
+        target_blocks = set()
+        for perm in self.target_perms:
+            target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
 
-def _find_duplications(ref_perms, target_perms):
-    """
-    Find duplicated blocks
-    """
-    index = defaultdict(set)
-    duplications = set()
-    for perm in ref_perms + target_perms:
-        for block in perm.blocks:
-            if perm.genome_name in index[block.block_id]:
-                duplications.add(block.block_id)
-            else:
-                index[block.block_id].add(perm.genome_name)
+        self.ref_perms = _filter_permutations(self.ref_perms, target_blocks)
 
-    return duplications
-
-
-def _find_missassembles(ref_perms, target_perms):
-    """
-    Tries to find a suspicious adjacencies that spans over
-    different reference chromosomes.
-    Assumes that repeats are filtered.
-    """
-    by_genome = defaultdict(list)
-    for ref_perm in ref_perms:
-        by_genome[ref_perm.genome_name].append(ref_perm)
-
-    perm_ok = defaultdict(lambda: False)
-
-    for genome_name, perms in by_genome.items():
-        chr_index = defaultdict(lambda : None)
-        for perm in perms:
+    def filter_repeats(self):
+        """
+        Filters repetitive blocks
+        """
+        index = defaultdict(set)
+        repeats = set()
+        for perm in self.ref_perms + self.target_perms:
             for block in perm.blocks:
-                chr_index[block.block_id] = perm.chr_name
+                if perm.genome_name in index[block.block_id]:
+                    repeats.add(block.block_id)
+                else:
+                    index[block.block_id].add(perm.genome_name)
 
-        for perm in target_perms:
-            block_ids = list(map(lambda b: b.block_id, perm.blocks))
-            chromosomes = list(map(lambda b: chr_index[b], block_ids))
-            if len(set(chromosomes)) <= 1:
-                perm_ok[perm.chr_name] = True
+        self.target_perms = _filter_permutations(self.target_perms, repeats,
+                                                 inverse=True)
+        self.ref_perms = _filter_permutations(self.ref_perms, repeats,
+                                              inverse=True)
 
-    suspicious = []
-    for perm in target_perms:
-        if not perm_ok[perm.chr_name]:
-            print(perm.chr_name)
-            suspicious.extend(list(map(lambda b: b.block_id, perm.blocks)))
+    def filter_fusions(self):
+        """
+        Tries to find contigs that are suspective to chromosome fusions
+        and fillter them out
+        """
+        by_genome = defaultdict(list)
+        for ref_perm in self.ref_perms:
+            by_genome[ref_perm.genome_name].append(ref_perm)
 
-    #print(suspicious)
-    return suspicious
+        refs_to_check = [ref for ref in by_genome.keys()
+                         if not self.recipe["genomes"][ref]["draft"]]
+        if not refs_to_check:
+            return
+
+        chr_index = defaultdict(lambda: defaultdict(lambda : None))
+        for genome_name, perms in by_genome.items():
+            for perm in perms:
+                for block in perm.blocks:
+                    chr_index[genome_name][block.block_id] = perm.chr_name
+
+        suspicious = []
+        for perm in self.target_perms:
+            for block_1, block_2 in perm.iter_pairs():
+                good_adjacency = False
+                for ref in refs_to_check:
+                    chr_1 = chr_index[ref][block_1.block_id]
+                    chr_2 = chr_index[ref][block_2.block_id]
+                    if None in [chr_1, chr_2] or chr_1 == chr_2:
+                        good_adjacency = True
+                        break
+
+                if not good_adjacency:
+                    logger.debug("Chimeric contig, ignoring: " + perm.chr_name)
+                    suspicious.extend(list(map(lambda b: b.block_id, perm.blocks)))
+                    break
+
+        self.target_perms = _filter_permutations(self.target_perms, suspicious,
+                                                 inverse=True)
+        self.ref_perms = _filter_permutations(self.ref_perms, suspicious,
+                                              inverse=True)
 
 
-def _filter_perm(perm, to_hold):
+def _filter_permutations(permutations, blocks, inverse=False):
     """
-    Filters duplications from permutaion
+    Filters given blocks from permutations
     """
-    new_perm = Permutation(perm.genome_name, perm.chr_name, perm.chr_id,
-                           perm.chr_len, [])
-    for block in perm.blocks:
-        if block.block_id in to_hold:
-            new_perm.blocks.append(block)
-    return new_perm
+    new_perms = []
+    filter_func = lambda b: (b.block_id in blocks) != inverse
+
+    for perm in permutations:
+        new_blocks = list(filter(filter_func, perm.blocks))
+        if new_blocks:
+            new_perms.append(Permutation(perm.genome_name, perm.chr_name,
+                                         perm.chr_id, perm.chr_len, new_blocks))
+    return new_perms
 
 
 def _parse_permutations(filename):
