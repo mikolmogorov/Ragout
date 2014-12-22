@@ -97,16 +97,22 @@ class PermutationContainer:
         for perm in self.target_perms:
             self.target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
 
-        #filter dupilcated blocks
-        self.duplications = _find_duplications(self.ref_perms,
-                                               self.target_perms)
-        to_hold = self.target_blocks - self.duplications
-        self.ref_perms_filtered = [_filter_perm(p, to_hold)
-                                      for p in self.ref_perms]
-        self.target_perms_filtered = [_filter_perm(p, to_hold)
-                                         for p in self.target_perms]
+        #filter dupilcated/suspicious to missassembles blocks
+        duplications = _find_duplications(self.ref_perms, self.target_perms)
+        to_hold = self.target_blocks - duplications
+
+        ref_filtered = [_filter_perm(p, to_hold) for p in self.ref_perms]
+        target_filtered = [_filter_perm(p, to_hold) for p in self.target_perms]
+
+        suspicious = _find_missassembles(ref_filtered, target_filtered)
+        to_hold = to_hold - set(suspicious)
+        ref_filtered = [_filter_perm(p, to_hold) for p in self.ref_perms]
+        target_filtered = [_filter_perm(p, to_hold) for p in self.target_perms]
+
+        self.ref_perms_filtered = list(filter(lambda p: p.blocks, ref_filtered))
         self.target_perms_filtered = list(filter(lambda p: p.blocks,
-                                                 self.target_perms_filtered))
+                                                 target_filtered))
+        #############
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -127,6 +133,40 @@ def _find_duplications(ref_perms, target_perms):
                 index[block.block_id].add(perm.genome_name)
 
     return duplications
+
+
+def _find_missassembles(ref_perms, target_perms):
+    """
+    Tries to find a suspicious adjacencies that spans over
+    different reference chromosomes.
+    Assumes that repeats are filtered.
+    """
+    by_genome = defaultdict(list)
+    for ref_perm in ref_perms:
+        by_genome[ref_perm.genome_name].append(ref_perm)
+
+    perm_ok = defaultdict(lambda: False)
+
+    for genome_name, perms in by_genome.items():
+        chr_index = defaultdict(lambda : None)
+        for perm in perms:
+            for block in perm.blocks:
+                chr_index[block.block_id] = perm.chr_name
+
+        for perm in target_perms:
+            block_ids = list(map(lambda b: b.block_id, perm.blocks))
+            chromosomes = list(map(lambda b: chr_index[b], block_ids))
+            if len(set(chromosomes)) <= 1:
+                perm_ok[perm.chr_name] = True
+
+    suspicious = []
+    for perm in target_perms:
+        if not perm_ok[perm.chr_name]:
+            print(perm.chr_name)
+            suspicious.extend(list(map(lambda b: b.block_id, perm.blocks)))
+
+    #print(suspicious)
+    return suspicious
 
 
 def _filter_perm(perm, to_hold):
