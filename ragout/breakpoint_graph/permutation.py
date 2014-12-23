@@ -161,7 +161,7 @@ class PermutationContainer:
                 for block in perm.blocks:
                     chr_index[genome_name][block.block_id] = perm.chr_name
 
-        suspicious = []
+        suspicious = set()
         for perm in self.target_perms:
             for block_1, block_2 in perm.iter_pairs():
                 good_adjacency = False
@@ -174,7 +174,7 @@ class PermutationContainer:
 
                 if not good_adjacency:
                     logger.debug("Chimeric contig, ignoring: " + perm.chr_name)
-                    suspicious.extend(list(map(lambda b: b.block_id, perm.blocks)))
+                    suspicious |= set(map(lambda b: b.block_id, perm.blocks))
                     break
 
         self.target_perms = _filter_permutations(self.target_perms, suspicious,
