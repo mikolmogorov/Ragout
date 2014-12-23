@@ -168,7 +168,7 @@ class PermutationContainer:
                 for ref in refs_to_check:
                     chr_1 = chr_index[ref][block_1.block_id]
                     chr_2 = chr_index[ref][block_2.block_id]
-                    if None in [chr_1, chr_2] or chr_1 == chr_2:
+                    if None not in [chr_1, chr_2] and chr_1 == chr_2:
                         good_adjacency = True
                         break
 
