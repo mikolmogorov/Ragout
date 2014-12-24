@@ -130,7 +130,8 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
 
         try:
             perm_container = PermutationContainer(perm_files[block_size],
-                                                  recipe)
+                                                  recipe,
+                                                  last_scaffolds is None)
         except PermException as e:
             logger.error(e)
             return 1
@@ -141,7 +142,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         adjacencies = graph.find_adjacencies(phylogeny)
         scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
 
-        if last_scaffolds:
+        if last_scaffolds is not None:
             last_scaffolds = merge.merge(last_scaffolds, scaffolds)
         else:
             last_scaffolds = scaffolds

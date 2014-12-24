@@ -61,7 +61,7 @@ class Permutation:
 
 
 class PermutationContainer:
-    def __init__(self, block_coords_file, recipe):
+    def __init__(self, block_coords_file, recipe, conservative):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
@@ -102,12 +102,10 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        #self.ref_perms_raw = copy(self.ref_perms)
-        #self.target_perms_raw = copy(self.target_perms)
-
         self.filter_indels()
         self.filter_repeats()
-        self.filter_fusions()
+        if conservative:
+            self.filter_fusions()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
