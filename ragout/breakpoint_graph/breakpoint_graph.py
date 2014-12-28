@@ -159,10 +159,10 @@ class BreakpointGraph:
             chosen_edges.extend(matching_edges)
 
         #check if there are only 2 nodes left
-        #if len(unused_nodes) == 2:
-        #    self.guessed_count += 1
-        #    chosen_edges.append(tuple(unused_nodes))
-        #    unused_nodes.clear()
+        if len(unused_nodes) == 2:
+            self.guessed_count += 1
+            chosen_edges.append(tuple(unused_nodes))
+            unused_nodes.clear()
         self.orphans_count += len(unused_nodes)
 
         return chosen_edges
