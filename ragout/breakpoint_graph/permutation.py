@@ -104,8 +104,8 @@ class PermutationContainer:
 
         self.filter_indels()
         self.filter_repeats()
-        if conservative:
-            self.filter_fusions()
+        #if conservative:
+        self.filter_fusions()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
