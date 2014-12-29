@@ -24,7 +24,7 @@ debugger = DebugConfig.get_instance()
 
 class BreakpointGraph:
     """
-    Breakpoint graph implementation, as it is written in paper
+    Breakpoint graph implementation
     """
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
@@ -158,11 +158,14 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
             chosen_edges.extend(matching_edges)
 
-        #check if there are only 2 nodes left
+        #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
-            self.guessed_count += 1
-            chosen_edges.append(tuple(unused_nodes))
-            unused_nodes.clear()
+            node_1, node_2 = tuple(unused_nodes)
+            if _alternating_cycle(subgraph, node_1, node_2, self.targets[0]):
+                self.guessed_count += 1
+                chosen_edges.append((node_1, node_2))
+                unused_nodes.clear()
+
         self.orphans_count += len(unused_nodes)
 
         return chosen_edges
@@ -255,6 +258,43 @@ def _split_graph(graph):
             unique_edges.add((v1, v2))
 
     return list(unique_edges)
+
+
+def _alternating_cycle(graph, node_1, node_2, target_id):
+    """
+    Determines if there is a cycle of alternating colors
+    that goes through the given edge
+    """
+    def get_genome_ids((u, v)):
+        return list(map(lambda e: e["genome_id"], graph[u][v].values()))
+
+    simple_graph = nx.Graph()
+    for (u, v) in graph.edges_iter():
+        simple_graph.add_edge(u, v)
+    assert not simple_graph.has_edge(node_1, node_2)
+
+    good_path = False
+    for path in nx.all_simple_paths(simple_graph, node_1, node_2):
+        #2-break or 3-break
+        if len(path) % 2 == 1 or len(path) / 2 > 3:
+            continue
+
+        edges = list(zip(path[:-1], path[1:]))
+        odd_colors = list(map(get_genome_ids, edges[0::2]))
+        even_colors = list(map(get_genome_ids, edges[1::2]))
+
+        if not all(map(lambda e: set(e) == set([target_id]), even_colors)):
+            continue
+
+        common_genomes = set(odd_colors[0])
+        for edge_colors in odd_colors:
+            common_genomes = common_genomes.intersection(edge_colors)
+
+        if common_genomes:
+            good_path = True
+            break
+
+    return good_path
 
 
 def _update_edge(graph, v1, v2, weight):
