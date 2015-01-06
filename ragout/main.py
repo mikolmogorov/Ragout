@@ -33,6 +33,7 @@ from ragout.shared.debug import DebugConfig
 import synteny_backend.sibelia
 import synteny_backend.cactus
 import synteny_backend.maf
+import synteny_backend.hal
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -183,7 +184,7 @@ def main():
                         help="path to the working directory",
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
-                        default="sibelia", choices=["sibelia", "cactus", "maf"],
+                        default="sibelia", choices=["sibelia", "cactus", "maf", "hal"],
                         help="which tool to use for synteny block decomposition")
     parser.add_argument("--no-refine", action="store_const", metavar="no_refine",
                         dest="no_refine", default=False, const=True,

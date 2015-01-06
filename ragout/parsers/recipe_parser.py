@@ -26,13 +26,13 @@ def parse_ragout_recipe(filename):
     prefix = os.path.dirname(filename)
 
     recipe_dict = {"genomes" : {}}
-    known_params = ["tree", "target", "blocks", "maf", "fasta",
+    known_params = ["tree", "target", "blocks", "maf", "hal", "fasta",
                     "circular", "draft"]
     required_params = ["tree", "target", "blocks"]
 
     cast_bool = ["circular", "draft"]
     cast_int_list = ["blocks"]
-    fix_path = ["fasta", "maf"]
+    fix_path = ["fasta", "maf", "hal"]
 
     defaults = {"circular" : False,
                 "draft" : False}
