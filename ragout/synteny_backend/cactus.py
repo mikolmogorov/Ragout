@@ -14,8 +14,8 @@ import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend, BackendException
+from .hal import HalBackend
 from ragout.shared import config
-import ragout.maf2synteny.maf2synteny as m2s
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
@@ -36,10 +36,7 @@ class CactusBackend(SyntenyBackend):
 
 
 if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
-    logger.debug("progressiveCactus is installed")
     SyntenyBackend.register_backend("cactus", CactusBackend())
-else:
-    logger.debug("progressiveCactus is not installed")
 
 
 def _make_permutations(recipe, output_dir, overwrite):
@@ -52,17 +49,16 @@ def _make_permutations(recipe, output_dir, overwrite):
     if overwrite and os.path.isdir(work_dir):
         shutil.rmtree(work_dir)
 
+    hal_backend = HalBackend()
     if os.path.isdir(work_dir):
         #using existing results
         logger.warning("Using existing Cactus results from previous run")
         logger.warning("Use --overwrite to force alignment")
-        for block_size in recipe["blocks"]:
-            block_dir = os.path.join(work_dir, str(block_size))
-            coords_file = os.path.join(block_dir, "blocks_coords.txt")
-            if not os.path.isfile(coords_file):
-                raise BackendException("Exitsing results are incompatible "
-                                       "with input recipe")
-            files[block_size] = os.path.abspath(coords_file)
+        hal_file = os.path.join(work_dir, "alignment.hal")
+        if not os.path.isfile(hal_file):
+            raise BackendException("Exitsing results are incompatible "
+                                   "with input recipe")
+        recipe["hal"] = hal_file
 
     else:
         #running cactus
@@ -73,26 +69,16 @@ def _make_permutations(recipe, output_dir, overwrite):
 
         os.mkdir(work_dir)
         config_path = _make_cactus_config(recipe, work_dir)
-        ref_genome = recipe["target"]
-        maf_file = _run_cactus(config_path, ref_genome, work_dir)
+        hal_file = _run_cactus(config_path, recipe["target"], work_dir)
+        recipe["hal"] = hal_file
 
-        logger.info("Converting maf to synteny")
-        if not m2s.make_synteny(maf_file, work_dir, recipe["blocks"]):
-            raise BackendException("Something went wrong with maf2synteny")
-
-        for block_size in recipe["blocks"]:
-            block_dir = os.path.join(work_dir, str(block_size))
-            coords_file = os.path.join(block_dir, "blocks_coords.txt")
-            files[block_size] = os.path.abspath(coords_file)
-            if not os.path.exists(coords_file):
-                raise BackendException("Something bad happened!")
-
-    return files
+    #now run another backend
+    return hal_backend.run_backend(recipe, output_dir, overwrite)
 
 
 def _make_cactus_config(recipe, directory):
     """
-    Creates cactus' "seq" file
+    Creates cactus "seq" file
     """
     CONF_NAME = "cactus.cfg"
     file = open(os.path.join(directory, CONF_NAME), "w")
@@ -107,9 +93,10 @@ def _make_cactus_config(recipe, directory):
 
 
 def _run_cactus(config_path, ref_genome, out_dir):
+    """
+    Runs Progressive Cactus
+    """
     CACTUS_OUT = "alignment.hal"
-    HAL2MAF = "submodules/hal/bin/hal2maf"
-    MAF_OUT = "cactus.maf"
 
     logger.info("Running progressiveCactus...")
     work_dir = os.path.abspath(out_dir)
@@ -130,11 +117,4 @@ def _run_cactus(config_path, ref_genome, out_dir):
     except subprocess.CalledProcessError:
         raise BackendException()
 
-    #convert to maf
-    logger.info("Converting HAL to MAF...")
-    cmdline = [HAL2MAF, out_hal, out_maf, "--noAncestors",
-               "--refGenome", ref_genome, "--ucscNames"]
-    subprocess.check_call(cmdline, stdout=devnull)
-
-    os.chdir(prev_dir)
-    return out_maf
+    return out_hal
