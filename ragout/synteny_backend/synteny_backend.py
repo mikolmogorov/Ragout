@@ -32,6 +32,9 @@ class SyntenyBackend:
             logger.error(e)
             return False
         assert sorted(files.keys()) == sorted(recipe["blocks"])
+
+        self.target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
+
         return files
 
     def run_backend(self, recipe, output_dir, overwrite):
@@ -40,6 +43,12 @@ class SyntenyBackend:
         Indexed by block sizes
         """
         return None
+
+    def get_target_fasta(self):
+        """
+        Returns a path to a fasta file with contigs
+        """
+        return self.target_fasta
 
     @staticmethod
     def get_available_backends():
