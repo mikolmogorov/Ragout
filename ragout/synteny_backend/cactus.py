@@ -101,7 +101,6 @@ def _run_cactus(config_path, ref_genome, out_dir):
     logger.info("Running progressiveCactus...")
     work_dir = os.path.abspath(out_dir)
     out_hal = os.path.join(work_dir, CACTUS_OUT)
-    out_maf = os.path.join(work_dir, MAF_OUT)
     config_file = os.path.abspath(config_path)
     prev_dir = os.getcwd()
 
