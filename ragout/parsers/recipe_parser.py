@@ -101,16 +101,13 @@ def parse_ragout_recipe(filename):
             g_params.setdefault(def_key, def_val)
 
     if len(recipe_dict["blocks"]) != len(set(recipe_dict["blocks"])):
-        raise RecipeException("Found similar synteny block sizes in recipe")
+        raise RecipeException("Duplicated synteny block sizes in recipe")
 
     if not recipe_dict["genomes"]:
-        raise RecipeException("No genomes detected in recipe")
+        raise RecipeException("No genomes were detected in the recipe")
 
     if recipe_dict["target"] not in recipe_dict["genomes"]:
         raise RecipeException("Error parsing recipe: target genome "
-                              "is not in tree")
-    if "fasta" not in recipe_dict["genomes"][recipe_dict["target"]]:
-        raise RecipeException("Error parsing recipe: FASTA file for "
-                              "target genome is not specified")
+                              "is not in the tree")
 
     return recipe_dict

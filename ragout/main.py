@@ -82,7 +82,7 @@ def check_extern_modules(backend):
 def do_job(recipe_file, out_dir, backend, assembly_refine,
            overwrite, debug):
     """
-    Top-level logic of program
+    Top-level logic of the program
     """
     out_log = os.path.join(out_dir, "ragout.log")
     out_links = os.path.join(out_dir, "scaffolds.links")
@@ -107,14 +107,21 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     try:
         recipe = parse_ragout_recipe(recipe_file)
         phylogeny = Phylogeny(recipe)
-        target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
-        logger.info("Reading FASTA with contigs")
-        target_fasta_dict = read_fasta_dict(target_fasta_file)
-
-    except (RecipeException, FastaError, PhyloException) as e:
+    except (RecipeException, PhyloException) as e:
         logger.error(e)
         return 1
 
+    """
+    if backend != "hal":
+        if "fasta" not in recipe["genomes"][recipe["target"]]:
+            logger.error("FASTA file for target genome is not specified")
+            return 1
+
+        target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
+        recipe["runtime"]["target_fasta"] = target_fasta_file
+    """
+
+    #Running backend to get synteny blocks
     backends = SyntenyBackend.get_available_backends()
     perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
     if not perm_files:
@@ -131,8 +138,7 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
 
         try:
             perm_container = PermutationContainer(perm_files[block_size],
-                                                  recipe,
-                                                  last_scaffolds is None)
+                                                  recipe, last_scaffolds is None)
         except PermException as e:
             logger.error(e)
             return 1
@@ -149,6 +155,15 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             last_scaffolds = scaffolds
 
     debugger.set_debug_dir(debug_root)
+
+    logger.info("Reading contigs file")
+    target_fasta_file = backends[backend].get_target_fasta()
+    try:
+        target_fasta_dict = read_fasta_dict(target_fasta_file)
+    except FastaError as e:
+        logger.error(e)
+        return 1
+
     out_gen.output_links(last_scaffolds, out_links)
     out_gen.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 

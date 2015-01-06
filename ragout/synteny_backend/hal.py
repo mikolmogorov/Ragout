@@ -18,8 +18,11 @@ from ragout.shared import config
 from ragout.shared import utils
 
 logger = logging.getLogger()
+
 HAL_WORKDIR = "hal-workdir"
 HAL2MAF = "hal2mafMP.py"
+HAL2FASTA = "hal2fasta"
+TARGET_FASTA = "target.fasta"
 
 
 class HalBackend(SyntenyBackend):
@@ -36,21 +39,40 @@ class HalBackend(SyntenyBackend):
                                    "or it is not specified")
 
         files = {}
+        #using existing results
         if os.path.isdir(workdir):
-            #using existing results
             logger.warning("Using synteny blocks from previous run")
             logger.warning("Use --overwrite to force alignment")
+
+            all_good = True
             for block_size in recipe["blocks"]:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 if not os.path.isfile(coords_file):
-                    raise BackendException("Exitsing results are incompatible "
-                                           "with input recipe")
+                    all_good = False
+                    break
                 files[block_size] = os.path.abspath(coords_file)
+
+            target_fasta = os.path.join(workdir, TARGET_FASTA)
+            if not os.path.isfile(target_fasta):
+                all_good = False
+            else:
+                self.target_fasta = target_fasta
+
+            if not all_good:
+                raise BackendException("Exitsing results are incompatible "
+                                           "with current run")
 
         else:
             os.mkdir(workdir)
-            ###Running hal2maf
+
+            logger.info("Extracting FASTA from HAL")
+            target_fasta = os.path.join(workdir, TARGET_FASTA)
+            cmdline = [HAL2FASTA, recipe["hal"], recipe["target"],
+                       "--inMemory"]
+            subprocess.check_call(cmdline, stdout=open(target_fasta, "w"))
+            self.target_fasta = target_fasta
+
             logger.info("Converting HAL to MAF")
             num_proc = min(config.vals["cactus_max_threads"],
                            multiprocessing.cpu_count())
@@ -64,7 +86,6 @@ class HalBackend(SyntenyBackend):
             logger.debug(" ".join(cmdline))
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 
-            ###Running maf2synteny
             logger.info("Extracting synteny blocks from MAF")
             if not m2s.make_synteny(recipe["maf"], workdir, recipe["blocks"]):
                 raise BackendException("Something went wrong with maf2synteny")
@@ -79,5 +100,5 @@ class HalBackend(SyntenyBackend):
         return files
 
 
-if utils.which(HAL2MAF):
+if utils.which(HAL2MAF) and utils.which(HAL2FASTA):
     SyntenyBackend.register_backend("hal", HalBackend())
