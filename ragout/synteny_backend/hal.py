@@ -87,7 +87,7 @@ class HalBackend(SyntenyBackend):
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 
             logger.info("Extracting synteny blocks from MAF")
-            if not m2s.make_synteny(recipe["maf"], workdir, recipe["blocks"]):
+            if not m2s.make_synteny(out_maf, workdir, recipe["blocks"]):
                 raise BackendException("Something went wrong with maf2synteny")
 
             for block_size in recipe["blocks"]:
