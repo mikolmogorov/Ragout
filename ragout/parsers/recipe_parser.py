@@ -90,8 +90,10 @@ def parse_ragout_recipe(filename):
             except PhyloException as e:
                 raise RecipeException(e)
 
-    if len(set(genomes)) < len(set(recipe_dict["genomes"].keys())):
-        raise RecipeException("Some genomes are missing from the tree")
+    for g in recipe_dict["genomes"]:
+        if g not in genomes:
+            raise RecipeException("Recipe error: genome '{0}' is not in "
+                                  "the tree".format(g))
 
     for g in genomes:
         recipe_dict["genomes"].setdefault(g, {})
