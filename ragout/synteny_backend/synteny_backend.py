@@ -26,14 +26,13 @@ class SyntenyBackend:
         """
         Runs backend and then prepare data for futher processing
         """
+        self.target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
         try:
             files = self.run_backend(recipe, output_dir, overwrite)
         except BackendException as e:
             logger.error(e)
             return False
         assert sorted(files.keys()) == sorted(recipe["blocks"])
-
-        self.target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
 
         return files
 
