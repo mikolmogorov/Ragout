@@ -111,16 +111,6 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
         logger.error(e)
         return 1
 
-    """
-    if backend != "hal":
-        if "fasta" not in recipe["genomes"][recipe["target"]]:
-            logger.error("FASTA file for target genome is not specified")
-            return 1
-
-        target_fasta_file = recipe["genomes"][recipe["target"]]["fasta"]
-        recipe["runtime"]["target_fasta"] = target_fasta_file
-    """
-
     #Running backend to get synteny blocks
     backends = SyntenyBackend.get_available_backends()
     perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
