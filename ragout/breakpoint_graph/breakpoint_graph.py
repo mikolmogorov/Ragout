@@ -37,6 +37,7 @@ class BreakpointGraph:
         Builds breakpoint graph from permutations
         """
         logger.debug("Building breakpoint graph")
+        self.perm_container = perm_container
 
         for perm in perm_container.ref_perms:
             if perm.genome_name not in self.references:
@@ -161,7 +162,9 @@ class BreakpointGraph:
         #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
-            if _alternating_cycle(subgraph, node_1, node_2, self.targets[0]):
+            if (self.perm_container.ref_supported(abs(node_1), abs(node_2)) and
+                _alternating_cycle(subgraph, node_1, node_2, self.targets[0])):
+
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
                 unused_nodes.clear()

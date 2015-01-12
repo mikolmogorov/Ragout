@@ -54,6 +54,7 @@ class Permutation:
         self.chr_id = chr_id
         self.chr_len = chr_len
         self.blocks = blocks
+        self.chr_index = None
 
     def iter_pairs(self):
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
@@ -61,7 +62,7 @@ class Permutation:
 
 
 class PermutationContainer:
-    def __init__(self, block_coords_file, recipe, conservative):
+    def __init__(self, block_coords_file, recipe):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
@@ -104,8 +105,9 @@ class PermutationContainer:
 
         self.filter_indels()
         self.filter_repeats()
-        if conservative:
-            self.filter_fusions()
+        self.build_chr_index()
+        #if conservative:
+        #    self.filter_chimeras()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -139,46 +141,60 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
                                               inverse=True)
 
-    def filter_fusions(self):
+    def filter_chimeras(self):
         """
         Tries to find contigs that are suspective to chromosome fusions
         and fillter them out
         """
-        by_genome = defaultdict(list)
-        for ref_perm in self.ref_perms:
-            by_genome[ref_perm.genome_name].append(ref_perm)
-
-        refs_to_check = [ref for ref in by_genome.keys()
-                         if not self.recipe["genomes"][ref]["draft"]]
-        if not refs_to_check:
-            return
-
-        chr_index = defaultdict(lambda: defaultdict(lambda : None))
-        for genome_name, perms in by_genome.items():
-            for perm in perms:
-                for block in perm.blocks:
-                    chr_index[genome_name][block.block_id] = perm.chr_name
-
         suspicious = set()
+        counter = 0
         for perm in self.target_perms:
             for block_1, block_2 in perm.iter_pairs():
-                good_adjacency = False
-                for ref in refs_to_check:
-                    chr_1 = chr_index[ref][block_1.block_id]
-                    chr_2 = chr_index[ref][block_2.block_id]
-                    if None not in [chr_1, chr_2] and chr_1 == chr_2:
-                        good_adjacency = True
-                        break
-
-                if not good_adjacency:
-                    logger.debug("Chimeric contig, ignoring: " + perm.chr_name)
+                if not self.ref_supported(block_1.block_id,
+                                          block_2.block_id):
                     suspicious |= set(map(lambda b: b.block_id, perm.blocks))
+                    counter += 1
                     break
 
+        logger.debug("{0} contigs were marked as chimeric".format(counter))
         self.target_perms = _filter_permutations(self.target_perms, suspicious,
                                                  inverse=True)
         self.ref_perms = _filter_permutations(self.ref_perms, suspicious,
                                               inverse=True)
+
+    def build_chr_index(self):
+        """
+        Mapping synteny blocks on chromosomes
+        Assumes that repeats are filtered
+        """
+        all_refs = set(perm.genome_name for perm in self.ref_perms)
+        refs_to_check = [ref for ref in all_refs
+                         if not self.recipe["genomes"][ref]["draft"]]
+
+        by_genome = defaultdict(list)
+        for ref_perm in self.ref_perms:
+            if ref_perm.genome_name in refs_to_check:
+                by_genome[ref_perm.genome_name].append(ref_perm)
+
+        self.chr_index = defaultdict(lambda: defaultdict(lambda : None))
+
+        for genome_name, perms in by_genome.items():
+            for perm in perms:
+                for block in perm.blocks:
+                    self.chr_index[genome_name][block.block_id] = perm.chr_name
+
+    def ref_supported(self, block_id_1, block_id_2):
+        """
+        Checks if adjacency blocks lie on a same chromosome for
+        at least one reference
+        """
+        for ref in self.chr_index:
+            chr_1 = self.chr_index[ref][block_id_1]
+            chr_2 = self.chr_index[ref][block_id_2]
+            if None not in [chr_1, chr_2] and chr_1 == chr_2:
+                return True
+
+        return False
 
 
 def _filter_permutations(permutations, blocks, inverse=False):
@@ -225,7 +241,6 @@ def _parse_permutations(filename):
                                                          math.copysign(1, b)))
                 chr_count += 1
     return permutations
-
 
 
 def _parse_blocks_coords(filename):
