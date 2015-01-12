@@ -12,19 +12,20 @@ import shutil
 import logging
 import argparse
 
-import ragout.overlap.overlap as ovlp
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.assembly_graph.assembly_graph as asgraph
 import ragout.breakpoint_graph.breakpoint_graph as bg
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
 import ragout.scaffolder.output_generator as out_gen
-import ragout.overlap.overlap as overlap
 import ragout.maf2synteny.maf2synteny as m2s
+import ragout.overlap.overlap as overlap
+from ragout.overlap.overlap import OverlapException
 from ragout.breakpoint_graph.phylogeny import Phylogeny, PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
                                                  PermException)
-from ragout.synteny_backend.synteny_backend import SyntenyBackend
+from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
+                                                    BackendException)
 from ragout.parsers.recipe_parser import parse_ragout_recipe, RecipeException
 from ragout.parsers.fasta_parser import read_fasta_dict, FastaError
 from ragout.shared.debug import DebugConfig
@@ -66,21 +67,36 @@ def check_extern_modules(backend):
     """
     backends = SyntenyBackend.get_available_backends()
     if backend not in backends:
-        logger.error("\"{0}\" is not installed. You can use provided scripts "
-                     "to install it".format(backend))
-        return False
+        raise BackendException("\"{0}\" is not installed.".format(backend))
 
     if not m2s.check_binary():
-        return False
+        raise BackendException("maf2synteny binary is missing, "
+                               "did you run 'make'?")
 
     if not overlap.check_binary():
-        return False
+        raise BackendException("overlap binary is missing, "
+                               "did you run 'make'?")
 
-    return True
+
+def run_ragout(recipe_file, out_dir, backend, assembly_refine,
+               overwrite, debug):
+    """
+    A wrapper to catch possible exceptions
+    """
+    try:
+        run_unsafe(recipe_file, out_dir, backend, assembly_refine,
+                   overwrite, debug)
+    except (RecipeException, PhyloException, PermException,
+            BackendException, OverlapException, FastaError) as e:
+        logger.error("An error occured while running Ragout:")
+        logger.error(e)
+        return 1
+
+    return 0
 
 
-def do_job(recipe_file, out_dir, backend, assembly_refine,
-           overwrite, debug):
+def run_unsafe(recipe_file, out_dir, backend, assembly_refine,
+               overwrite, debug):
     """
     Top-level logic of the program
     """
@@ -101,22 +117,14 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
     enable_logging(out_log, debug)
     logger.info("Cooking Ragout...")
 
-    if not check_extern_modules(backend):
-        return 1
+    check_extern_modules(backend)
 
-    try:
-        recipe = parse_ragout_recipe(recipe_file)
-        phylogeny = Phylogeny(recipe)
-    except (RecipeException, PhyloException) as e:
-        logger.error(e)
-        return 1
+    recipe = parse_ragout_recipe(recipe_file)
+    phylogeny = Phylogeny(recipe)
 
     #Running backend to get synteny blocks
     backends = SyntenyBackend.get_available_backends()
     perm_files = backends[backend].make_permutations(recipe, out_dir, overwrite)
-    if not perm_files:
-        logger.error("There were problems with synteny backend, exiting.")
-        return 1
 
     last_scaffolds = None
     for block_size in recipe["blocks"]:
@@ -126,12 +134,9 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
             debug_dir = os.path.join(debug_root, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        try:
-            perm_container = PermutationContainer(perm_files[block_size],
-                                                  recipe, last_scaffolds is None)
-        except PermException as e:
-            logger.error(e)
-            return 1
+        perm_container = PermutationContainer(perm_files[block_size], recipe)
+        if last_scaffolds is None:
+            perm_container.filter_chimeras()
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
@@ -148,19 +153,13 @@ def do_job(recipe_file, out_dir, backend, assembly_refine,
 
     logger.info("Reading contigs file")
     target_fasta_file = backends[backend].get_target_fasta()
-    try:
-        target_fasta_dict = read_fasta_dict(target_fasta_file)
-    except FastaError as e:
-        logger.error(e)
-        return 1
+    target_fasta_dict = read_fasta_dict(target_fasta_file)
 
     out_gen.output_links(last_scaffolds, out_links)
     out_gen.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
 
     if assembly_refine:
-        if not ovlp.make_overlap_graph(target_fasta_file, out_overlap):
-            logger.error("Error in overlap graph reconstruction, exiting")
-            return 1
+        overlap.make_overlap_graph(target_fasta_file, out_overlap)
         refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds,
                                                    target_fasta_dict)
         out_gen.output_links(refined_scaffolds, out_refined_links)
@@ -203,5 +202,5 @@ def main():
     parser.add_argument("--version", action="version", version="Ragout v1.0")
     args = parser.parse_args()
 
-    return do_job(args.recipe, args.output_dir, args.synteny_backend,
-                  not args.no_refine, args.overwrite, args.debug)
+    return run_ragout(args.recipe, args.output_dir, args.synteny_backend,
+                      not args.no_refine, args.overwrite, args.debug)

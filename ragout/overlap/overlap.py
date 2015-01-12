@@ -18,6 +18,9 @@ logger = logging.getLogger()
 
 OVERLAP_EXEC = "ragout-overlap"
 
+class OverlapException(Exception):
+    pass
+
 def check_binary():
     """
     Checks if the native binary is available and runnable
@@ -42,9 +45,6 @@ def make_overlap_graph(contigs_file, dot_file):
     """
     Builds assembly graph and outputs it in "dot" format
     """
-    if not check_binary():
-        return False
-
     cmdline = [OVERLAP_EXEC, contigs_file, dot_file,
                str(config.vals["overlap"]["min_overlap"]),
                str(config.vals["overlap"]["max_overlap"])]
@@ -57,8 +57,6 @@ def make_overlap_graph(contigs_file, dot_file):
         logger.debug(line.strip())
     ret_code = proc.wait()
     if ret_code:
-        logger.error("Non-zero return code when calling {0} module: {1}"
-                     .format(OVERLAP_EXEC, ret_code))
-        return False
-
-    return True
+        raise OverlapException("Error building overlap graph: Non-zero return "
+                               "code when calling {0} "
+                               "module: {1}".format(OVERLAP_EXEC, ret_code))
