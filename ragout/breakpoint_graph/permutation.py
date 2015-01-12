@@ -147,14 +147,16 @@ class PermutationContainer:
         and fillter them out
         """
         suspicious = set()
+        counter = 0
         for perm in self.target_perms:
             for block_1, block_2 in perm.iter_pairs():
-                if not self.is_ref_supported(block_1.block_id,
-                                             block_2.block_id):
-                    logger.debug("Chimeric contig, ignoring: " + perm.chr_name)
+                if not self.ref_supported(block_1.block_id,
+                                          block_2.block_id):
                     suspicious |= set(map(lambda b: b.block_id, perm.blocks))
+                    counter += 1
                     break
 
+        logger.debug("{0} contigs were marked as chimeric".format(counter))
         self.target_perms = _filter_permutations(self.target_perms, suspicious,
                                                  inverse=True)
         self.ref_perms = _filter_permutations(self.ref_perms, suspicious,
@@ -181,7 +183,7 @@ class PermutationContainer:
                 for block in perm.blocks:
                     self.chr_index[genome_name][block.block_id] = perm.chr_name
 
-    def is_ref_supported(self, block_id_1, block_id_2):
+    def ref_supported(self, block_id_1, block_id_2):
         """
         Checks if adjacency blocks lie on a same chromosome for
         at least one reference
