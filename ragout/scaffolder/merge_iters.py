@@ -8,6 +8,7 @@ iterations
 """
 
 from collections import namedtuple, defaultdict
+from itertools import product
 import sys
 import logging
 
@@ -26,58 +27,61 @@ def merge(big_scaffolds, small_scaffolds):
         for c in scf.contigs:
             big_index.add(c.seq_name)
 
-    small_index = {}
+    small_index = defaultdict(list)
     for scf in small_scaffolds:
         for pos, contig in enumerate(scf.contigs):
-            assert contig.seq_name not in small_index
-            small_index[contig.seq_name] = (scf, pos)
+            small_index[contig.seq_name].append((scf, pos))
 
-    count = 0
     new_scafflods = []
     for scf in big_scaffolds:
-        result = []
-        for prev_cont, new_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            result.append(prev_cont)
+        new_contigs = []
+        for left_cnt, right_cnt in zip(scf.contigs[:-1], scf.contigs[1:]):
+            new_contigs.append(left_cnt)
 
-            try:
-                scf_prev, begin = small_index[prev_cont.seq_name]
-                scf_new, end = small_index[new_cont.seq_name]
-            except KeyError:
+            left_candidates = small_index[left_cnt.seq_name]
+            right_candidates = small_index[right_cnt.seq_name]
+
+            #handling repeats too
+            consistent = []
+            for left_cand, right_cand in product(left_candidates,
+                                                 right_candidates):
+                left_scf, left_pos = left_cand
+                right_scf, right_pos = right_cand
+
+                big_sign = left_cnt.sign == right_cnt.sign
+                small_sign = (left_scf.contigs[left_pos].sign ==
+                              right_scf.contigs[right_pos].sign)
+
+                if (left_scf != right_scf or
+                        abs(left_pos - right_pos) == 1 or
+                        big_sign != small_sign):
+                    continue
+
+                same_dir = left_pos < right_pos
+                if not same_dir:
+                    left_pos, right_pos = right_pos, left_pos
+
+                weak_contigs = left_scf.contigs[left_pos + 1 : right_pos]
+                if any(c in big_index for c in weak_contigs):
+                    continue
+
+                if not same_dir:
+                    weak_contigs = list(map(lambda c: c.reverse_copy(),
+                                            weak_contigs[::-1]))
+                link_to_change = left_scf.contigs[left_pos].link
+                consistent.append(weak_contigs)
+
+            if len(consistent) > 1:
+                logger.debug("Something bad happening!")
+            if len(consistent) != 1:
                 continue
-            if scf_prev.name != scf_new.name:
-                continue
 
-            assert end != begin
-            same_dir = True
-            if end < begin:
-                same_dir = False
-                end, begin = begin, end
+            new_contigs[-1].link = link_to_change
+            new_contigs.extend(consistent[0])
 
-            consistent = True
-            for c in scf_prev.contigs[begin + 1 : end]:
-                if c.seq_name in big_index:
-                    consistent = False
-                    break
-
-            if not consistent or end - begin == 1:
-                continue
-
-            if ((prev_cont.sign == new_cont.sign) !=
-                (scf_prev.contigs[begin].sign == scf_prev.contigs[end].sign)):
-                continue
-
-            count += end - begin - 1
-            contigs = scf_prev.contigs[begin + 1 : end]
-            if not same_dir:
-                contigs = contigs[::-1]
-                contigs = list(map(lambda c: c.reverse_copy(), contigs))
-            #keeping gap from new contigs
-            result[-1].link = scf_prev.contigs[begin].link
-            result.extend(contigs)
-
-        result.append(new_cont)
+        new_contigs.append(right_cnt)
         s = Scaffold(scf.name)
-        s.contigs = result
+        s.contigs = new_contigs
         new_scafflods.append(s)
 
     return new_scafflods
