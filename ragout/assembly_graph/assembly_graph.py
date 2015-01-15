@@ -27,7 +27,7 @@ def save_colored_overlap_graph(graph_file, scaffolds, out_file):
     for scf in scaffolds:
       for cont in scf.contigs:
         main_strand.add(str(cont))
-        all_contigs.add(cont.name)
+        all_contigs.add(cont.seq_name)
 
     fout.write("digraph {\n")
     for node in graph.nodes_iter():
@@ -51,7 +51,7 @@ def save_colored_insert_overlap_graph(graph_file, scaffolds,
     all_contigs = set()
     for scf in scaffolds:
         main_strand |= set(map(lambda s: str(s), scf.contigs))
-        all_contigs |= set(map(lambda s: s.name, scf.contigs))
+        all_contigs |= set(map(lambda c: c.seq_name, scf.contigs))
 
     refine_contigs = set()
     for scf in scaffolds_refine:
@@ -136,7 +136,7 @@ def save_compress_overlap_graph(graph_file, scaffolds_in, output_file):
     for scf in scaffolds_in:
         for cont in scf.contigs:
             ordered_contigs.add(str(cont))
-            all_contigs.add(cont.name)
+            all_contigs.add(cont.seq_name)
 
     fout = open(output_file, "w")
     fout.write("digraph {\n")
