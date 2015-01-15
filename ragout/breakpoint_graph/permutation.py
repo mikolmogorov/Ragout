@@ -15,6 +15,7 @@ import math
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
+from .repeat_resolver import resolve_repeats
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -135,6 +136,9 @@ class PermutationContainer:
                     repeats.add(block.block_id)
                 else:
                     index[block.block_id].add(perm.genome_name)
+        ###
+        resolve_repeats(self.ref_perms, self.target_perms, repeats)
+        ###
 
         self.target_perms = _filter_permutations(self.target_perms, repeats,
                                                  inverse=True)

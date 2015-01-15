@@ -44,7 +44,6 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
     """
     Assembles contigs into scaffolds
     """
-
     scaffolds = []
     visited = set()
     counter = [0]
@@ -62,9 +61,10 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
             adj_block = adjacencies[scf.right].block
             adj_distance = adjacencies[scf.right].distance
             adj_supporting_genomes = adjacencies[scf.right].supporting_genomes
-            assert len(contig_index[abs(adj_block)]) == 1
+            #assert len(contig_index[abs(adj_block)]) == 1
 
-            contig = contig_index[abs(adj_block)][0]
+            #contig = contig_index[abs(adj_block)][0]
+            contig = contig_index[abs(adj_block)]
             if contig in visited:
                 break
 
@@ -88,9 +88,10 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
             adj_block = -adjacencies[-scf.left].block
             adj_distance = adjacencies[-scf.left].distance
             adj_supporting_genomes = adjacencies[-scf.left].supporting_genomes
-            assert len(contig_index[abs(adj_block)]) == 1
+            #assert len(contig_index[abs(adj_block)]) == 1
 
-            contig = contig_index[abs(adj_block)][0]
+            #contig = contig_index[abs(adj_block)][0]
+            contig = contig_index[abs(adj_block)]
             if contig in visited:
                 break
 
@@ -140,13 +141,15 @@ def _make_contigs(perm_container):
     Converts permutations into contigs
     """
     contigs = []
-    index = defaultdict(list)
-    for perm in perm_container.target_perms:
+    #index = defaultdict(list)
+    index = {}
+    for contig_id, perm in enumerate(perm_container.target_perms):
         assert len(perm.blocks)
 
-        contigs.append(Contig(perm.chr_name))
+        contigs.append(Contig(contig_id, perm.chr_name))
         for block in perm.blocks:
-            index[block.block_id].append(contigs[-1])
+            assert block.block_id not in index
+            index[block.block_id] = contigs[-1]
             contigs[-1].blocks.append(block.signed_id())
 
     return contigs, index

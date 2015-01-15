@@ -59,8 +59,8 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
-            cont_seq = contigs_fasta[contig.name]
-            used_contigs.add(contig.name)
+            cont_seq = contigs_fasta[contig.seq_name]
+            used_contigs.add(contig.seq_name)
 
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
