@@ -62,7 +62,8 @@ class BreakpointGraph:
                 self.bp_graph.add_edge(-prev_block.signed_id(),
                                        next_block.signed_id(),
                                        genome_id=perm.genome_name,
-                                       distance=distance)
+                                       distance=distance,
+                                       infinity=False)
 
             if (perm.genome_name in self.references and
                 not recipe["genomes"][perm.genome_name]["draft"]):
@@ -71,17 +72,12 @@ class BreakpointGraph:
                             perm.blocks[0].start)
                 assert distance >= 0
 
-                if recipe["genomes"][perm.genome_name]["circular"]:
-                    self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
-                                           perm.blocks[0].signed_id(),
-                                           genome_id=perm.genome_name,
-                                           distance=distance)
-                else:
-                    self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
-                                           perm.blocks[0].signed_id(),
-                                           genome_id=perm.genome_name,
-                                           distance=distance,
-                                           infinity=True)
+                infinity = not recipe["genomes"][perm.genome_name]["circular"]
+                self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
+                                       perm.blocks[0].signed_id(),
+                                       genome_id=perm.genome_name,
+                                       distance=distance,
+                                       infinity=infinity)
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
@@ -226,7 +222,7 @@ class BreakpointGraph:
             return False
 
         for edge_data in self.bp_graph[node_1][node_2].values():
-            if "infinity" in edge_data:
+            if edge_data["infinity"]:
                 return True
         return False
 

@@ -69,11 +69,8 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
     """
     new_scaffolds = []
     ordered_contigs = set()
-    next_contig_id = 0
     for scf in scaffolds_in:
-        for cnt in scf.contigs:
-            ordered_contigs.add(cnt.seq_name)
-            next_contig_id = max(next_contig_id, cnt.id + 1)
+        ordered_contigs |= set(map(lambda c: c.seq_name, scf.contigs))
     reverse_graph = graph.reverse()
 
     for scf in scaffolds_in:
@@ -96,9 +93,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
 
-                new_scaffolds[-1].contigs.append(Contig(next_contig_id,
-                                                        name, sign))
-                next_contig_id += 1
+                new_scaffolds[-1].contigs.append(Contig(name, None, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
                 (new_scaffolds[-1].contigs[-1]

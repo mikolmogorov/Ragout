@@ -15,6 +15,7 @@ import math
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
+from ragout.shared.datatypes import Block, Permutation
 from .repeat_resolver import resolve_repeats
 
 logger = logging.getLogger()
@@ -23,43 +24,6 @@ debugger = DebugConfig.get_instance()
 
 class PermException(Exception):
     pass
-
-class Block:
-    """
-    Represents synteny block
-    """
-    def __init__(self, block_id, sign, start=None, end=None):
-        self.block_id = block_id
-        self.sign = sign
-        self.start = start
-        self.end = end
-
-    def length(self):
-        if self.start is None or self.end is None:
-            return None
-
-        assert self.end >= self.start
-        return self.end - self.start
-
-    def signed_id(self):
-        return self.block_id * self.sign
-
-
-class Permutation:
-    """
-    Represents signed permutation
-    """
-    def __init__(self, genome_name, chr_name, chr_id, chr_len, blocks):
-        self.genome_name = genome_name
-        self.chr_name = chr_name
-        self.chr_id = chr_id
-        self.chr_len = chr_len
-        self.blocks = blocks
-        self.chr_index = None
-
-    def iter_pairs(self):
-        for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
-            yield pb, nb
 
 
 class PermutationContainer:
