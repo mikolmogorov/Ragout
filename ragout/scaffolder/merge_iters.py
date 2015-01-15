@@ -62,7 +62,7 @@ def merge(big_scaffolds, small_scaffolds):
                     left_pos, right_pos = right_pos, left_pos
 
                 weak_contigs = left_scf.contigs[left_pos + 1 : right_pos]
-                if any(c in big_index for c in weak_contigs):
+                if any(c.seq_name in big_index for c in weak_contigs):
                     continue
 
                 if not same_dir:
