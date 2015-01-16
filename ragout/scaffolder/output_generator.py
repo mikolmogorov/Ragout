@@ -56,11 +56,15 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     out_fasta_dict = {}
 
     scf_length = []
+    total_contigs = 0
+    total_len = 0
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
             cont_seq = contigs_fasta[contig.seq_name]
             used_contigs.add(contig.seq_name)
+            total_contigs += 1
+            total_len += len(cont_seq)
 
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
@@ -77,13 +81,13 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     write_fasta_dict(out_fasta_dict, out_file)
 
     #add some statistics
-    used_count = 0
+    used_unique = 0
     used_len = 0
     unused_count = 0
     unused_len = 0
     for h in contigs_fasta:
         if h in used_contigs:
-            used_count += 1
+            used_unique += 1
             used_len += len(contigs_fasta[h])
         else:
             unused_count += 1
@@ -94,15 +98,18 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     contigs_length = [len(c) for c in contigs_fasta.values()]
 
     logger.info("Assembly statistics:\n\n"
-                "\tScaffolds count:\t{0}\n"
-                "\tUsed contigs count:\t{1}\n"
-                "\tUsed contigs length:\t{2} ({3:2.4}%)\n"
-                "\tUnused contigs count:\t{4}\n"
-                "\tUnused contigs length:\t{5} ({6:2.4}%)\n"
-                "\tContigs N50: \t\t{7}\n"
-                "\tScaffolds N50:\t\t{8}\n"
-                .format(len(scaffolds), used_count, used_len, used_perc,
-                        unused_count, unused_len, unused_perc,
+                "\tScaffolds:\t\t{0}\n"
+                "\tUnique contigs:\t\t{1}\n"
+                "\tUnique contigs length:\t{2} ({3:2.4}%)\n"
+                "\tTotal contigs:\t\t{4}\n"
+                "\tTotal contigs length:\t{5}\n"
+                "\tUnused contigs count:\t{6}\n"
+                "\tUnused contigs length:\t{7} ({8:2.4}%)\n"
+                "\tContigs N50: \t\t{9}\n"
+                "\tScaffolds N50:\t\t{10}\n"
+                .format(len(scaffolds), used_unique, used_len, used_perc,
+                        total_contigs, total_len, unused_count, unused_len,
+                        unused_perc,
                         _calc_n50(contigs_length, unused_len + used_len),
                         _calc_n50(scf_length, unused_len + used_len)))
 

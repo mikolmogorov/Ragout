@@ -75,36 +75,42 @@ def _resolve_by_context(ref_perms, repeats):
     Tries to resolve trivial repeats (that have same context in every ref)
     """
     ref_index = defaultdict(lambda: defaultdict(list))
-    all_refs = set()
+    ref_with_block = defaultdict(set)
+    for perm in ref_perms:
+        for block in perm.blocks:
+            ref_with_block[block.block_id].add(perm.genome_name)
 
     for perm in ref_perms:
-        all_refs.add(perm.genome_name)
         if len(perm.blocks) < 3: continue
 
         for left_b, mid_b, right_b in zip(perm.blocks[:-2], perm.blocks[1:-1],
                                           perm.blocks[2:]):
 
             if (mid_b.block_id in repeats and left_b.block_id not in repeats
-                                        and right_b.block_id not in repeats):
+                and right_b.block_id not in repeats):
                 left_id = -left_b.signed_id() * mid_b.sign
                 right_id = right_b.signed_id() * mid_b.sign
                 ref_index[mid_b.block_id][perm.genome_name] \
                                     .append(Context(left_id, right_id))
 
-    resolved_repeats = defaultdict(list)
+    resolved_repeats = defaultdict(set)
     for repeat, repeat_index in ref_index.items():
-        first_ref = next(iter(all_refs))
-        to_compare = repeat_index[first_ref]
+        refs_to_check = ref_with_block[repeat]
+        #first ref and context
+        for ref in refs_to_check:
+            for context in repeat_index[ref]:
+                other_refs = (refs_to_check
+                             .intersection(ref_with_block[abs(context.left)])
+                             .intersection(ref_with_block[abs(context.right)]))
 
-        for context in to_compare:
-            good = True
-            for ref in all_refs:
-                if ref == first_ref: continue
-                if context not in repeat_index[ref]:
-                    good = False
-                    break
+                good = True
+                for other_ref in other_refs:
+                    if other_ref == ref: continue
+                    if context not in repeat_index[other_ref]:
+                        good = False
+                        break
 
-            if good:
-                resolved_repeats[repeat].append(context)
+                if good:
+                    resolved_repeats[repeat].add(context)
 
     return resolved_repeats
