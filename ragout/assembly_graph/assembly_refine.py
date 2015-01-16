@@ -96,8 +96,8 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 new_scaffolds[-1].contigs.append(Contig(name, None, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
-                (new_scaffolds[-1].contigs[-1]
-                        .link.supporting_genomes) = supp_genomes
+                new_scaffolds[-1].contigs[-1].link.supporting_genomes = \
+                                                                supp_genomes
 
         new_scaffolds[-1].contigs.append(new_cont)
     return new_scaffolds

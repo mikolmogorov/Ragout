@@ -7,7 +7,7 @@ This module provides some common data structures
 """
 
 from collections import namedtuple
-from copy import copy
+from copy import deepcopy
 
 
 class Block:
@@ -41,7 +41,7 @@ class Permutation:
         self.chr_id = chr_id
         self.chr_len = chr_len
         self.blocks = blocks
-        self.chr_index = None
+        #self.chr_index = None
 
     def iter_pairs(self):
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
@@ -65,7 +65,7 @@ class Contig:
         return self.perm.blocks[-1].signed_id()
 
     def reverse_copy(self):
-        contig = copy(self)
+        contig = deepcopy(self)
         contig.sign = -contig.sign
         return contig
 
