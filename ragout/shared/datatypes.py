@@ -41,7 +41,6 @@ class Permutation:
         self.chr_id = chr_id
         self.chr_len = chr_len
         self.blocks = blocks
-        #self.chr_index = None
 
     def iter_pairs(self):
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):

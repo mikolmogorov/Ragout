@@ -34,10 +34,10 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     resolved = _resolve_by_context(ref_perms, repeats)
     to_replace = defaultdict(list)
     for r, contexts in resolved.items():
-        one_block_perms = filter(lambda p: len(p.blocks) == 1, target_index[r])
-        if len(one_block_perms) != 1: continue
+        if len(target_index[r]) != 1: continue
+        perm = target_index[r][0]
+        if len(perm.blocks) != 1: continue
 
-        perm = one_block_perms[0]
         for context in contexts:
             #replace in refs
             to_replace[r].append((context, next_block_id))
@@ -49,7 +49,6 @@ def resolve_repeats(ref_perms, target_perms, repeats):
 
             next_block_id += 1
             counter += 1
-            #print(r, context)
 
     _replace_blocks(to_replace, ref_perms)
     logger.debug("{0} repeat instances resolved".format(counter))
@@ -80,6 +79,7 @@ def _resolve_by_context(ref_perms, repeats):
         for block in perm.blocks:
             ref_with_block[block.block_id].add(perm.genome_name)
 
+    #collecting all repeat contexts
     for perm in ref_perms:
         if len(perm.blocks) < 3: continue
 
