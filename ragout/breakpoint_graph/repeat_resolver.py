@@ -26,9 +26,14 @@ def resolve_repeats(ref_perms, target_perms, repeats):
                             max(map(lambda b: b.block_id, perm.blocks)) + 1)
 
     target_index = defaultdict(list)
+    target_adj = set()
     for perm in target_perms:
         for block in perm.blocks:
             target_index[block.block_id].append(perm)
+        if len(perm.blocks) > 1:
+            for lb, rb in zip(perm.blocks[:-1], perm.blocks[1:]):
+                target_adj.add(-lb.signed_id())
+                target_adj.add(rb.signed_id())
 
     counter = 0
     resolved = _resolve_by_context(ref_perms, repeats)
@@ -39,6 +44,8 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         if len(perm.blocks) != 1: continue
 
         for context in contexts:
+            if len(set(context).intersection(target_adj)): continue
+
             #replace in refs
             to_replace[r].append((context, next_block_id))
 
