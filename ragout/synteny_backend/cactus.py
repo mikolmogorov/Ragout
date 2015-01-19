@@ -32,14 +32,14 @@ class CactusBackend(SyntenyBackend):
 
 
     def run_backend(self, recipe, output_dir, overwrite):
-        return _make_permutations(recipe, output_dir, overwrite)
+        return _make_permutations(recipe, output_dir, overwrite, self.threads)
 
 
 if os.path.isfile(os.path.join(CACTUS_INSTALL, CACTUS_EXEC)):
     SyntenyBackend.register_backend("cactus", CactusBackend())
 
 
-def _make_permutations(recipe, output_dir, overwrite):
+def _make_permutations(recipe, output_dir, overwrite, threads):
     """
     Runs Cactus, then outputs preprocessesed results into output_dir
     """
@@ -69,7 +69,7 @@ def _make_permutations(recipe, output_dir, overwrite):
 
         os.mkdir(work_dir)
         config_path = _make_cactus_config(recipe, work_dir)
-        hal_file = _run_cactus(config_path, recipe["target"], work_dir)
+        hal_file = _run_cactus(config_path, recipe["target"], work_dir, threads)
         recipe["hal"] = hal_file
 
     #now run another backend
@@ -92,7 +92,7 @@ def _make_cactus_config(recipe, directory):
     return file.name
 
 
-def _run_cactus(config_path, ref_genome, out_dir):
+def _run_cactus(config_path, ref_genome, out_dir, threads):
     """
     Runs Progressive Cactus
     """
@@ -104,9 +104,7 @@ def _run_cactus(config_path, ref_genome, out_dir):
     config_file = os.path.abspath(config_path)
     prev_dir = os.getcwd()
 
-    num_proc = min(config.vals["cactus_max_threads"],
-                   multiprocessing.cpu_count())
-    threads_param = "--maxThreads=" + str(num_proc)
+    threads_param = "--maxThreads=" + str(threads)
 
     os.chdir(CACTUS_INSTALL)
     devnull = open(os.devnull, "w")

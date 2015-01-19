@@ -71,8 +71,6 @@ class PermutationContainer:
         self.filter_indels()
         self.filter_repeats()
         self.build_chr_index()
-        #if conservative:
-        #    self.filter_chimeras()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -101,7 +99,7 @@ class PermutationContainer:
                 else:
                     index[block.block_id].add(perm.genome_name)
         ###
-        resolve_repeats(self.ref_perms, self.target_perms, repeats)
+        #resolve_repeats(self.ref_perms, self.target_perms, repeats)
         ###
 
         self.target_perms = _filter_permutations(self.target_perms, repeats,

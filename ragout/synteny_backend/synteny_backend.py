@@ -22,11 +22,12 @@ class SyntenyBackend:
     def __init__(self):
         pass
 
-    def make_permutations(self, recipe, output_dir, overwrite):
+    def make_permutations(self, recipe, output_dir, overwrite, threads):
         """
         Runs backend and then prepare data for futher processing
         """
         self.target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
+        self.threads = threads
 
         files = self.run_backend(recipe, output_dir, overwrite)
         assert sorted(files.keys()) == sorted(recipe["blocks"])
