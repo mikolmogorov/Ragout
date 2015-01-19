@@ -27,13 +27,14 @@ class PermException(Exception):
 
 
 class PermutationContainer:
-    def __init__(self, block_coords_file, recipe):
+    def __init__(self, block_coords_file, recipe, conservative):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
         self.ref_perms = []
         self.target_perms = []
         self.recipe = recipe
+        self.conservative = conservative
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
@@ -70,7 +71,9 @@ class PermutationContainer:
 
         self.filter_indels()
         self.filter_repeats()
+
         self.build_chr_index()
+        self.filter_chimeras()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -116,8 +119,8 @@ class PermutationContainer:
         counter = 0
         for perm in self.target_perms:
             for block_1, block_2 in perm.iter_pairs():
-                if not self.ref_supported(block_1.block_id,
-                                          block_2.block_id):
+                if not self.good_adj(block_1.block_id,
+                                     block_2.block_id):
                     suspicious |= set(map(lambda b: b.block_id, perm.blocks))
                     counter += 1
                     break
@@ -149,11 +152,14 @@ class PermutationContainer:
                 for block in perm.blocks:
                     self.chr_index[genome_name][block.block_id] = perm.chr_name
 
-    def ref_supported(self, block_id_1, block_id_2):
+    def good_adj(self, block_id_1, block_id_2):
         """
         Checks if adjacency blocks lie on a same chromosome for
         at least one reference
         """
+        if not self.conservative:
+            return True
+
         for ref in self.chr_index:
             chr_1 = self.chr_index[ref][block_id_1]
             chr_2 = self.chr_index[ref][block_id_2]

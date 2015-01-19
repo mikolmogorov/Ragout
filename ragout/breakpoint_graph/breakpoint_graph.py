@@ -159,7 +159,8 @@ class BreakpointGraph:
         #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
-            if (abs(node_1) != abs(node_2) and
+            if (self.perm_container.good_adj(abs(node_1), abs(node_2)) and
+                abs(node_1) != abs(node_2) and
                 _alternating_cycle(subgraph, node_1, node_2, self.targets[0])):
 
                 self.guessed_count += 1

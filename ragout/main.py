@@ -134,9 +134,9 @@ def run_unsafe(args):
             debug_dir = os.path.join(debug_root, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        perm_container = PermutationContainer(perm_files[block_size], recipe)
-        if last_scaffolds is None:
-            perm_container.filter_chimeras()
+        conservative = last_scaffolds is None
+        perm_container = PermutationContainer(perm_files[block_size],
+                                              recipe, conservative)
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
