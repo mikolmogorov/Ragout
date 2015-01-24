@@ -12,6 +12,7 @@ from collections import defaultdict
 import logging
 import os
 import math
+from copy import deepcopy
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
@@ -70,7 +71,18 @@ class PermutationContainer:
                                 "target sequences")
 
         self.filter_indels()
+
+        ###
+        before_filtering = deepcopy(self.target_perms)
         self.filter_repeats()
+        logger.debug("{0} target sequences left after repeat filtering"
+                     .format(len(self.target_perms)))
+        if debugger.debugging:
+            file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
+            ids = set(map(lambda p: p.chr_id, self.target_perms))
+            filtered_perms = [p for p in before_filtering if p.chr_id not in ids]
+            _write_permutations(filtered_perms, open(file, "w"))
+        ###
 
         self.build_chr_index()
         self.filter_chimeras()
@@ -81,13 +93,20 @@ class PermutationContainer:
 
     def filter_indels(self):
         """
-        Filters blocks that don't appear in target
+        Keep only blocks that appear in target and one of the references
         """
         target_blocks = set()
         for perm in self.target_perms:
             target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
 
-        self.ref_perms = _filter_permutations(self.ref_perms, target_blocks)
+        reference_blocks = set()
+        for perm in self.ref_perms:
+            reference_blocks |= set(map(lambda b: b.block_id, perm.blocks))
+
+        to_keep = target_blocks.intersection(reference_blocks)
+        self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
+        self.target_perms = _filter_permutations(self.target_perms, to_keep)
+
 
     def filter_repeats(self):
         """

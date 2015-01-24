@@ -149,7 +149,8 @@ def run_unsafe(args):
         else:
             last_scaffolds = scaffolds
 
-    debugger.set_debug_dir(debug_root)
+    if args.debug:
+        debugger.set_debug_dir(debug_root)
 
     logger.info("Reading contigs file")
     target_fasta_file = backend.get_target_fasta()
