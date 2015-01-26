@@ -24,8 +24,8 @@ class Context:
 
     def __str__(self):
         block_id = self.perm.blocks[self.pos].block_id
-        return "[{0}, {1}, {2}, {3}]".format(self.perm.chr_name, block_id,
-                                             self.left, self.right)
+        return "({0}, {1}, {2})".format(self.perm.chr_name,
+                                        self.left, self.right)
 
 logger = logging.getLogger()
 
@@ -52,7 +52,7 @@ def resolve_repeats(ref_perms, target_perms, repeats):
 
 
     for trg_perm, ref_ctx in one2many:
-        logger.debug(str(ref_ctx))
+        #logger.debug(str(ref_ctx))
         assert len(trg_perm.blocks) == 1
         new_perm = deepcopy(trg_perm)
         new_perm.blocks[0].block_id = next_block_id
@@ -61,9 +61,9 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         next_block_id += 1
 
 
-def _edit_distance(ref, trg, semi_global):
+def _edit_distance(ref, trg):
     """
-    Computes edit distance. If semi_global is set, allows
+    Computes edit distance, allowing
     free gaps on the left side
     """
     GAP = 1
@@ -71,11 +71,12 @@ def _edit_distance(ref, trg, semi_global):
     l1, l2 = len(ref) + 1, len(trg) + 1
     table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
 
-    if not semi_global:
-        for i in xrange(l1):
-            table[i][0] = i
-        for j in xrange(l2):
-            table[0][j] = j
+    """
+    for i in xrange(l1):
+        table[i][0] = i
+    for j in xrange(l2):
+        table[0][j] = j
+    """
 
     for i, j in product(xrange(1, l1), xrange(1, l2)):
         table[i][j] = min(table[i-1][j] + GAP, table[i][j-1] + GAP,
@@ -91,9 +92,8 @@ def _context_distance(ctx_ref, ctx_trg):
     length = len(ctx_trg.left) + len(ctx_trg.right)
     if not length: return 0
 
-    left = _edit_distance(ctx_ref.left, ctx_trg.left, True)
-    right = _edit_distance(ctx_ref.right[::-1], ctx_trg.right[::-1],
-                           True)
+    left = _edit_distance(ctx_ref.left, ctx_trg.left)
+    right = _edit_distance(ctx_ref.right[::-1], ctx_trg.right[::-1])
     return float(left + right) / length
 
 
@@ -125,6 +125,11 @@ def _match_contexts(ref_contexts, target_contexts):
         t_zero = [c for c in t_contexts if len(c.left) + len(c.right) == 0]
 
         #create bipartie graph
+        logger.debug("Processing {0}".format(block))
+        logger.debug("Target contexts:\n{0}"
+                            .format("\n".join(map(str, t_contexts))))
+        logger.debug("Reference contexts:\n{0}"
+                            .format("\n".join(map(str, r_contexts))))
         graph = nx.Graph()
         for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(t_partial),
                                                     enumerate(r_contexts)):
@@ -133,26 +138,29 @@ def _match_contexts(ref_contexts, target_contexts):
             graph.add_node(node_trg, ref=False, ctx=ctx_t)
 
             distance = _context_distance(ctx_r, ctx_t)
+            #logger.debug("D {0} -- {1} {2}".format(ctx_r, ctx_t, distance))
             if distance < MAX_DIST:
                 graph.add_edge(node_ref, node_trg, weight=distance)
 
         edges = _min_weight_matching(graph)
-        used_nodes = set()
-        for e in edges:
-            u, v = e
+        used_contexts = set()
+        for edge in edges:
+            u, v = edge
             if graph.node[u]["ref"]:
                 u, v = v, u
             one2one_matched.append((graph.node[u]["ctx"],
                                     graph.node[v]["ctx"]))
-            used_nodes.add(v)
-            #logger.debug("Matched {0} and {1}".format(graph.node[e[0]]["ctx"],
-            #                                          graph.node[e[1]]["ctx"]))
+            used_contexts.add(graph.node[v]["ctx"])
+            logger.debug("M: {0} -- {1}".format(graph.node[v]["ctx"],
+                                                graph.node[u]["ctx"]))
 
         if len(t_zero) == 1:
-            for node in graph.nodes():
-                if node not in used_nodes and graph.node[node]["ref"]:
-                    one2many_matched.append((t_zero[0].perm,
-                                             graph.node[node]["ctx"]))
+            #for node in graph.nodes():
+            for r_ctx in r_contexts:
+                if r_ctx not in used_contexts:
+                    one2many_matched.append((t_zero[0].perm, r_ctx))
+                    logger.debug("Z {0} -- {1}".format(t_zero[0].perm.chr_name,
+                                                       r_ctx))
                     #print("ya")
 
     return one2one_matched, one2many_matched

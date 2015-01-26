@@ -136,7 +136,8 @@ def run_unsafe(args):
 
         conservative = last_scaffolds is None
         perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, conservative)
+                                              recipe, args.resolve_repeats,
+                                              conservative)
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
@@ -198,6 +199,9 @@ def main():
     parser.add_argument("--overwrite", action="store_true", default=False,
                         dest="overwrite",
                         help="overwrite existing synteny blocks")
+    parser.add_argument("--repeats", action="store_true", default=False,
+                        dest="resolve_repeats",
+                        help="try to resolve repeats before constructing BG")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")
