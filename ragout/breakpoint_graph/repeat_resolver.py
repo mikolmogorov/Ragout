@@ -67,7 +67,7 @@ def _edit_distance(ref, trg):
     free gaps on the left side
     """
     GAP = 1
-    MISS = 1
+    MISS = 2
     l1, l2 = len(ref) + 1, len(trg) + 1
     table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
 
@@ -164,62 +164,6 @@ def _match_contexts(ref_contexts, target_contexts):
                     #print("ya")
 
     return one2one_matched, one2many_matched
-
-
-"""
-def _match_contexts(ref_contexts, target_contexts):
-    MIN_DIST = 0.4
-    EPS = 0.01
-
-    matched_ref_ctx = ref_contexts      #now let's assume we have one reference
-
-    one2one_matches = []
-    zero_ctx_matches = []
-
-    for block, contexts in target_contexts.items():
-        partial_ctx = [c for c in contexts if len(c.left) + len(c.right) > 0]
-        zero_ctx = [c for c in contexts if len(c.left) + len(c.right) == 0]
-
-        #contexts_left = matched_ref_ctx[block][::]
-        partial_left = False
-        for trg_ctx in partial_ctx:
-            candidates = []
-            for ref_ctx in matched_ref_ctx[block]:
-                distance = _context_distance(ref_ctx, trg_ctx)
-                if distance < MIN_DIST:
-                    candidates.append((ref_ctx, distance))
-
-            if not candidates:
-                partial_left = True
-                continue
-
-            candidates.sort(key=lambda c: c[1])
-                #logger.debug("Resolving {0}".format(block))
-                #logger.debug("No match for {0}".format(trg_ctx))
-            if len(candidates) == 1:
-                one2one_matches.append((candidates[0][0], trg_ctx))
-                contexts_left.remove(candidates[0][0])
-                #logger.debug("{0} matched with {1}"
-                #                    .format(trg_ctx, candidates[0]))
-            if len(candidates) > 1:
-                if abs(candidates[0][1] - candidates[1][1]) > EPS:
-                    one2one_matches.append((candidates[0][0], trg_ctx))
-                    #contexts_left.remove(candidates[0][0])
-                #else:
-                #    for cand in candidates:
-                #        contexts_left.remove(cand[0])
-
-        if len(zero_ctx) == 1 and not partial_left:
-            #print(len(contexts_left))
-            print("let's have some fun!")
-                #else:
-                    #logger.debug("Resolving {0}".format(block))
-                    #logger.debug("{0} has multiple candidates: {1}"
-                    #                    .format(trg_ctx, candidates))
-
-    #logger.debug("Resolved {0} contexts".format(resolved_count))
-    #logger.debug("Unresolved {0} contexts".format(unresolved_count))
-"""
 
 
 def _get_contexts(permutations, repeats):
