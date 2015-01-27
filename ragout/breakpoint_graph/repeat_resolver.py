@@ -42,7 +42,7 @@ def resolve_repeats(ref_perms, target_perms, repeats):
 
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
-    one2one, one2many = _match_contexts(ref_contexts, trg_contexts)
+    one2one, one2many = _match_contexts(ref_contexts, trg_contexts, repeats)
 
     for trg_ctx, ref_ctx in one2one:
         #logger.debug("{0} with {1}".format(trg_ctx, ref_ctx))
@@ -50,7 +50,7 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
         next_block_id += 1
 
-
+    """
     for trg_perm, ref_ctx in one2many:
         #logger.debug(str(ref_ctx))
         assert len(trg_perm.blocks) == 1
@@ -59,15 +59,22 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         target_perms.append(new_perm)
         ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
         next_block_id += 1
-
-
-def _edit_distance(ref, trg):
     """
-    Computes edit distance, allowing
+
+
+def _alignment(ref, trg, repeats):
+    """
+    Computes global alignment, allowing
     free gaps on the left side
     """
-    GAP = 1
-    MISS = 2
+    GAP = -1
+    def match(a, b):
+        if a != b:
+            return -2
+        if abs(a) in repeats:
+            return 1
+        return 2
+
     l1, l2 = len(ref) + 1, len(trg) + 1
     table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
 
@@ -79,28 +86,24 @@ def _edit_distance(ref, trg):
     """
 
     for i, j in product(xrange(1, l1), xrange(1, l2)):
-        table[i][j] = min(table[i-1][j] + GAP, table[i][j-1] + GAP,
-                          table[i-1][j-1] + (MISS if ref[i-1] != trg[j-1]
-                                                  else 0))
+        table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
+                          table[i-1][j-1] + match(ref[i-1], trg[j-1]))
     return table[-1][-1]
 
 
-def _context_distance(ctx_ref, ctx_trg):
+def _similarity_score(ctx_ref, ctx_trg, repeats):
     """
-    Compute discordance between two contexts
+    Compute similarity between two contexts
     """
-    length = len(ctx_trg.left) + len(ctx_trg.right)
-    if not length: return 0
+    if len(ctx_trg.left) + len(ctx_trg.right) == 0:
+        return 0
 
-    left = _edit_distance(ctx_ref.left, ctx_trg.left)
-    right = _edit_distance(ctx_ref.right[::-1], ctx_trg.right[::-1])
-    return float(left + right) / length
+    left = _alignment(ctx_ref.left, ctx_trg.left, repeats)
+    right = _alignment(ctx_ref.right[::-1], ctx_trg.right[::-1], repeats)
+    return left + right
 
 
-def _min_weight_matching(graph):
-    for v1, v2 in graph.edges_iter():
-        graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
-
+def _max_weight_matching(graph):
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = set()
     for v1, v2 in edges.items():
@@ -110,19 +113,22 @@ def _min_weight_matching(graph):
     return list(unique_edges)
 
 
-def _match_contexts(ref_contexts, target_contexts):
-    MAX_DIST = 0.4
+def _match_contexts(ref_contexts, target_contexts, repeats):
+    def strong(context):
+        return any(abs(b) not in repeats
+                   for b in chain(context.left, context.right))
+
     matched_ref_ctx = ref_contexts      #now let's assume we have one reference
 
-    one2one_matched = []
-    one2many_matched = []
+    strong_matched = []
+    weak_matched = []
 
     for block in target_contexts:
         t_contexts = target_contexts[block]
         r_contexts = ref_contexts[block]
 
-        t_partial = [c for c in t_contexts if len(c.left) + len(c.right) > 0]
-        t_zero = [c for c in t_contexts if len(c.left) + len(c.right) == 0]
+        t_strong = [c for c in t_contexts if strong(c)]
+        t_weak = [c for c in t_contexts if not strong(c)]
 
         #create bipartie graph
         logger.debug("Processing {0}".format(block))
@@ -131,39 +137,51 @@ def _match_contexts(ref_contexts, target_contexts):
         logger.debug("Reference contexts:\n{0}"
                             .format("\n".join(map(str, r_contexts))))
         graph = nx.Graph()
-        for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(t_partial),
+
+        #add strong contexts
+        for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(t_strong),
                                                     enumerate(r_contexts)):
-            node_ref, node_trg = "ref" + str(no_r), "trg" + str(no_t)
+            node_ref, node_trg = "ref" + str(no_r), "str" + str(no_t)
             graph.add_node(node_ref, ref=True, ctx=ctx_r)
             graph.add_node(node_trg, ref=False, ctx=ctx_t)
 
-            distance = _context_distance(ctx_r, ctx_t)
-            #logger.debug("D {0} -- {1} {2}".format(ctx_r, ctx_t, distance))
-            if distance < MAX_DIST:
-                graph.add_edge(node_ref, node_trg, weight=distance)
+            score = _similarity_score(ctx_r, ctx_t, repeats)
+            if score > 0:
+                graph.add_edge(node_ref, node_trg, weight=score, match="strong")
 
-        edges = _min_weight_matching(graph)
-        used_contexts = set()
+        #add weak
+        #TODO: check if all weak contexts are different
+        logger.debug("Weak: {0}".format(map(str, t_weak)))
+        many_weak = t_weak * len(r_contexts)
+        for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(many_weak),
+                                                    enumerate(r_contexts)):
+            node_ref, node_trg = "ref" + str(no_r), "wck" + str(no_t)
+            graph.add_node(node_ref, ref=True, ctx=ctx_r)
+            graph.add_node(node_trg, ref=False, ctx=ctx_t)
+
+            score = _similarity_score(ctx_r, ctx_t, repeats)
+            if score >= 0:
+                graph.add_edge(node_ref, node_trg, weight=score, match="weak")
+        ##
+
+        edges = _max_weight_matching(graph)
         for edge in edges:
-            u, v = edge
-            if graph.node[u]["ref"]:
-                u, v = v, u
-            one2one_matched.append((graph.node[u]["ctx"],
-                                    graph.node[v]["ctx"]))
-            used_contexts.add(graph.node[v]["ctx"])
-            logger.debug("M: {0} -- {1}".format(graph.node[v]["ctx"],
-                                                graph.node[u]["ctx"]))
+            trg_node, ref_node = edge
+            if graph.node[trg_node]["ref"]:
+                trg_node, ref_node = ref_node, trg_node
 
-        if len(t_zero) == 1:
-            #for node in graph.nodes():
-            for r_ctx in r_contexts:
-                if r_ctx not in used_contexts:
-                    one2many_matched.append((t_zero[0].perm, r_ctx))
-                    logger.debug("Z {0} -- {1}".format(t_zero[0].perm.chr_name,
-                                                       r_ctx))
-                    #print("ya")
+            match_pair = (graph.node[ref_node]["ctx"],
+                          graph.node[trg_node]["ctx"])
+            if graph[trg_node][ref_node] == "strong":
+                strong_matched.append(match_pair)
+                logger.debug("M: {0} -- {1}".format(graph.node[ref_node]["ctx"],
+                                                    graph.node[trg_node]["ctx"]))
+            else:
+                weak_matched.append(match_pair)
+                logger.debug("Z: {0} -- {1}".format(graph.node[ref_node]["ctx"],
+                                                   graph.node[trg_node]["ctx"]))
 
-    return one2one_matched, one2many_matched
+    return strong_matched, weak_matched
 
 
 def _get_contexts(permutations, repeats):
