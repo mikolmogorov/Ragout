@@ -249,7 +249,7 @@ def _shortest_path(graph, src, dst, restricted_nodes):
 
     path = [dst]
     cur_node = dst
-    while parent[cur_node] != cur_node:
+    while cur_node != src:
         path.append(parent[cur_node])
         cur_node = parent[cur_node]
     return path[::-1]

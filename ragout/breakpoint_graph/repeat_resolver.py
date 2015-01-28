@@ -23,8 +23,8 @@ class Context:
 
     def __str__(self):
         block_id = self.perm.blocks[self.pos].block_id
-        return "({0}, {1}, {2})".format(self.perm.chr_name,
-                                        self.left, self.right)
+        return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, self.pos,
+                                             self.left, self.right)
 
     def equal(self, other):
         return self.right == other.right and self.left == other.left
@@ -49,21 +49,77 @@ def resolve_repeats(ref_perms, target_perms, repeats):
                                                          trg_contexts, repeats)
 
     for trg_ctx, ref_ctx in unique_matches:
-        #logger.debug("{0} with {1}".format(trg_ctx, ref_ctx))
+        assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+                ref_ctx.perm.blocks[ref_ctx.pos].block_id)
         trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
         ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
         next_block_id += 1
 
     #now processing repetitive contigs
-    index = defaultdict(lambda: defaultdict(list))
+    by_target = defaultdict(list)
     for trg_ctx, ref_ctx in repetitive_matches:
-        block = trg_ctx.perm.blocks[trg_ctx.pos].block_id
-        index[trg_ctx.perm][block].append((trg_ctx, ref_ctx))
-    for perm, by_block in index.items():
+        by_target[trg_ctx.perm].append((trg_ctx, ref_ctx))
+
+    for perm, contexts in by_target.items():
         logger.debug("Perm: {0}".format(perm.chr_name))
-        for block, contexts in by_block.items():
-            logger.debug("Block {0} : {1}".format(block,
-                                           map(lambda (_, c): c.pos, contexts)))
+        groups = _split_by_instance(contexts)
+
+        for group in groups:
+            new_perm = deepcopy(perm)
+            for trg_ctx, ref_ctx in group:
+                assert (new_perm.blocks[trg_ctx.pos].block_id ==
+                        ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+                new_perm.blocks[trg_ctx.pos].block_id = next_block_id
+                ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+                next_block_id += 1
+
+            target_perms.append(new_perm)
+
+        target_perms.remove(perm)
+
+
+def _split_by_instance(contexts):
+    """
+    Given a set of matched contexts, group them by instances of
+    coresponding contig in target genome
+    """
+    index = defaultdict(lambda: defaultdict(list))
+    for trg_ctx, ref_ctx in contexts:
+        index[ref_ctx.perm][trg_ctx.pos].append((trg_ctx, ref_ctx))
+
+    groups = []
+    for ref_perm, by_pos in index.items():
+        if len(by_pos) != len(contexts[0][0].perm.blocks): continue
+
+        logger.debug("Ref: {0}".format(ref_perm.chr_name))
+
+        #some magic position shifting
+        positions = {}
+        zero_pos = sorted(by_pos.keys())[0]
+        for pos, contexts in by_pos.items():
+            shift = pos - zero_pos
+            sign = lambda t, r: (t.perm.blocks[t.pos].sign *
+                                 r.perm.blocks[r.pos].sign)
+            positions[pos] = list(map(lambda (t, r): r.pos - shift * sign(t, r),
+                                      contexts))
+            logger.debug("Pos {0} : {1}".format(pos, positions[pos]))
+
+        #now find equal positions
+        for num, ref_pos in enumerate(positions[zero_pos]):
+            contexts_group = [by_pos[zero_pos][num]]
+            try:
+                for pos in positions:
+                    if pos == zero_pos: continue
+                    index = positions[pos].index(ref_pos)
+                    contexts_group.append(by_pos[pos][index])
+                groups.append(contexts_group)
+                logger.debug("Group:\n{0}"
+                    .format("\n".join(map(lambda (t, r): str((str(t), str(r))),
+                                      contexts_group))))
+            except ValueError:
+                pass
+
+    return groups
 
 
 def _alignment(ref, trg, repeats):
@@ -114,8 +170,6 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
     def is_unique(context):
         return any(abs(b) not in repeats for b in
                               chain(context.left, context.right))
-
-    matched_ref_ctx = ref_contexts      #now let's assume we have one reference
 
     unique_matches = []
     repetitive_matches = []
