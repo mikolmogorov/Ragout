@@ -55,8 +55,8 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
         visited.add(contig)
         scf_name = "ragout-scaffold-{0}".format(counter[0])
         counter[0] += 1
-        scf = Scaffold.with_contigs(scf_name, contig.left(),
-                                    contig.right(), [contig])
+        scf = Scaffold.with_contigs(scf_name, contig.left_end(),
+                                    contig.right_end(), [contig])
         scaffolds.append(scf)
 
         #go right
@@ -69,43 +69,46 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
             if contig in visited:
                 break
 
-            if adj_block in [contig.left(), -contig.right()]:
-                scf.contigs[-1].link = Link(adj_distance, adj_supporting_genomes)
-                scf.contigs.append(contig)
-                visited.add(contig)
-
-                if contig.left() == adj_block:
-                    scf.right = contig.right()
+            if adj_block in [contig.left_end(), contig.right_end()]:
+                if contig.left_end() == adj_block:
+                    scf.contigs.append(contig)
                 else:
-                    scf.contigs[-1] = scf.contigs[-1].reverse_copy()
-                    scf.right = -contig.left()
+                    scf.contigs.append(contig.reverse_copy())
 
+                flank = scf.contigs[-2].right_gap() + scf.contigs[-1].left_gap()
+                assert flank >= 0
+                scf.contigs[-2].link = Link(adj_distance - flank,
+                                            adj_supporting_genomes)
+
+                scf.right = scf.contigs[-1].right_end()
+                visited.add(contig)
                 continue
 
             break
 
         #go left
-        while -scf.left in adjacencies:
-            adj_block = -adjacencies[-scf.left].block
-            adj_distance = adjacencies[-scf.left].distance
-            adj_supporting_genomes = adjacencies[-scf.left].supporting_genomes
+        while scf.left in adjacencies:
+            adj_block = adjacencies[scf.left].block
+            adj_distance = adjacencies[scf.left].distance
+            adj_supporting_genomes = adjacencies[scf.left].supporting_genomes
 
             contig = contig_index[abs(adj_block)]
             if contig in visited:
                 break
 
-            if adj_block in [contig.right(), -contig.left()]:
-                scf.contigs.insert(0, contig)
-                scf.contigs[0].link = Link(adj_distance, adj_supporting_genomes)
-                visited.add(contig)
-
-                if contig.right() == adj_block:
-                    scf.left = contig.left()
-
+            if adj_block in [contig.right_end(), contig.left_end()]:
+                if contig.right_end() == adj_block:
+                    scf.contigs.insert(0, contig)
                 else:
-                    scf.contigs[0] = scf.contigs[0].reverse_copy()
-                    scf.left = -contig.right()
+                    scf.contigs.insert(0, contig.reverse_copy())
 
+                flank = scf.contigs[0].right_gap() + scf.contigs[1].left_gap()
+                assert flank >= 0
+                scf.contigs[0].link = Link(adj_distance - flank,
+                                           adj_supporting_genomes)
+
+                scf.left = contigs[0].left_end()
+                visited.add(contig)
                 continue
 
             break

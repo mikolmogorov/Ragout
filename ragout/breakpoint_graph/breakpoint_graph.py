@@ -115,9 +115,9 @@ class BreakpointGraph:
                 for e in self.bp_graph[edge[0]][edge[1]].values():
                     supporting_genomes.append(e["genome_id"])
             assert abs(edge[0]) != abs(edge[1])
-            adjacencies[-edge[0]] = Adjacency(edge[1], distance,
+            adjacencies[edge[0]] = Adjacency(edge[1], distance,
                                               supporting_genomes)
-            adjacencies[-edge[1]] = Adjacency(edge[0], distance,
+            adjacencies[edge[1]] = Adjacency(edge[0], distance,
                                               supporting_genomes)
 
         if debugger.debugging:

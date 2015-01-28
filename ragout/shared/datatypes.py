@@ -57,11 +57,21 @@ class Contig:
         self.sign = sign
         self.link = Link(0, [])
 
-    def left(self):
-        return self.perm.blocks[0].signed_id()
+    def left_end(self):
+        return (self.perm.blocks[0].signed_id() if self.sign > 0
+                else -self.perm.blocks[-1].signed_id())
 
-    def right(self):
-        return self.perm.blocks[-1].signed_id()
+    def right_end(self):
+        return (-self.perm.blocks[-1].signed_id() if self.sign > 0
+                else self.perm.blocks[0].signed_id())
+
+    def left_gap(self):
+        return (self.perm.blocks[0].start if self.sign > 0
+                else self.perm.chr_len - self.perm.blocks[-1].end)
+
+    def right_gap(self):
+        return (self.perm.chr_len - self.perm.blocks[-1].end
+                if self.sign > 0 else self.perm.blocks[0].start)
 
     def reverse_copy(self):
         contig = deepcopy(self)
