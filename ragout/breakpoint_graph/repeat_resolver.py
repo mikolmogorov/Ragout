@@ -61,6 +61,9 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         by_target[trg_ctx.perm].append((trg_ctx, ref_ctx))
 
     for perm, contexts in by_target.items():
+        if any(b.block_id not in repeats for b in perm.blocks):
+            continue
+
         logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(contexts)
 
