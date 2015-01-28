@@ -107,7 +107,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                 scf.contigs[0].link = Link(adj_distance - flank,
                                            adj_supporting_genomes)
 
-                scf.left = contigs[0].left_end()
+                scf.left = scf.contigs[0].left_end()
                 visited.add(contig)
                 continue
 
