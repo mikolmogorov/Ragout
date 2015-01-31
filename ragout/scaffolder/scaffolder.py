@@ -76,9 +76,8 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                     scf.contigs.append(contig.reverse_copy())
 
                 flank = scf.contigs[-2].right_gap() + scf.contigs[-1].left_gap()
-                assert flank >= 0
-                scf.contigs[-2].link = Link(adj_distance - flank,
-                                            adj_supporting_genomes)
+                gap = max(0, adj_distance - flank)
+                scf.contigs[-2].link = Link(gap, adj_supporting_genomes)
 
                 scf.right = scf.contigs[-1].right_end()
                 visited.add(contig)
@@ -103,9 +102,8 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                     scf.contigs.insert(0, contig.reverse_copy())
 
                 flank = scf.contigs[0].right_gap() + scf.contigs[1].left_gap()
-                assert flank >= 0
-                scf.contigs[0].link = Link(adj_distance - flank,
-                                           adj_supporting_genomes)
+                gap = max(0, adj_distance - flank)
+                scf.contigs[0].link = Link(gap, adj_supporting_genomes)
 
                 scf.left = scf.contigs[0].left_end()
                 visited.add(contig)
