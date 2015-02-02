@@ -82,7 +82,7 @@ def run_test(parameters):
                 value = int(line.strip()[20:])
                 print("Errors:", value)
                 if value > parameters["max_errors"]:
-                    raise RuntimeError("Too much miss-ordered contigs")
+                    raise RuntimeError("Too many miss-ordered contigs")
 
             if line.startswith("Total contigs: "):
                 value = int(line.strip()[15:])
@@ -94,7 +94,7 @@ def run_test(parameters):
                 value = int(line.strip()[17:])
                 print("Scaffolds:", value)
                 if value > parameters["max_scaffolds"]:
-                    raise RuntimeError("Too much scaffolds")
+                    raise RuntimeError("Too many scaffolds")
 
     #checking after refinement
     cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_refined]
@@ -107,7 +107,7 @@ def run_test(parameters):
                 value = int(line.strip()[20:])
                 print("Errors:", value)
                 if value > parameters["max_errors_refine"]:
-                    raise RuntimeError("Too much miss-ordered contigs")
+                    raise RuntimeError("Too many miss-ordered contigs")
 
             if line.startswith("Total contigs: "):
                 value = int(line.strip()[15:])
@@ -119,7 +119,7 @@ def run_test(parameters):
                 value = int(line.strip()[17:])
                 print("Scaffolds:", value)
                 if value > parameters["max_scaffolds"]:
-                    raise RuntimeError("Too much scaffolds")
+                    raise RuntimeError("Too many scaffolds")
 
 
 def main():
