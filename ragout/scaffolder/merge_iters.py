@@ -93,7 +93,7 @@ def merge(big_scaffolds, small_scaffolds):
                 new_contigs.extend(big_scf.contigs[left_idx+1:right_idx])
 
         new_contigs.append(right_cnt)
-        s = Scaffold(scf.name)
+        s = Scaffold(big_scf.name)
         s.contigs = new_contigs
         new_scafflods.append(s)
 
