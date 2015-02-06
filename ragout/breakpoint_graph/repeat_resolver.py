@@ -14,6 +14,10 @@ import logging
 
 import networkx as nx
 
+
+logger = logging.getLogger()
+
+
 class Context:
     def __init__(self, perm, pos, left, right):
         self.perm = perm
@@ -30,18 +34,22 @@ class Context:
         return self.right == other.right and self.left == other.left
 
 
-logger = logging.getLogger()
-
 def resolve_repeats(ref_perms, target_perms, repeats):
     """
     Does the job
     """
+    refs = set(map(lambda p: p.genome_name, ref_perms))
+    if len(refs) > 1:
+        logger.warning("Repeat resolution is currently supported "
+                       "for only one reference. Skipping...")
+        return
     logger.info("Resolving repeats")
 
     next_block_id = 0
     for perm in chain(ref_perms, target_perms):
         next_block_id = max(next_block_id,
                             max(map(lambda b: b.block_id, perm.blocks)) + 1)
+    first_block_id = next_block_id
 
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
@@ -60,15 +68,17 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     for trg_ctx, ref_ctx in repetitive_matches:
         by_target[trg_ctx.perm].append((trg_ctx, ref_ctx))
 
+    num_extra_contigs = 0
     for perm, contexts in by_target.items():
         if any(b.block_id not in repeats for b in perm.blocks):
             continue
 
-        logger.debug("Perm: {0}".format(perm.chr_name))
+        #logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(contexts)
 
         for group in groups:
             new_perm = deepcopy(perm)
+            num_extra_contigs += 1
             for trg_ctx, ref_ctx in group:
                 assert (new_perm.blocks[trg_ctx.pos].block_id ==
                         ref_ctx.perm.blocks[ref_ctx.pos].block_id)
@@ -80,11 +90,15 @@ def resolve_repeats(ref_perms, target_perms, repeats):
 
         target_perms.remove(perm)
 
+    logger.debug("Resolved {0} repeat instances"
+                        .format(next_block_id - first_block_id))
+    logger.debug("Added {0} extra contigs".format(num_extra_contigs))
+
 
 def _split_by_instance(contexts):
     """
-    Given a set of matched contexts, group them by instances of
-    coresponding contig in target genome
+    Given a set of matched context pairs, group them by contig
+    (possibly in multiple instances)
     """
     index = defaultdict(lambda: defaultdict(list))
     for trg_ctx, ref_ctx in contexts:
@@ -94,7 +108,7 @@ def _split_by_instance(contexts):
     for ref_perm, by_pos in index.items():
         if len(by_pos) != len(contexts[0][0].perm.blocks): continue
 
-        logger.debug("Ref: {0}".format(ref_perm.chr_name))
+        #logger.debug("Ref: {0}".format(ref_perm.chr_name))
 
         #some magic position shifting
         positions = {}
@@ -105,7 +119,7 @@ def _split_by_instance(contexts):
                                  r.perm.blocks[r.pos].sign)
             positions[pos] = list(map(lambda (t, r): r.pos - shift * sign(t, r),
                                       contexts))
-            logger.debug("Pos {0} : {1}".format(pos, positions[pos]))
+            #logger.debug("Pos {0} : {1}".format(pos, positions[pos]))
 
         #now find equal positions
         for num, ref_pos in enumerate(positions[zero_pos]):
@@ -116,9 +130,9 @@ def _split_by_instance(contexts):
                     index = positions[pos].index(ref_pos)
                     contexts_group.append(by_pos[pos][index])
                 groups.append(contexts_group)
-                logger.debug("Group:\n{0}"
-                    .format("\n".join(map(lambda (t, r): str((str(t), str(r))),
-                                      contexts_group))))
+                #logger.debug("Group:\n{0}"
+                    #.format("\n".join(map(lambda (t, r): str((str(t), str(r))),
+                    #                  contexts_group))))
             except ValueError:
                 pass
 
@@ -170,6 +184,9 @@ def _max_weight_matching(graph):
 
 
 def _match_contexts(ref_contexts, target_contexts, repeats):
+    """
+    Tries to find a mapping between reference contexts and target contexts
+    """
     def is_unique(context):
         return any(abs(b) not in repeats for b in
                               chain(context.left, context.right))
@@ -185,11 +202,11 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
         t_repetitive = [c for c in t_contexts if not is_unique(c)]
 
         #create bipartie graph
-        logger.debug("Processing {0}".format(block))
-        logger.debug("Target contexts:\n{0}"
-                            .format("\n".join(map(str, t_contexts))))
-        logger.debug("Reference contexts:\n{0}"
-                            .format("\n".join(map(str, r_contexts))))
+        #logger.debug("Processing {0}".format(block))
+        #logger.debug("Target contexts:\n{0}"
+        #                    .format("\n".join(map(str, t_contexts))))
+        #logger.debug("Reference contexts:\n{0}"
+        #                    .format("\n".join(map(str, r_contexts))))
         graph = nx.Graph()
 
         #add unique contexts
@@ -207,7 +224,7 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
         different = all(not c_1.equal(c_2) for c_1, c_2 in
                                            combinations(t_repetitive, 2))
         if different:
-            logger.debug("Repetetive: {0}".format(map(str, t_repetitive)))
+            #logger.debug("Repetetive: {0}".format(map(str, t_repetitive)))
             many_rep = t_repetitive * len(r_contexts)
             for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(many_rep),
                                                         enumerate(r_contexts)):
@@ -219,8 +236,8 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
                 if score >= 0:
                     graph.add_edge(node_ref, node_trg, weight=score,
                                    match="rep")
-        else:
-            logger.debug("Repetitive contexts are ambigous")
+        #else:
+        #    logger.debug("Repetitive contexts are ambigous")
 
         edges = _max_weight_matching(graph)
         for edge in edges:
@@ -232,17 +249,20 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
                           graph.node[ref_node]["ctx"])
             if graph[trg_node][ref_node]["match"] == "unq":
                 unique_matches.append(match_pair)
-                logger.debug("M: {0} -- {1}".format(graph.node[trg_node]["ctx"],
-                                                   graph.node[ref_node]["ctx"]))
+                #logger.debug("M: {0} -- {1}".format(graph.node[trg_node]["ctx"],
+                #                                   graph.node[ref_node]["ctx"]))
             else:
                 repetitive_matches.append(match_pair)
-                logger.debug("Z: {0} -- {1}".format(graph.node[ref_node]["ctx"],
-                                                   graph.node[ref_node]["ctx"]))
+                #logger.debug("Z: {0} -- {1}".format(graph.node[ref_node]["ctx"],
+                #                                   graph.node[ref_node]["ctx"]))
 
     return unique_matches, repetitive_matches
 
 
 def _get_contexts(permutations, repeats):
+    """
+    Get repeats' contexts
+    """
     WINDOW = 5
 
     contexts = defaultdict(list)
