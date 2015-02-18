@@ -38,11 +38,11 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     """
     Does the job
     """
-    refs = set(map(lambda p: p.genome_name, ref_perms))
-    if len(refs) > 1:
-        logger.warning("Repeat resolution is currently supported "
-                       "for only one reference. Skipping...")
-        return
+    #refs = set(map(lambda p: p.genome_name, ref_perms))
+    #if len(refs) > 1:
+    #    logger.warning("Repeat resolution is currently supported "
+    #                   "for only one reference. Skipping...")
+    #    return
     logger.info("Resolving repeats")
 
     next_block_id = 0
@@ -53,6 +53,20 @@ def resolve_repeats(ref_perms, target_perms, repeats):
 
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
+
+    #by_repeats_ref = defaultdict(list)
+    #for ctx in ref_contexts:
+    #    block_id = ctx.perm.blocks[ctx.pos].block_id
+    #    by_repeats_ref[block_id].append(ctx)
+
+    for repeat, contexts in ref_contexts.items():
+        by_genome = defaultdict(list)
+        for ctx in contexts:
+            by_genome[ctx.perm.genome_name].append(ctx)
+
+        logger.debug("Resolving {0}".format(repeat))
+        _match_contexts_multiref(by_genome, repeats, None)
+    """
     unique_matches, repetitive_matches = _match_contexts(ref_contexts,
                                                          trg_contexts, repeats)
 
@@ -93,6 +107,42 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     logger.debug("Resolved {0} repeat instances"
                         .format(next_block_id - first_block_id))
     logger.debug("Added {0} extra contigs".format(num_extra_contigs))
+    """
+
+
+def _match_contexts_multiref(contexts_by_genome, repeats, phylogeny):
+    genomes = contexts_by_genome.keys()
+    #TODO: determine the order according to phylogenetic tree
+    profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
+
+    for genome in genomes[1:]:
+        #finding a matching between existing groups and a new genome
+        genome_ctxs = contexts_by_genome[genome]
+        graph = nx.Graph()
+        for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
+                                                     enumerate(genome_ctxs)):
+            node_prof = "profile" + str(pr_id)
+            node_genome = "genome" + str(ctx_id)
+            graph.add_node(node_prof, profile=True, prof=prof)
+            graph.add_node(node_genome, profile=False, ctx=ctx)
+
+            score = _profile_similarity(prof, ctx, repeats)
+            if score > 0:
+                graph.add_edge(node_prof, node_genome, weight=score)
+
+        edges = _max_weight_matching(graph)
+        for edge in edges:
+            prof_node, genome_node = edge
+            if graph.node[genome_node]["profile"]:
+                prof_node, genome_node = genome_node, prof_node
+
+            graph.node[prof_node]["prof"].append(graph.node[genome_node]["ctx"])
+
+    for profile in profiles:
+        for ctx in profile:
+            logger.debug(str(ctx))
+        logger.debug("--")
+        #print("")
 
 
 def _split_by_instance(contexts):
@@ -139,38 +189,46 @@ def _split_by_instance(contexts):
     return groups
 
 
-def _alignment(ref, trg, repeats):
-    """
-    Computes global alignment, allowing
-    free gaps on the left side
-    """
-    GAP = -1
-    def match(a, b):
-        if a != b:
-            return -2
-        if abs(a) in repeats:
-            return 1
-        return 2
-
-    l1, l2 = len(ref) + 1, len(trg) + 1
-    table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
-
-    for i, j in product(xrange(1, l1), xrange(1, l2)):
-        table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
-                          table[i-1][j-1] + match(ref[i-1], trg[j-1]))
-    return table[-1][-1]
-
-
-def _similarity_score(ctx_ref, ctx_trg, repeats):
+def _context_similarity(ctx_ref, ctx_trg, repeats):
     """
     Compute similarity between two contexts
     """
+    def alignment(ref, trg):
+        """
+        Computes global alignment, allowing
+        free gaps on the left side
+        """
+        GAP = -1
+        def match(a, b):
+            if a != b:
+                return -2
+            if abs(a) in repeats:
+                return 1
+            return 2
+
+        l1, l2 = len(ref) + 1, len(trg) + 1
+        table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
+
+        for i, j in product(xrange(1, l1), xrange(1, l2)):
+            table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
+                              table[i-1][j-1] + match(ref[i-1], trg[j-1]))
+        return table[-1][-1]
+
     if len(ctx_trg.left) + len(ctx_trg.right) == 0:
         return 0
 
-    left = _alignment(ctx_ref.left, ctx_trg.left, repeats)
-    right = _alignment(ctx_ref.right[::-1], ctx_trg.right[::-1], repeats)
+    left = alignment(ctx_ref.left, ctx_trg.left)
+    right = alignment(ctx_ref.right[::-1], ctx_trg.right[::-1])
     return left + right
+
+
+def _profile_similarity(profile, genome_ctx, repeats):
+    """
+    Compute similarity of set of contexts vs one context
+    """
+    scores = list(map(lambda c: _context_similarity(c, genome_ctx, repeats),
+                  profile))
+    return float(sum(scores)) / len(scores)
 
 
 def _max_weight_matching(graph):
@@ -216,7 +274,7 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
             graph.add_node(node_ref, ref=True, ctx=ctx_r)
             graph.add_node(node_trg, ref=False, ctx=ctx_t)
 
-            score = _similarity_score(ctx_r, ctx_t, repeats)
+            score = _context_similarity(ctx_r, ctx_t, repeats)
             if score > 0:
                 graph.add_edge(node_ref, node_trg, weight=score, match="unq")
 
@@ -232,7 +290,7 @@ def _match_contexts(ref_contexts, target_contexts, repeats):
                 graph.add_node(node_ref, ref=True, ctx=ctx_r)
                 graph.add_node(node_trg, ref=False, ctx=ctx_t)
 
-                score = _similarity_score(ctx_r, ctx_t, repeats)
+                score = _context_similarity(ctx_r, ctx_t, repeats)
                 if score >= 0:
                     graph.add_edge(node_ref, node_trg, weight=score,
                                    match="rep")
