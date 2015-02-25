@@ -7,7 +7,96 @@ This module provides some common data structures
 """
 
 from collections import namedtuple
-from copy import copy
+from copy import deepcopy
+
+
+class Block:
+    """
+    Represents synteny block
+    """
+    def __init__(self, block_id, sign, start=None, end=None):
+        self.block_id = block_id
+        self.sign = sign
+        self.start = start
+        self.end = end
+
+    def length(self):
+        if self.start is None or self.end is None:
+            return None
+
+        assert self.end >= self.start
+        return self.end - self.start
+
+    def signed_id(self):
+        return self.block_id * self.sign
+
+
+class Permutation:
+    """
+    Represents signed permutation
+    """
+    def __init__(self, genome_name, chr_name, chr_id, chr_len, blocks):
+        self.genome_name = genome_name
+        self.chr_name = chr_name
+        self.chr_id = chr_id
+        self.chr_len = chr_len
+        self.blocks = blocks
+
+    def iter_pairs(self):
+        for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
+            yield pb, nb
+
+
+class Contig:
+    """
+    Contig data structure for more convenient use
+    """
+    def __init__(self, seq_name, permutation, sign=1):
+        self.perm = permutation
+        self.seq_name = seq_name
+        self.sign = sign
+        self.link = Link(0, [])
+
+    def left_end(self):
+        return (self.perm.blocks[0].signed_id() if self.sign > 0
+                else -self.perm.blocks[-1].signed_id())
+
+    def right_end(self):
+        return (-self.perm.blocks[-1].signed_id() if self.sign > 0
+                else self.perm.blocks[0].signed_id())
+
+    def left_gap(self):
+        return (self.perm.blocks[0].start if self.sign > 0
+                else self.perm.chr_len - self.perm.blocks[-1].end)
+
+    def right_gap(self):
+        return (self.perm.chr_len - self.perm.blocks[-1].end
+                if self.sign > 0 else self.perm.blocks[0].start)
+
+    def reverse_copy(self):
+        contig = deepcopy(self)
+        contig.sign = -contig.sign
+        return contig
+
+    def signed_perm(self):
+        if self.sign > 0:
+            return list(map(lambda b: b.signed_id(), self.perm.blocks))
+        else:
+            return list(map(lambda b: -b.signed_id(), self.perm.blocks[::-1]))
+
+    def __str__(self):
+        sign = "+" if self.sign > 0 else "-"
+        return sign + self.seq_name
+
+
+class Link:
+    """
+    Represens an adjancency between teo contigs
+    """
+    def __init__(self, gap, supporting_genomes):
+        self.gap = gap
+        self.supporting_genomes = supporting_genomes
+        self.supporting_assembly = False
 
 
 class Scaffold:
@@ -24,26 +113,3 @@ class Scaffold:
         scf.right = right
         scf.contigs = contigs
         return scf
-
-class Contig:
-    def __init__(self, name, sign=1):
-        self.name = name
-        self.sign = sign
-        self.link = Link(0, [])
-        self.blocks = []
-
-    def reverse(self):
-        contig = copy(self)
-        contig.sign = -contig.sign
-        return contig
-
-    def __str__(self):
-        sign = "+" if self.sign > 0 else "-"
-        return sign + self.name
-
-class Link:
-    def __init__(self, gap, supporting_genomes):
-        self.gap = gap
-        self.supporting_genomes = supporting_genomes
-        self.supporting_assembly = False
-

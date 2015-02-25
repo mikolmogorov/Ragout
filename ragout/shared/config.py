@@ -33,5 +33,4 @@ vals =  {
 
             "min_synteny_coverage" : 0.6,
             "min_overlap_rate" : 0.5,
-            "cactus_max_threads" : 10
         }

@@ -70,7 +70,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
     new_scaffolds = []
     ordered_contigs = set()
     for scf in scaffolds_in:
-        ordered_contigs |= set(map(lambda s: s.name, scf.contigs))
+        ordered_contigs |= set(map(lambda c: c.seq_name, scf.contigs))
     reverse_graph = graph.reverse()
 
     for scf in scaffolds_in:
@@ -93,11 +93,11 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
 
-                new_scaffolds[-1].contigs.append(Contig(name, sign))
+                new_scaffolds[-1].contigs.append(Contig(name, None, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
-                (new_scaffolds[-1].contigs[-1].link
-                    .supporting_genomes) = supp_genomes
+                new_scaffolds[-1].contigs[-1].link.supporting_genomes = \
+                                                                supp_genomes
 
         new_scaffolds[-1].contigs.append(new_cont)
     return new_scaffolds
@@ -195,8 +195,8 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
     restricted_nodes = set()
     for scf in scaffolds:
         for contig in scf.contigs:
-            restricted_nodes.add("+" + contig.name)
-            restricted_nodes.add("-" + contig.name)
+            restricted_nodes.add("+" + contig.seq_name)
+            restricted_nodes.add("-" + contig.seq_name)
 
     for scf in scaffolds:
         for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
@@ -249,7 +249,7 @@ def _shortest_path(graph, src, dst, restricted_nodes):
 
     path = [dst]
     cur_node = dst
-    while parent[cur_node] != cur_node:
+    while cur_node != src:
         path.append(parent[cur_node])
         cur_node = parent[cur_node]
     return path[::-1]

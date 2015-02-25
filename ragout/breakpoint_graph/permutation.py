@@ -12,9 +12,12 @@ from collections import defaultdict
 import logging
 import os
 import math
+from copy import deepcopy
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
+from ragout.shared.datatypes import Block, Permutation
+from .repeat_resolver import resolve_repeats
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -23,52 +26,17 @@ debugger = DebugConfig.get_instance()
 class PermException(Exception):
     pass
 
-class Block:
-    """
-    Represents synteny block
-    """
-    def __init__(self, block_id, sign, start=None, end=None):
-        self.block_id = block_id
-        self.sign = sign
-        self.start = start
-        self.end = end
-
-    def length(self):
-        if self.start is None or self.end is None:
-            return None
-
-        assert self.end >= self.start
-        return self.end - self.start
-
-    def signed_id(self):
-        return self.block_id * self.sign
-
-
-class Permutation:
-    """
-    Represents signed permutation
-    """
-    def __init__(self, genome_name, chr_name, chr_id, chr_len, blocks):
-        self.genome_name = genome_name
-        self.chr_name = chr_name
-        self.chr_id = chr_id
-        self.chr_len = chr_len
-        self.blocks = blocks
-        self.chr_index = None
-
-    def iter_pairs(self):
-        for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
-            yield pb, nb
-
 
 class PermutationContainer:
-    def __init__(self, block_coords_file, recipe):
+    def __init__(self, block_coords_file, recipe,
+                 resolve_repeats, conservative):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
         self.ref_perms = []
         self.target_perms = []
         self.recipe = recipe
+        self.conservative = conservative
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
@@ -104,10 +72,21 @@ class PermutationContainer:
                                 "target sequences")
 
         self.filter_indels()
-        self.filter_repeats()
+
+        ###
+        #before_filtering = deepcopy(self.target_perms)
+        self.filter_repeats(resolve_repeats)
+        logger.debug("{0} target sequences left after repeat filtering"
+                     .format(len(self.target_perms)))
+        #if debugger.debugging:
+            #file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
+            #ids = set(map(lambda p: p.chr_id, self.target_perms))
+            #filtered_perms = [p for p in before_filtering if p.chr_id not in ids]
+            #_write_permutations(filtered_perms, open(file, "w"))
+        ###
+
         self.build_chr_index()
-        #if conservative:
-        #    self.filter_chimeras()
+        self.filter_chimeras()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
@@ -115,15 +94,22 @@ class PermutationContainer:
 
     def filter_indels(self):
         """
-        Filters blocks that don't appear in target
+        Keep only blocks that appear in target and one of the references
         """
         target_blocks = set()
         for perm in self.target_perms:
             target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
 
-        self.ref_perms = _filter_permutations(self.ref_perms, target_blocks)
+        reference_blocks = set()
+        for perm in self.ref_perms:
+            reference_blocks |= set(map(lambda b: b.block_id, perm.blocks))
 
-    def filter_repeats(self):
+        to_keep = target_blocks.intersection(reference_blocks)
+        self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
+        self.target_perms = _filter_permutations(self.target_perms, to_keep)
+
+
+    def filter_repeats(self, resolve):
         """
         Filters repetitive blocks
         """
@@ -135,6 +121,8 @@ class PermutationContainer:
                     repeats.add(block.block_id)
                 else:
                     index[block.block_id].add(perm.genome_name)
+        if resolve:
+            resolve_repeats(self.ref_perms, self.target_perms, repeats)
 
         self.target_perms = _filter_permutations(self.target_perms, repeats,
                                                  inverse=True)
@@ -150,8 +138,8 @@ class PermutationContainer:
         counter = 0
         for perm in self.target_perms:
             for block_1, block_2 in perm.iter_pairs():
-                if not self.ref_supported(block_1.block_id,
-                                          block_2.block_id):
+                if not self.good_adj(block_1.block_id,
+                                     block_2.block_id):
                     suspicious |= set(map(lambda b: b.block_id, perm.blocks))
                     counter += 1
                     break
@@ -167,14 +155,9 @@ class PermutationContainer:
         Mapping synteny blocks on chromosomes
         Assumes that repeats are filtered
         """
-        all_refs = set(perm.genome_name for perm in self.ref_perms)
-        refs_to_check = [ref for ref in all_refs
-                         if not self.recipe["genomes"][ref]["draft"]]
-
         by_genome = defaultdict(list)
         for ref_perm in self.ref_perms:
-            if ref_perm.genome_name in refs_to_check:
-                by_genome[ref_perm.genome_name].append(ref_perm)
+            by_genome[ref_perm.genome_name].append(ref_perm)
 
         self.chr_index = defaultdict(lambda: defaultdict(lambda : None))
 
@@ -183,11 +166,14 @@ class PermutationContainer:
                 for block in perm.blocks:
                     self.chr_index[genome_name][block.block_id] = perm.chr_name
 
-    def ref_supported(self, block_id_1, block_id_2):
+    def good_adj(self, block_id_1, block_id_2):
         """
         Checks if adjacency blocks lie on a same chromosome for
         at least one reference
         """
+        if not self.conservative:
+            return True
+
         for ref in self.chr_index:
             chr_1 = self.chr_index[ref][block_id_1]
             chr_2 = self.chr_index[ref][block_id_2]

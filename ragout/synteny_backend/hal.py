@@ -74,15 +74,14 @@ class HalBackend(SyntenyBackend):
             self.target_fasta = target_fasta
 
             logger.info("Converting HAL to MAF")
-            num_proc = min(config.vals["cactus_max_threads"],
-                           multiprocessing.cpu_count())
             out_maf = os.path.join(workdir, "alignment.maf")
             ref_genome = recipe["target"]   #Tricky notation, huh?
             export_genomes = ",".join(recipe["genomes"])
 
             cmdline = [HAL2MAF, recipe["hal"], out_maf, "--noAncestors",
-                        "--numProc", str(num_proc),  "--refGenome", ref_genome,
-                        "--targetGenomes", export_genomes, "--inMemory"]
+                        "--numProc", str(self.threads),  "--refGenome",
+                        ref_genome, "--targetGenomes", export_genomes,
+                        "--inMemory"]
             logger.debug(" ".join(cmdline))
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 
