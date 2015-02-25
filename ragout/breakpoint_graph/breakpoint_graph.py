@@ -30,7 +30,6 @@ class BreakpointGraph:
         self.bp_graph = nx.MultiGraph()
         self.targets = []
         self.references = []
-        self.known_adjacencies = {}
 
     def build_from(self, perm_container, recipe):
         """
