@@ -49,22 +49,20 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
+    repetitive_matches = []
+
     for repeat_id, contexts in ref_contexts.items():
         by_genome = defaultdict(list)
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
-        logger.debug("==Resolving {0}".format(repeat_id))
+        #logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, None)
-        unique_matches, repetitive_matches = _match_target_contexts(profiles,
-                                      trg_contexts[repeat_id], repeats, None)
+        unique_m, repetitive_m = _match_target_contexts(profiles,
+                                trg_contexts[repeat_id], repeats, None)
+        repetitive_matches.extend(repetitive_m)
 
-        #for profile in profiles:
-        #    for ctx in profile:
-        #        logger.debug(str(ctx))
-        #    logger.debug("--")
-
-        for trg_ctx, profile in unique_matches:
+        for trg_ctx, profile in unique_m:
             for ref_ctx in profile:
                 assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
                         ref_ctx.perm.blocks[ref_ctx.pos].block_id)
@@ -72,29 +70,35 @@ def resolve_repeats(ref_perms, target_perms, repeats):
             trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
             next_block_id += 1
 
-    """
     #now processing repetitive contigs
     by_target = defaultdict(list)
-    for trg_ctx, ref_ctx in repetitive_matches:
-        by_target[trg_ctx.perm].append((trg_ctx, ref_ctx))
+    for trg_ctx, profile in repetitive_matches:
+        by_target[trg_ctx.perm].append((trg_ctx, profile))
 
     num_extra_contigs = 0
-    for perm, contexts in by_target.items():
+    for perm, matches in by_target.items():
         if any(b.block_id not in repeats for b in perm.blocks):
             continue
 
         #logger.debug("Perm: {0}".format(perm.chr_name))
-        groups = _split_by_instance(contexts)
+        groups = _split_by_instance(matches)
 
         for group in groups:
             new_perm = deepcopy(perm)
             num_extra_contigs += 1
-            for trg_ctx, ref_ctx in group:
-                assert (new_perm.blocks[trg_ctx.pos].block_id ==
-                        ref_ctx.perm.blocks[ref_ctx.pos].block_id)
-                new_perm.blocks[trg_ctx.pos].block_id = next_block_id
-                ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+            for trg_ctx, profile in group:
+                for ref_ctx in profile:
+                    assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+                            ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+                    ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+                trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
                 next_block_id += 1
+            #for trg_ctx, ref_ctx in group:
+            #    assert (new_perm.blocks[trg_ctx.pos].block_id ==
+            #            ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+            #    new_perm.blocks[trg_ctx.pos].block_id = next_block_id
+            #    ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+            #    next_block_id += 1
 
             target_perms.append(new_perm)
 
@@ -103,7 +107,6 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     logger.debug("Resolved {0} repeat instances"
                         .format(next_block_id - first_block_id))
     logger.debug("Added {0} extra contigs".format(num_extra_contigs))
-    """
 
 
 def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
@@ -207,46 +210,56 @@ def _match_target_contexts(profiles, target_contexts, repeats, phylogeny):
     return unique_matches, repetitive_matches
 
 
-"""
-def _split_by_instance(contexts):
-    index = defaultdict(lambda: defaultdict(list))
-    for trg_ctx, ref_ctx in contexts:
-        index[ref_ctx.perm][trg_ctx.pos].append((trg_ctx, ref_ctx))
+def _split_by_instance(matches):
+    by_pos = defaultdict(list)
+    trg_ctx_by_pos = {}
+    for trg_ctx, profile in matches:
+        prof_by_genome = {ctx.perm.genome_name : ctx for ctx in profile}
+        by_pos[trg_ctx.pos].append(prof_by_genome)
+        trg_ctx_by_pos[trg_ctx.pos] = trg_ctx
+
+    target_perm = matches[0][0].perm
+    positions = by_pos.keys()
+    print(target_perm.blocks)
 
     groups = []
-    for ref_perm, by_pos in index.items():
-        if len(by_pos) != len(contexts[0][0].perm.blocks): continue
+    #try all possible combinations wrt to positions in contig
+    for combination in product(*by_pos.values()):
+        combination = list(combination)
+        master_prof = combination[0]
+        master_pos = positions[0]
+        try:
+            group = [(trg_ctx_by_pos[master_pos], master_prof.values())]
+            for genome in master_prof.keys():
+                master_ctx = master_prof[genome]
+                master_sign = (target_perm.blocks[master_pos].sign *
+                               master_ctx.perm.blocks[master_ctx.pos].sign)
 
-        #logger.debug("Ref: {0}".format(ref_perm.chr_name))
+                for prof_pos, prof in zip(positions, combination)[1:]:
+                    group.append((trg_ctx_by_pos[prof_pos], prof.values()))
 
-        #some magic position shifting
-        positions = {}
-        zero_pos = sorted(by_pos.keys())[0]
-        for pos, contexts in by_pos.items():
-            shift = pos - zero_pos
-            sign = lambda t, r: (t.perm.blocks[t.pos].sign *
-                                 r.perm.blocks[r.pos].sign)
-            positions[pos] = list(map(lambda (t, r): r.pos - shift * sign(t, r),
-                                      contexts))
-            #logger.debug("Pos {0} : {1}".format(pos, positions[pos]))
+                    genome_ctx = prof[genome]
+                    if (master_prof[genome].perm.chr_name !=
+                        genome_ctx.perm.chr_name):
+                        #print("--")
+                        raise KeyError
 
-        #now find equal positions
-        for num, ref_pos in enumerate(positions[zero_pos]):
-            contexts_group = [by_pos[zero_pos][num]]
-            try:
-                for pos in positions:
-                    if pos == zero_pos: continue
-                    index = positions[pos].index(ref_pos)
-                    contexts_group.append(by_pos[pos][index])
-                groups.append(contexts_group)
-                #logger.debug("Group:\n{0}"
-                    #.format("\n".join(map(lambda (t, r): str((str(t), str(r))),
-                    #                  contexts_group))))
-            except ValueError:
-                pass
+                    prof_sign = (target_perm.blocks[prof_pos].sign *
+                                 genome_ctx.perm.blocks[genome_ctx.pos].sign)
+                    shift = (genome_ctx.pos - master_ctx.pos) * prof_sign
+                    if (prof_sign != master_sign or
+                            shift != prof_pos - master_pos):
+                        #print(":(")
+                        raise KeyError
 
+            #all good!
+            groups.append(group)
+
+        except KeyError:
+            #print("++")
+            continue
+    print(groups)
     return groups
-"""
 
 
 def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
@@ -255,8 +268,7 @@ def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
     """
     def alignment(ref, trg):
         """
-        Computes global alignment, allowing
-        free gaps on the left side
+        Computes global alignment
         """
         GAP = -1
         def match(a, b):
