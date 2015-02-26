@@ -155,14 +155,9 @@ class PermutationContainer:
         Mapping synteny blocks on chromosomes
         Assumes that repeats are filtered
         """
-        all_refs = set(perm.genome_name for perm in self.ref_perms)
-        refs_to_check = [ref for ref in all_refs
-                         if not self.recipe["genomes"][ref]["draft"]]
-
         by_genome = defaultdict(list)
         for ref_perm in self.ref_perms:
-            if ref_perm.genome_name in refs_to_check:
-                by_genome[ref_perm.genome_name].append(ref_perm)
+            by_genome[ref_perm.genome_name].append(ref_perm)
 
         self.chr_index = defaultdict(lambda: defaultdict(lambda : None))
 
