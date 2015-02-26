@@ -3,8 +3,10 @@
 #Released under the BSD license (see LICENSE file)
 
 """
-This module tries to resolve repeats so we are able to
-put them into breakpoint graph
+This module resolves repeats so we can
+put them into the breakpoint graph.
+The underlying intuition is straitforward, however
+the code contains a lot of magic :(
 """
 
 from collections import namedtuple, defaultdict
@@ -13,7 +15,6 @@ from copy import deepcopy, copy
 import logging
 
 import networkx as nx
-
 
 logger = logging.getLogger()
 
@@ -34,10 +35,11 @@ class Context:
         return self.right == other.right and self.left == other.left
 
 
-def resolve_repeats(ref_perms, target_perms, repeats):
+def resolve_repeats(ref_perms, target_perms, phylogeny):
     """
     Does the job
     """
+    from . permutation import find_repeats
     logger.info("Resolving repeats")
 
     next_block_id = 0
@@ -45,46 +47,32 @@ def resolve_repeats(ref_perms, target_perms, repeats):
         next_block_id = max(next_block_id,
                             max(map(lambda b: b.block_id, perm.blocks)) + 1)
     first_block_id = next_block_id
+    repeats = find_repeats(ref_perms + target_perms)
 
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
-    repetitive_matches = []
-
+    context_matches = []
     for repeat_id, contexts in ref_contexts.items():
         by_genome = defaultdict(list)
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
         #logger.debug("==Resolving {0}".format(repeat_id))
-        profiles = _split_into_profiles(by_genome, repeats, None)
+        profiles = _split_into_profiles(by_genome, repeats, phylogeny)
         unique_m, repetitive_m = _match_target_contexts(profiles,
-                                trg_contexts[repeat_id], repeats, None)
-        repetitive_matches.extend(repetitive_m)
+                                trg_contexts[repeat_id], repeats, phylogeny)
+        context_matches.extend(repetitive_m + unique_m)
 
-        for trg_ctx, profile in unique_m:
-            for ref_ctx in profile:
-                assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
-                        ref_ctx.perm.blocks[ref_ctx.pos].block_id)
-                ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
-            trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
-            next_block_id += 1
-
-    #now processing repetitive contigs
     by_target = defaultdict(list)
-    for trg_ctx, profile in repetitive_matches:
+    for trg_ctx, profile in context_matches:
         by_target[trg_ctx.perm].append((trg_ctx, profile))
 
-    num_extra_contigs = 0
     for perm, matches in by_target.items():
-        if any(b.block_id not in repeats for b in perm.blocks):
-            assert 0
-            continue
-
         #logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(matches)
 
-        print(perm)
+        #print(perm)
         for group in groups:
             #for g in group:
                 #print(g[0])
@@ -92,7 +80,6 @@ def resolve_repeats(ref_perms, target_perms, repeats):
                 #print("--")
             #print(map(lambda p: str(p[0]) + " " + str(p[1]), group))
             new_perm = deepcopy(perm)
-            num_extra_contigs += 1
             for trg_ctx, profile in group:
                 for ref_ctx in profile:
                     assert (new_perm.blocks[trg_ctx.pos].block_id ==
@@ -102,16 +89,22 @@ def resolve_repeats(ref_perms, target_perms, repeats):
                 next_block_id += 1
             target_perms.append(new_perm)
 
-        target_perms.remove(perm)
+        if groups:
+            target_perms.remove(perm)
 
-    logger.debug("Resolved {0} repeat instances"
+    logger.debug("Resolved {0} unique repeat instances"
                         .format(next_block_id - first_block_id))
-    logger.debug("Added {0} extra contigs".format(num_extra_contigs))
 
 
 def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
-    genomes = contexts_by_genome.keys()
-    #TODO: determine the order according to the phylogenetic tree
+    """
+    Given repeat contexts in each of reference genomes,
+    joins them into "profiles" -- sets of matched contexts
+    across different genomes (like an alignemnt column in MSA)
+    """
+    references = set(contexts_by_genome.keys())
+    genomes = filter(lambda g: g in references,
+                     phylogeny.terminals_dfs_order())
     profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
 
     for genome in genomes[1:]:
@@ -142,7 +135,7 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
 
 def _match_target_contexts(profiles, target_contexts, repeats, phylogeny):
     """
-    Tries to find a mapping between reference contexts and target contexts
+    Tries to find a mapping between reference profiles and target contexts
     """
     #TODO: determine if each context exists in target using parsimony procedure
     def is_unique(context):
@@ -211,6 +204,11 @@ def _match_target_contexts(profiles, target_contexts, repeats, phylogeny):
 
 
 def _split_by_instance(matches):
+    """
+    Given matched contexts within a single contig,
+    split them into groups where each group corresponds
+    to a unique instance of this contig
+    """
     by_pos = defaultdict(list)
     trg_ctx_by_pos = {}
     for trg_ctx, profile in matches:

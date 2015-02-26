@@ -3,12 +3,13 @@
 #Released under the BSD license (see LICENSE file)
 
 """
-This module solves "Half-breakpoint state parsimony"
-problem
+This module provides some phylogeny-related functions
+(includeing one for solving half-breakpoint state parsimony problem)
 """
 
 import math
 from collections import defaultdict
+from itertools import chain
 import logging
 
 from ragout.parsers.phylogeny_parser import (parse_tree, PhyloException)
@@ -48,7 +49,7 @@ class Phylogeny:
 
     def estimate_tree(self, leaf_states):
         """
-        Scoring with DP (see algorithm description in the paper)
+        Scores the tree with weighted parsimony procedure
         """
         all_states = set(leaf_states.values())
 
@@ -87,6 +88,20 @@ class Phylogeny:
             return root_scores
 
         return min(rec_helper(self.tree).values())
+
+    def terminals_dfs_order(self):
+        """
+        Returns terminal nodes' names in dfs order
+        """
+        def get_labels(root):
+            if root.terminal:
+                return [root.identifier]
+
+            edges = sorted(root.get_edges(), key=lambda e: e[2], reverse=True)
+            edges = sorted(edges, key=lambda e: e[0].terminal)
+            return list(chain(*map(lambda e: get_labels(e[0]), edges)))
+
+        return get_labels(self.tree)
 
 
 def _median(values):

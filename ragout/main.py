@@ -137,7 +137,7 @@ def run_unsafe(args):
         conservative = last_scaffolds is None
         perm_container = PermutationContainer(perm_files[block_size],
                                               recipe, args.resolve_repeats,
-                                              conservative)
+                                              conservative, phylogeny)
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
