@@ -27,7 +27,7 @@ class Context:
 
     def __str__(self):
         block_id = self.perm.blocks[self.pos].block_id
-        return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, self.pos,
+        return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, block_id,
                                              self.left, self.right)
 
     def equal(self, other):
@@ -38,11 +38,6 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     """
     Does the job
     """
-    #refs = set(map(lambda p: p.genome_name, ref_perms))
-    #if len(refs) > 1:
-    #    logger.warning("Repeat resolution is currently supported "
-    #                   "for only one reference. Skipping...")
-    #    return
     logger.info("Resolving repeats")
 
     next_block_id = 0
@@ -54,29 +49,30 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
-    #by_repeats_ref = defaultdict(list)
-    #for ctx in ref_contexts:
-    #    block_id = ctx.perm.blocks[ctx.pos].block_id
-    #    by_repeats_ref[block_id].append(ctx)
-
-    for repeat, contexts in ref_contexts.items():
+    for repeat_id, contexts in ref_contexts.items():
         by_genome = defaultdict(list)
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
-        logger.debug("Resolving {0}".format(repeat))
-        _match_contexts_multiref(by_genome, repeats, None)
+        logger.debug("==Resolving {0}".format(repeat_id))
+        profiles = _split_into_profiles(by_genome, repeats, None)
+        unique_matches, repetitive_matches = _match_target_contexts(profiles,
+                                      trg_contexts[repeat_id], repeats, None)
+
+        #for profile in profiles:
+        #    for ctx in profile:
+        #        logger.debug(str(ctx))
+        #    logger.debug("--")
+
+        for trg_ctx, profile in unique_matches:
+            for ref_ctx in profile:
+                assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+                        ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+                ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+            trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
+            next_block_id += 1
+
     """
-    unique_matches, repetitive_matches = _match_contexts(ref_contexts,
-                                                         trg_contexts, repeats)
-
-    for trg_ctx, ref_ctx in unique_matches:
-        assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
-                ref_ctx.perm.blocks[ref_ctx.pos].block_id)
-        trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
-        ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
-        next_block_id += 1
-
     #now processing repetitive contigs
     by_target = defaultdict(list)
     for trg_ctx, ref_ctx in repetitive_matches:
@@ -110,13 +106,13 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     """
 
 
-def _match_contexts_multiref(contexts_by_genome, repeats, phylogeny):
+def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
     genomes = contexts_by_genome.keys()
-    #TODO: determine the order according to phylogenetic tree
+    #TODO: determine the order according to the phylogenetic tree
     profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
 
     for genome in genomes[1:]:
-        #finding a matching between existing groups and a new genome
+        #finding a matching between existing profiles and a new genome
         genome_ctxs = contexts_by_genome[genome]
         graph = nx.Graph()
         for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
@@ -126,7 +122,7 @@ def _match_contexts_multiref(contexts_by_genome, repeats, phylogeny):
             graph.add_node(node_prof, profile=True, prof=prof)
             graph.add_node(node_genome, profile=False, ctx=ctx)
 
-            score = _profile_similarity(prof, ctx, repeats)
+            score = _profile_similarity(prof, ctx, repeats, same_len=True)
             if score > 0:
                 graph.add_edge(node_prof, node_genome, weight=score)
 
@@ -138,18 +134,81 @@ def _match_contexts_multiref(contexts_by_genome, repeats, phylogeny):
 
             graph.node[prof_node]["prof"].append(graph.node[genome_node]["ctx"])
 
-    for profile in profiles:
-        for ctx in profile:
-            logger.debug(str(ctx))
-        logger.debug("--")
-        #print("")
+    return profiles
 
 
+def _match_target_contexts(profiles, target_contexts, repeats, phylogeny):
+    """
+    Tries to find a mapping between reference contexts and target contexts
+    """
+    #TODO: determine if each context exists in target using parsimony procedure
+    def is_unique(context):
+        return any(abs(b) not in repeats for b in
+                   chain(context.left, context.right))
+
+    unique_matches = []
+    repetitive_matches = []
+
+    t_unique = [c for c in target_contexts if is_unique(c)]
+    t_repetitive = [c for c in target_contexts if not is_unique(c)]
+
+    #create bipartie graph
+    graph = nx.Graph()
+
+    #add unique contexts
+    for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
+                                                enumerate(t_unique)):
+        node_prof = "profile" + str(pr_id)
+        node_genome = "target" + str(ctx_id)
+        graph.add_node(node_prof, profile=True, prof=prof)
+        graph.add_node(node_genome, profile=False, ctx=ctx)
+
+        score = _profile_similarity(prof, ctx, repeats, same_len=False)
+        if score > 0:
+            graph.add_edge(node_prof, node_genome, weight=score, match="unq")
+
+    #repetetive ones
+    different = all(not c_1.equal(c_2) for c_1, c_2 in
+                    combinations(t_repetitive, 2))
+    if different:
+        many_rep = t_repetitive * len(profiles)
+        for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
+                                                    enumerate(many_rep)):
+            node_prof = "profile" + str(pr_id)
+            node_genome = "rep_target" + str(ctx_id)
+            graph.add_node(node_prof, profile=True, prof=prof)
+            graph.add_node(node_genome, profile=False, ctx=ctx)
+
+            score = _profile_similarity(prof, ctx, repeats, same_len=False)
+            if score >= 0:
+                graph.add_edge(node_prof, node_genome, weight=score,
+                               match="rep")
+
+    edges = _max_weight_matching(graph)
+    for edge in edges:
+        prof_node, genome_node = edge
+        if graph.node[genome_node]["profile"]:
+            prof_node, genome_node = genome_node, prof_node
+
+        profile = graph.node[prof_node]["prof"]
+        trg_ctx = graph.node[genome_node]["ctx"]
+
+        if graph[prof_node][genome_node]["match"] == "unq":
+            unique_matches.append((trg_ctx, profile))
+        else:
+            repetitive_matches.append((trg_ctx, profile))
+
+        #for ctx in profile:
+        #    logger.debug(str(ctx))
+        #logger.debug("~~")
+        #logger.debug(str(trg_ctx))
+        #logger.debug("--")
+
+    return unique_matches, repetitive_matches
+
+
+"""
 def _split_by_instance(contexts):
-    """
-    Given a set of matched context pairs, group them by contig
-    (possibly in multiple instances)
-    """
     index = defaultdict(lambda: defaultdict(list))
     for trg_ctx, ref_ctx in contexts:
         index[ref_ctx.perm][trg_ctx.pos].append((trg_ctx, ref_ctx))
@@ -187,9 +246,10 @@ def _split_by_instance(contexts):
                 pass
 
     return groups
+"""
 
 
-def _context_similarity(ctx_ref, ctx_trg, repeats):
+def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
     """
     Compute similarity between two contexts
     """
@@ -208,6 +268,11 @@ def _context_similarity(ctx_ref, ctx_trg, repeats):
 
         l1, l2 = len(ref) + 1, len(trg) + 1
         table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
+        if same_len:
+            for i in xrange(l1):
+                table[i][0] = i
+            for i in xrange(l2):
+                table[0][i] = i
 
         for i, j in product(xrange(1, l1), xrange(1, l2)):
             table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
@@ -222,12 +287,12 @@ def _context_similarity(ctx_ref, ctx_trg, repeats):
     return left + right
 
 
-def _profile_similarity(profile, genome_ctx, repeats):
+def _profile_similarity(profile, genome_ctx, repeats, same_len):
     """
     Compute similarity of set of contexts vs one context
     """
-    scores = list(map(lambda c: _context_similarity(c, genome_ctx, repeats),
-                  profile))
+    scores = list(map(lambda c: _context_similarity(c, genome_ctx,
+                                    repeats, same_len), profile))
     return float(sum(scores)) / len(scores)
 
 
@@ -239,82 +304,6 @@ def _max_weight_matching(graph):
             unique_edges.add((v1, v2))
 
     return list(unique_edges)
-
-
-def _match_contexts(ref_contexts, target_contexts, repeats):
-    """
-    Tries to find a mapping between reference contexts and target contexts
-    """
-    def is_unique(context):
-        return any(abs(b) not in repeats for b in
-                              chain(context.left, context.right))
-
-    unique_matches = []
-    repetitive_matches = []
-
-    for block in target_contexts:
-        t_contexts = target_contexts[block]
-        r_contexts = ref_contexts[block]
-
-        t_unique = [c for c in t_contexts if is_unique(c)]
-        t_repetitive = [c for c in t_contexts if not is_unique(c)]
-
-        #create bipartie graph
-        #logger.debug("Processing {0}".format(block))
-        #logger.debug("Target contexts:\n{0}"
-        #                    .format("\n".join(map(str, t_contexts))))
-        #logger.debug("Reference contexts:\n{0}"
-        #                    .format("\n".join(map(str, r_contexts))))
-        graph = nx.Graph()
-
-        #add unique contexts
-        for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(t_unique),
-                                                    enumerate(r_contexts)):
-            node_ref, node_trg = "ref" + str(no_r), "unq" + str(no_t)
-            graph.add_node(node_ref, ref=True, ctx=ctx_r)
-            graph.add_node(node_trg, ref=False, ctx=ctx_t)
-
-            score = _context_similarity(ctx_r, ctx_t, repeats)
-            if score > 0:
-                graph.add_edge(node_ref, node_trg, weight=score, match="unq")
-
-        #repetetive ones
-        different = all(not c_1.equal(c_2) for c_1, c_2 in
-                                           combinations(t_repetitive, 2))
-        if different:
-            #logger.debug("Repetetive: {0}".format(map(str, t_repetitive)))
-            many_rep = t_repetitive * len(r_contexts)
-            for (no_t, ctx_t), (no_r, ctx_r) in product(enumerate(many_rep),
-                                                        enumerate(r_contexts)):
-                node_ref, node_trg = "ref" + str(no_r), "rep" + str(no_t)
-                graph.add_node(node_ref, ref=True, ctx=ctx_r)
-                graph.add_node(node_trg, ref=False, ctx=ctx_t)
-
-                score = _context_similarity(ctx_r, ctx_t, repeats)
-                if score >= 0:
-                    graph.add_edge(node_ref, node_trg, weight=score,
-                                   match="rep")
-        #else:
-        #    logger.debug("Repetitive contexts are ambigous")
-
-        edges = _max_weight_matching(graph)
-        for edge in edges:
-            trg_node, ref_node = edge
-            if graph.node[trg_node]["ref"]:
-                trg_node, ref_node = ref_node, trg_node
-
-            match_pair = (graph.node[trg_node]["ctx"],
-                          graph.node[ref_node]["ctx"])
-            if graph[trg_node][ref_node]["match"] == "unq":
-                unique_matches.append(match_pair)
-                #logger.debug("M: {0} -- {1}".format(graph.node[trg_node]["ctx"],
-                #                                   graph.node[ref_node]["ctx"]))
-            else:
-                repetitive_matches.append(match_pair)
-                #logger.debug("Z: {0} -- {1}".format(graph.node[ref_node]["ctx"],
-                #                                   graph.node[ref_node]["ctx"]))
-
-    return unique_matches, repetitive_matches
 
 
 def _get_contexts(permutations, repeats):
