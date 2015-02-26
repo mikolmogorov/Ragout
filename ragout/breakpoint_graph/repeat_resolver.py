@@ -78,28 +78,28 @@ def resolve_repeats(ref_perms, target_perms, repeats):
     num_extra_contigs = 0
     for perm, matches in by_target.items():
         if any(b.block_id not in repeats for b in perm.blocks):
+            assert 0
             continue
 
         #logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(matches)
 
+        print(perm)
         for group in groups:
+            #for g in group:
+                #print(g[0])
+                #print(map(str, g[1]))
+                #print("--")
+            #print(map(lambda p: str(p[0]) + " " + str(p[1]), group))
             new_perm = deepcopy(perm)
             num_extra_contigs += 1
             for trg_ctx, profile in group:
                 for ref_ctx in profile:
-                    assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+                    assert (new_perm.blocks[trg_ctx.pos].block_id ==
                             ref_ctx.perm.blocks[ref_ctx.pos].block_id)
                     ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
-                trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
+                new_perm.blocks[trg_ctx.pos].block_id = next_block_id
                 next_block_id += 1
-            #for trg_ctx, ref_ctx in group:
-            #    assert (new_perm.blocks[trg_ctx.pos].block_id ==
-            #            ref_ctx.perm.blocks[ref_ctx.pos].block_id)
-            #    new_perm.blocks[trg_ctx.pos].block_id = next_block_id
-            #    ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
-            #    next_block_id += 1
-
             target_perms.append(new_perm)
 
         target_perms.remove(perm)
@@ -220,7 +220,7 @@ def _split_by_instance(matches):
 
     target_perm = matches[0][0].perm
     positions = by_pos.keys()
-    print(target_perm.blocks)
+    #print(target_perm.blocks)
 
     groups = []
     #try all possible combinations wrt to positions in contig
@@ -258,7 +258,7 @@ def _split_by_instance(matches):
         except KeyError:
             #print("++")
             continue
-    print(groups)
+    #print(groups)
     return groups
 
 
