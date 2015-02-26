@@ -11,8 +11,7 @@ import math
 from collections import defaultdict
 import logging
 
-from ragout.parsers.phylogeny_parser import (parse_tree, is_terminal,
-                                             PhyloException)
+from ragout.parsers.phylogeny_parser import (parse_tree, PhyloException)
 logger = logging.getLogger()
 
 class Phylogeny:
@@ -31,17 +30,19 @@ class Phylogeny:
         to avoid underflows/overflows
         """
         def tree_length(node):
-            if is_terminal(node):
+            if node.terminal:
                 return []
 
             lengths = []
-            for node, _bootstrap, length in node.edges:
+            for node, _bootstrap, length in node.get_edges():
+                assert length is not None
                 lengths.append(length)
                 lengths.extend(tree_length(node))
 
             return lengths
 
         lengths = tree_length(self.tree)
+        assert len(lengths)
         self.mu = float(1) / _median(lengths)
         logger.debug("Branch lengths: {0}, mu = {1}".format(lengths, self.mu))
 
@@ -52,23 +53,24 @@ class Phylogeny:
         all_states = set(leaf_states.values())
 
         #score of a tree branch
-        def branch_score(root, child, branch):
-            #MU = 1
-            if root == child or child is None:
+        def branch_score(parent, child, branch):
+            if parent == child or child is None:
                 return 0.0
             else:
-                length = max(branch, 0.0000001) #prevent underflow
-                return math.exp(-self.mu * length)
+                #prevent underflow
+                length = max(branch, 0.0000001)
+                #adding one to counter possibly small exp value 
+                return 1.0 + math.exp(-self.mu * length)
 
         #recursive
         def rec_helper(root):
-            if is_terminal(root):
+            if root.terminal:
                 leaf_score = (lambda s: 0.0 if s == leaf_states[root.identifier]
                                             else float("inf"))
                 return {s : leaf_score(s) for s in all_states}
 
             nodes_scores = {}
-            for node, _bootstrap, _length  in root.edges:
+            for node, _bootstrap, _length  in root.get_edges():
                 nodes_scores[node] = rec_helper(node)
 
             root_scores = defaultdict(float)
@@ -79,7 +81,6 @@ class Phylogeny:
                         score = (nodes_scores[node][child_state] +
                                 branch_score(root_state, child_state,
                                              branch_length))
-                        #print(score)
                         min_score = min(min_score, score)
                     root_scores[root_state] += min_score
 

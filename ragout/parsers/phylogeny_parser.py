@@ -8,15 +8,51 @@ to deal with trees
 """
 
 import newick
+import newick.parser
+from newick.tree import Tree, Leaf
 
 class PhyloException(Exception):
     pass
 
 
+class _RagoutTreeBuilder(newick.parser.AbstractHandler):
+    """
+    A custom parser handler for newick library
+    """
+    def __init__(self):
+        self.stack = []
+        self.root = None
+
+    def new_tree_begin(self):
+        t = Tree()
+        if len(self.stack) == 0:
+            self.root = t
+        self.stack.append(t)
+        self.stack[-1].terminal = False
+
+    def new_tree_end(self, identifier = None):
+        self.stack[-1].identifier = identifier
+
+    def new_edge(self,bootstrap,length):
+        n = self.stack.pop()
+        if length is None:
+            length = 1
+        self.stack[-1].add_edge((n,bootstrap,length))
+
+    def new_leaf(self,l):
+        if len(self.stack) == 0:        # special case of singleton tree
+            self.root = l
+        self.stack.append(Leaf(l))
+        self.stack[-1].terminal = True
+
+    def get_result(self):
+        return self.root
+
+
 def parse_tree(newick_str):
     tree = None
     try:
-        tree = newick.parse_tree(newick_str)
+        tree = newick.parser.parse(newick_str, _RagoutTreeBuilder())
     except newick.lexer.LexerError as e:
         raise PhyloException("Error parsing tree")
     return tree
@@ -31,10 +67,3 @@ def get_leaves_names(newick_str):
         return None
 
     return list(map(lambda n: n.identifier, tree.get_leaves()))
-
-
-def is_terminal(tree_node):
-    """
-    A kind of hack to identify leaf
-    """
-    return tree_node.get_leaves() == [tree_node]
