@@ -53,7 +53,9 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
-    context_matches = []
+    #getting matches
+    repetitive_matches = []
+    unique_matches = []
     for repeat_id, contexts in ref_contexts.items():
         by_genome = defaultdict(list)
         for ctx in contexts:
@@ -65,14 +67,26 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
                                         target_name), profiles))
         unique_m, repetitive_m = _match_target_contexts(profiles,
                                             trg_contexts[repeat_id], repeats)
-        context_matches.extend(repetitive_m + unique_m)
+        unique_matches.extend(unique_m)
+        repetitive_matches.extend(repetitive_m)
+    ##
 
+    ##resolving unique
+    for trg_ctx, profile in unique_matches:
+        for ref_ctx in profile:
+            assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+                    ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+            ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+        trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
+        next_block_id += 1
+    ##
+
+    #resolving repetitive
     by_target_perm = defaultdict(list)
-    for trg_ctx, profile in context_matches:
+    for trg_ctx, profile in repetitive_matches:
         by_target_perm[trg_ctx.perm].append((trg_ctx, profile))
-
+    to_remove = set()
     for perm, matches in by_target_perm.items():
-        #logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(matches)
 
         #print(perm)
@@ -93,7 +107,9 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
             target_perms.append(new_perm)
 
         if groups:
-            target_perms.remove(perm)
+            to_remove.add(perm)
+    target_perms = list(filter(lambda p: p not in to_remove, target_perms))
+    ##
 
     logger.debug("Resolved {0} unique repeat instances"
                         .format(next_block_id - first_block_id))
