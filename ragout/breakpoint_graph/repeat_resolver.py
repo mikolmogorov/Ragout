@@ -39,7 +39,7 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
     """
     Does the job
     """
-    from . permutation import find_repeats
+    from .permutation import find_repeats
     logger.info("Resolving repeats")
 
     next_block_id = 0
@@ -47,8 +47,9 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
         next_block_id = max(next_block_id,
                             max(map(lambda b: b.block_id, perm.blocks)) + 1)
     first_block_id = next_block_id
-    repeats = find_repeats(ref_perms + target_perms)
+    target_name = target_perms[0].genome_name
 
+    repeats = find_repeats(ref_perms + target_perms)
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
@@ -60,15 +61,17 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
 
         #logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
+        profiles = list(filter(lambda p: _parsimony_test(p, phylogeny,
+                                        target_name), profiles))
         unique_m, repetitive_m = _match_target_contexts(profiles,
-                                trg_contexts[repeat_id], repeats, phylogeny)
+                                            trg_contexts[repeat_id], repeats)
         context_matches.extend(repetitive_m + unique_m)
 
-    by_target = defaultdict(list)
+    by_target_perm = defaultdict(list)
     for trg_ctx, profile in context_matches:
-        by_target[trg_ctx.perm].append((trg_ctx, profile))
+        by_target_perm[trg_ctx.perm].append((trg_ctx, profile))
 
-    for perm, matches in by_target.items():
+    for perm, matches in by_target_perm.items():
         #logger.debug("Perm: {0}".format(perm.chr_name))
         groups = _split_by_instance(matches)
 
@@ -94,6 +97,20 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
 
     logger.debug("Resolved {0} unique repeat instances"
                         .format(next_block_id - first_block_id))
+
+
+def _parsimony_test(profile, phylogeny, target_name):
+    """
+    Determines if the given uniqe instance of a repeat exists in target genome
+    """
+    states = {g : False for g in phylogeny.terminals_dfs_order()}
+    for ctx in profile:
+        states[ctx.perm.genome_name] = True
+
+    score_without = phylogeny.estimate_tree(states)
+    states[target_name] = True
+    score_with = phylogeny.estimate_tree(states)
+    return score_with < score_without
 
 
 def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
@@ -133,7 +150,7 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
     return profiles
 
 
-def _match_target_contexts(profiles, target_contexts, repeats, phylogeny):
+def _match_target_contexts(profiles, target_contexts, repeats):
     """
     Tries to find a mapping between reference profiles and target contexts
     """
@@ -239,7 +256,6 @@ def _split_by_instance(matches):
                     genome_ctx = prof[genome]
                     if (master_prof[genome].perm.chr_name !=
                         genome_ctx.perm.chr_name):
-                        #print("--")
                         raise KeyError
 
                     prof_sign = (target_perm.blocks[prof_pos].sign *
@@ -247,16 +263,14 @@ def _split_by_instance(matches):
                     shift = (genome_ctx.pos - master_ctx.pos) * prof_sign
                     if (prof_sign != master_sign or
                             shift != prof_pos - master_pos):
-                        #print(":(")
                         raise KeyError
 
             #all good!
             groups.append(group)
 
         except KeyError:
-            #print("++")
             continue
-    #print(groups)
+
     return groups
 
 
