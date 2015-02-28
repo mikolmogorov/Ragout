@@ -72,12 +72,13 @@ class PermutationContainer:
                                 "target sequences")
 
         self.filter_indels()
-        #before_filtering = deepcopy(self.target_perms)
-        if resolve_repeats:
-            rr.resolve_repeats(self.ref_perms, self.target_perms, phylogeny)
-            self.filter_indels()
 
-        self.filter_repeats()
+        #before_filtering = deepcopy(self.target_perms)
+        repeats = _find_repeats(self.ref_perms + self.target_perms)
+        if resolve_repeats:
+            rr.resolve_repeats(self.ref_perms, self.target_perms,
+                               repeats, phylogeny)
+        self.filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
         #if debugger.debugging:
@@ -110,11 +111,10 @@ class PermutationContainer:
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
 
-    def filter_repeats(self):
+    def filter_repeats(self, repeats):
         """
         Filters repetitive blocks
         """
-        repeats = find_repeats(self.ref_perms + self.target_perms)
         self.target_perms = _filter_permutations(self.target_perms, repeats,
                                                  inverse=True)
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
@@ -174,7 +174,7 @@ class PermutationContainer:
         return False
 
 
-def find_repeats(permutations):
+def _find_repeats(permutations):
     """
     Returns a set of repetitive blocks
     """

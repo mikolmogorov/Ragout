@@ -35,11 +35,10 @@ class Context:
         return self.right == other.right and self.left == other.left
 
 
-def resolve_repeats(ref_perms, target_perms, phylogeny):
+def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
     """
     Does the job
     """
-    from .permutation import find_repeats
     logger.info("Resolving repeats")
 
     next_block_id = 0
@@ -49,7 +48,6 @@ def resolve_repeats(ref_perms, target_perms, phylogeny):
     first_block_id = next_block_id
     target_name = target_perms[0].genome_name
 
-    repeats = find_repeats(ref_perms + target_perms)
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
@@ -145,7 +143,7 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
         genome_ctxs = contexts_by_genome[genome]
         graph = nx.Graph()
         for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
-                                                     enumerate(genome_ctxs)):
+                                                    enumerate(genome_ctxs)):
             node_prof = "profile" + str(pr_id)
             node_genome = "genome" + str(ctx_id)
             graph.add_node(node_prof, profile=True, prof=prof)
@@ -173,7 +171,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
     #TODO: determine if each context exists in target using parsimony procedure
     def is_unique(context):
         return any(abs(b) not in repeats for b in
-                   chain(context.left, context.right))
+                   map(lambda b: b.block_id, context.perm.blocks))
 
     unique_matches = []
     repetitive_matches = []
