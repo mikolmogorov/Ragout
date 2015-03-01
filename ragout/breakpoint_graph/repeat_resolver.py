@@ -59,7 +59,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
-        #logger.debug("==Resolving {0}".format(repeat_id))
+        logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
         profiles = list(filter(lambda p: _parsimony_test(p, phylogeny,
                                         target_name), profiles))
@@ -67,6 +67,14 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
                                             trg_contexts[repeat_id], repeats)
         unique_matches.extend(unique_m)
         repetitive_matches.extend(repetitive_m)
+
+        for matches in [unique_m, repetitive_m]:
+            for trg_ctx, profile in matches:
+                logger.debug("T: {0}".format(trg_ctx))
+                for ref_ctx in profile:
+                    logger.debug("R: {0}".format(ref_ctx))
+                logger.debug("--")
+            logger.debug("~~~~~~~~~~~~~~~~")
     ##
 
     ##resolving unique
@@ -138,6 +146,7 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
                      phylogeny.terminals_dfs_order())
     profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
 
+    #logger.debug(str(genomes))
     for genome in genomes[1:]:
         #finding a matching between existing profiles and a new genome
         genome_ctxs = contexts_by_genome[genome]
@@ -159,6 +168,16 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
             if graph.node[genome_node]["profile"]:
                 prof_node, genome_node = genome_node, prof_node
 
+            #logger.debug("Matched: {0} with score {1}"
+            #                .format(graph.node[genome_node]["ctx"],
+            #                        graph[prof_node][genome_node]["weight"]))
+            #prof, ctx = graph.node[prof_node]["prof"], graph.node[genome_node]["ctx"]
+            #for c in prof:
+            #    logger.debug("{0}, {1}".format(c, ctx))
+            #    logger.debug(_context_similarity(c, ctx, repeats, True))
+            #logger.debug(_profile_similarity(graph.node[prof_node]["prof"],
+            #                                graph.node[genome_node]["ctx"],
+            #                                repeats, True))
             graph.node[prof_node]["prof"].append(graph.node[genome_node]["ctx"])
 
     return profiles
@@ -170,7 +189,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
     """
     #TODO: determine if each context exists in target using parsimony procedure
     def is_unique(context):
-        return any(abs(b) not in repeats for b in
+        return any(b not in repeats for b in
                    map(lambda b: b.block_id, context.perm.blocks))
 
     unique_matches = []
@@ -178,6 +197,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
 
     t_unique = [c for c in target_contexts if is_unique(c)]
     t_repetitive = [c for c in target_contexts if not is_unique(c)]
+    #logger.debug("R" + str(map(str, t_repetitive)))
 
     #create bipartie graph
     graph = nx.Graph()
@@ -230,6 +250,8 @@ def _match_target_contexts(profiles, target_contexts, repeats):
         #logger.debug("~~")
         #logger.debug(str(trg_ctx))
         #logger.debug("--")
+    #logger.debug("Uniq: {0}, Rep: {1}".format(len(unique_matches),
+    #                                          len(repetitive_matches)))
 
     return unique_matches, repetitive_matches
 
@@ -308,9 +330,9 @@ def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
         table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
         if same_len:
             for i in xrange(l1):
-                table[i][0] = i
+                table[i][0] = i * GAP
             for i in xrange(l2):
-                table[0][i] = i
+                table[0][i] = i * GAP
 
         for i, j in product(xrange(1, l1), xrange(1, l2)):
             table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
