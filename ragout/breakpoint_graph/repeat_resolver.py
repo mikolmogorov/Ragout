@@ -6,7 +6,7 @@
 This module resolves repeats so we can
 put them into the breakpoint graph.
 The underlying intuition is straitforward, however
-the code contains a lot of magic :(
+the code contains a lot of magic. Sorry :(
 """
 
 from collections import namedtuple, defaultdict
@@ -95,13 +95,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
     for perm, matches in by_target_perm.items():
         groups = _split_by_instance(matches)
 
-        #print(perm)
         for group in groups:
-            #for g in group:
-                #print(g[0])
-                #print(map(str, g[1]))
-                #print("--")
-            #print(map(lambda p: str(p[0]) + " " + str(p[1]), group))
             new_perm = deepcopy(perm)
             for trg_ctx, profile in group:
                 for ref_ctx in profile:
@@ -168,16 +162,6 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
             if graph.node[genome_node]["profile"]:
                 prof_node, genome_node = genome_node, prof_node
 
-            #logger.debug("Matched: {0} with score {1}"
-            #                .format(graph.node[genome_node]["ctx"],
-            #                        graph[prof_node][genome_node]["weight"]))
-            #prof, ctx = graph.node[prof_node]["prof"], graph.node[genome_node]["ctx"]
-            #for c in prof:
-            #    logger.debug("{0}, {1}".format(c, ctx))
-            #    logger.debug(_context_similarity(c, ctx, repeats, True))
-            #logger.debug(_profile_similarity(graph.node[prof_node]["prof"],
-            #                                graph.node[genome_node]["ctx"],
-            #                                repeats, True))
             graph.node[prof_node]["prof"].append(graph.node[genome_node]["ctx"])
 
     return profiles
@@ -187,7 +171,6 @@ def _match_target_contexts(profiles, target_contexts, repeats):
     """
     Tries to find a mapping between reference profiles and target contexts
     """
-    #TODO: determine if each context exists in target using parsimony procedure
     def is_unique(context):
         return any(b not in repeats for b in
                    map(lambda b: b.block_id, context.perm.blocks))
@@ -197,7 +180,6 @@ def _match_target_contexts(profiles, target_contexts, repeats):
 
     t_unique = [c for c in target_contexts if is_unique(c)]
     t_repetitive = [c for c in target_contexts if not is_unique(c)]
-    #logger.debug("R" + str(map(str, t_repetitive)))
 
     #create bipartie graph
     graph = nx.Graph()
@@ -245,14 +227,6 @@ def _match_target_contexts(profiles, target_contexts, repeats):
         else:
             repetitive_matches.append((trg_ctx, profile))
 
-        #for ctx in profile:
-        #    logger.debug(str(ctx))
-        #logger.debug("~~")
-        #logger.debug(str(trg_ctx))
-        #logger.debug("--")
-    #logger.debug("Uniq: {0}, Rep: {1}".format(len(unique_matches),
-    #                                          len(repetitive_matches)))
-
     return unique_matches, repetitive_matches
 
 
@@ -275,6 +249,7 @@ def _split_by_instance(matches):
 
     groups = []
     #try all possible combinations wrt to positions in contig
+    #TODO: make it effective
     for combination in product(*by_pos.values()):
         combination = list(combination)
         master_prof = combination[0]
@@ -290,7 +265,7 @@ def _split_by_instance(matches):
                     group.append((trg_ctx_by_pos[prof_pos], prof.values()))
 
                     genome_ctx = prof[genome]
-                    if (master_prof[genome].perm.chr_name !=
+                    if (master_ctx.perm.chr_name !=
                         genome_ctx.perm.chr_name):
                         raise KeyError
 
