@@ -249,6 +249,10 @@ def _split_by_instance(matches):
     if len(target_perm.blocks) == 1:    #trivial case
         return list(map(lambda m: [m], matches))
 
+    logger.debug("=========")
+    logger.debug(target_perm)
+    logger.debug("=========")
+
     by_pos = defaultdict(list)
     for match in matches:
         by_pos[match.trg.pos].append(match)
@@ -290,10 +294,6 @@ def _split_by_instance(matches):
                 group.append(next_match)
                 break
         groups.extend([[m] for m in unused_matches])
-
-    logger.debug("=========")
-    logger.debug(target_perm)
-    logger.debug("=========")
 
     #min_group = max(2, (len(target_perm.blocks) + 1) / 2)
     min_group = len(target_perm.blocks) / 2 + 1
