@@ -28,11 +28,16 @@ class Context:
 
     def __str__(self):
         block_id = self.perm.blocks[self.pos].block_id
-        return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, block_id,
+        return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, self.pos,
                                              self.left, self.right)
 
     def equal(self, other):
         return self.right == other.right and self.left == other.left
+
+MP = namedtuple("MatchPair", ["trg", "prof"])
+class MatchPair(MP):
+    def __hash__(self):
+        return id(self)
 
 
 def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
@@ -89,9 +94,10 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
 
     #resolving repetitive
     by_target_perm = defaultdict(list)
-    for trg_ctx, profile in repetitive_matches:
-        by_target_perm[trg_ctx.perm].append((trg_ctx, profile))
+    for match in repetitive_matches:
+        by_target_perm[match.trg.perm].append(match)
     to_remove = set()
+    new_contigs = 0
     for perm, matches in by_target_perm.items():
         groups = _split_by_instance(matches)
 
@@ -105,6 +111,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
                 new_perm.blocks[trg_ctx.pos].block_id = next_block_id
                 next_block_id += 1
             target_perms.append(new_perm)
+            new_contigs += 1
 
         if groups:
             to_remove.add(perm)
@@ -113,6 +120,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
 
     logger.debug("Resolved {0} unique repeat instances"
                         .format(next_block_id - first_block_id))
+    logger.debug("Added {0} extra contigs".format(new_contigs))
 
 
 def _parsimony_test(profile, phylogeny, target_name):
@@ -213,6 +221,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
                 graph.add_edge(node_prof, node_genome, weight=score,
                                match="rep")
 
+    #get matching
     edges = _max_weight_matching(graph)
     for edge in edges:
         prof_node, genome_node = edge
@@ -223,9 +232,9 @@ def _match_target_contexts(profiles, target_contexts, repeats):
         trg_ctx = graph.node[genome_node]["ctx"]
 
         if graph[prof_node][genome_node]["match"] == "unq":
-            unique_matches.append((trg_ctx, profile))
+            unique_matches.append(MatchPair(trg_ctx, profile))
         else:
-            repetitive_matches.append((trg_ctx, profile))
+            repetitive_matches.append(MatchPair(trg_ctx, profile))
 
     return unique_matches, repetitive_matches
 
@@ -236,53 +245,69 @@ def _split_by_instance(matches):
     split them into groups where each group corresponds
     to a unique instance of this contig
     """
-    by_pos = defaultdict(list)
-    trg_ctx_by_pos = {}
-    for trg_ctx, profile in matches:
-        prof_by_genome = {ctx.perm.genome_name : ctx for ctx in profile}
-        by_pos[trg_ctx.pos].append(prof_by_genome)
-        trg_ctx_by_pos[trg_ctx.pos] = trg_ctx
-
     target_perm = matches[0][0].perm
-    positions = by_pos.keys()
-    #print(target_perm.blocks)
+    if len(target_perm.blocks) == 1:    #trivial case
+        return list(map(lambda m: [m], matches))
 
-    groups = []
-    #try all possible combinations wrt to positions in contig
-    #TODO: make it effective
-    for combination in product(*by_pos.values()):
-        combination = list(combination)
-        master_prof = combination[0]
-        master_pos = positions[0]
-        try:
-            group = [(trg_ctx_by_pos[master_pos], master_prof.values())]
-            for genome in master_prof.keys():
-                master_ctx = master_prof[genome]
-                master_sign = (target_perm.blocks[master_pos].sign *
-                               master_ctx.perm.blocks[master_ctx.pos].sign)
+    by_pos = defaultdict(list)
+    for match in matches:
+        by_pos[match.trg.pos].append(match)
+    positions = sorted(by_pos.keys())
 
-                for prof_pos, prof in zip(positions, combination)[1:]:
-                    group.append((trg_ctx_by_pos[prof_pos], prof.values()))
+    def prof_agreement(match_1, match_2):
+        index_1 = {ctx.perm.genome_name : ctx for ctx in match_1.prof}
+        index_2 = {ctx.perm.genome_name : ctx for ctx in match_2.prof}
+        shared_genomes = set(index_1.keys()) & set(index_2.keys())
+        if not len(shared_genomes):
+            return False
+        for genome in shared_genomes:
+            if index_1[genome].perm.chr_name != index_2[genome].perm.chr_name:
+                return False
+            sign_1 = (target_perm.blocks[match_1.trg.pos].sign *
+                      index_1[genome].perm.blocks[index_1[genome].pos].sign)
+            sign_2 = (target_perm.blocks[match_2.trg.pos].sign *
+                      index_2[genome].perm.blocks[index_2[genome].pos].sign)
+            if sign_1 != sign_2:
+                return False
+            shift = (index_2[genome].pos - index_1[genome].pos) * sign_1
+            if shift != match_2.trg.pos - match_1.trg.pos:
+                return False
+        return True
 
-                    genome_ctx = prof[genome]
-                    if (master_ctx.perm.chr_name !=
-                        genome_ctx.perm.chr_name):
-                        raise KeyError
+    groups = map(lambda x: [x], by_pos[positions[0]])
+    #used_matches = set(by_pos[positions[0]])
+    #now try to extend each group
+    for pos in positions[1:]:
+        unused_matches = set(by_pos[pos])
+        for group in groups:
+            prev_match = group[-1]
+            for next_match in by_pos[pos]:
+                if not prof_agreement(prev_match, next_match):
+                    continue
+                #assert next_match not in used_matches
+                #used_matches.add(next_match)
+                unused_matches.remove(next_match)
+                group.append(next_match)
+                break
+        groups.extend([[m] for m in unused_matches])
 
-                    prof_sign = (target_perm.blocks[prof_pos].sign *
-                                 genome_ctx.perm.blocks[genome_ctx.pos].sign)
-                    shift = (genome_ctx.pos - master_ctx.pos) * prof_sign
-                    if (prof_sign != master_sign or
-                            shift != prof_pos - master_pos):
-                        raise KeyError
+    logger.debug("=========")
+    logger.debug(target_perm)
+    logger.debug("=========")
 
-            #all good!
-            groups.append(group)
-
-        except KeyError:
+    #min_group = max(2, (len(target_perm.blocks) + 1) / 2)
+    min_group = len(target_perm.blocks) / 2 + 1
+    for group in groups:
+        if len(group) < min_group:
             continue
+        logger.debug("##group")
+        for match in group:
+            logger.debug("####profile pos {0}".format(match.trg.pos))
+            for ctx in match.prof:
+                logger.debug(ctx)
+        logger.debug("")
 
-    return groups
+    return list(filter(lambda g: len(g) >= min_group, groups))
 
 
 def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
