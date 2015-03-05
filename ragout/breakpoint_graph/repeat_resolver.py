@@ -279,20 +279,17 @@ def _split_by_instance(matches):
         return True
 
     groups = map(lambda x: [x], by_pos[positions[0]])
-    #used_matches = set(by_pos[positions[0]])
     #now try to extend each group
     for pos in positions[1:]:
         unused_matches = set(by_pos[pos])
         for group in groups:
             prev_match = group[-1]
             for next_match in by_pos[pos]:
-                if not prof_agreement(prev_match, next_match):
-                    continue
-                #assert next_match not in used_matches
-                #used_matches.add(next_match)
-                unused_matches.remove(next_match)
-                group.append(next_match)
-                break
+                if (next_match in unused_matches and
+                        prof_agreement(prev_match, next_match)):
+                    unused_matches.remove(next_match)
+                    group.append(next_match)
+                    break
         groups.extend([[m] for m in unused_matches])
 
     #min_group = max(2, (len(target_perm.blocks) + 1) / 2)
