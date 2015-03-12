@@ -17,7 +17,8 @@ from copy import deepcopy
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
 from ragout.shared.datatypes import Block, Permutation
-import repeat_resolver as rr
+from ragout.breakpoint_graph.build_phylogeny import TreeBuilder
+import ragout.breakpoint_graph.repeat_resolver as rr
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -71,9 +72,8 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        self.filter_indels()
 
-        #before_filtering = deepcopy(self.target_perms)
+        self.filter_indels()
         repeats = _find_repeats(self.ref_perms + self.target_perms)
         if resolve_repeats:
             rr.resolve_repeats(self.ref_perms, self.target_perms,
@@ -81,11 +81,11 @@ class PermutationContainer:
         self.filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
-        #if debugger.debugging:
-            #file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
-            #ids = set(map(lambda p: p.chr_id, self.target_perms))
-            #filtered_perms = [p for p in before_filtering if p.chr_id not in ids]
-            #_write_permutations(filtered_perms, open(file, "w"))
+
+        ###
+        tb = TreeBuilder(self.target_perms + self.ref_perms)
+        tb.build()
+        ###
 
         self.build_chr_index()
         self.filter_chimeras()

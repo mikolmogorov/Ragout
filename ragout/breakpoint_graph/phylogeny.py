@@ -23,9 +23,9 @@ class Phylogeny:
     def __init__(self, recipe):
         self.tree_string = recipe["tree"]
         self.tree = parse_tree(self.tree_string)
-        self.scale_branches()
+        self._scale_branches()
 
-    def scale_branches(self):
+    def _scale_branches(self):
         """
         Fits mu coefficient according to branch lengths
         to avoid underflows/overflows
