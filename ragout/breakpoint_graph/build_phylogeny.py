@@ -7,8 +7,9 @@ This module infers phylogenetic tree based on
 breakpoints data
 """
 
+from __future__ import print_function
 from collections import defaultdict
-from itertools import combinations, product
+from itertools import combinations, product, combinations_with_replacement
 
 from newick.tree import Leaf, Tree
 
@@ -18,7 +19,7 @@ class TreeBuilder:
         for perm in permutations:
             self.perms_by_genome[perm.genome_name].append(perm)
 
-    def _get_distance(self, genome_1, genome_2):
+    def _genome_distance(self, genome_1, genome_2):
         breakpoints_1 = set()
         n_blocks_1 = 0
         for perm in self.perms_by_genome[genome_1]:
@@ -35,46 +36,73 @@ class TreeBuilder:
                 bp = sorted([-bl_1.signed_id(), bl_2.signed_id()])
                 breakpoints_2.add(tuple(bp))
 
-        #print("breakpoints", len(breakpoints_1), len(breakpoints_2))
-        #print("Differences", breakpoints_1 ^ breakpoints_2)
-        #return (max(n_blocks_1, n_blocks_2) -
-        #        len(breakpoints_1 & breakpoints_2) - 1)
         return (min(len(breakpoints_1), len(breakpoints_2)) -
                 len(breakpoints_1 & breakpoints_2))
-
+        #return max(n_blocks_1, n_blocks_2) - len(breakpoints_1 & breakpoints_2) - 2
 
     def build(self):
+        """
+        Implementation of neighbor-joining algorithm
+        """
         genomes = self.perms_by_genome.keys()
+        taxas = set(map(Leaf, genomes))
         distances = defaultdict(lambda : {})
-        for g_1, g_2 in combinations(genomes, 2):
-            distances[g_1][g_2] = self._get_distance(g_1, g_2)
-            distances[g_2][g_1] = distances[g_1][g_2]
+        for t_1, t_2 in combinations_with_replacement(taxas, 2):
+            distances[t_1][t_2] = self._genome_distance(t_1.identifier,
+                                                        t_2.identifier)
+            distances[t_2][t_1] = distances[t_1][t_2]
+        for t_1 in taxas:
+            print(t_1, "\t", end="")
+            for t_2 in taxas:
+                print(distances[t_1][t_2], "\t", end="")
+            print("")
 
-        def tree_dist(tree_1, tree_2):
-            leaves_1 = tree_1.get_leaves_identifiers()
-            leaves_2 = tree_2.get_leaves_identifiers()
-            total = 0
-            for l_1, l_2 in product(leaves_1, leaves_2):
-                total += distances[l_1][l_2]
-            return float(total) / len(leaves_1) / len(leaves_2)
+        def calc_q(taxas):
+            q_matrix = defaultdict(lambda : {})
+            for t_1, t_2 in combinations(taxas, 2):
+                other_dist = 0
+                for other_t in taxas:
+                    other_dist += distances[t_1][other_t]
+                    other_dist += distances[t_2][other_t]
+                q_matrix[t_1][t_2] = ((len(taxas) - 2) * distances[t_1][t_2] -
+                                     other_dist)
+                q_matrix[t_2][t_1] = q_matrix[t_1][t_2]
+            return q_matrix
 
-        trees_left = set(map(Leaf, genomes))
-        while len(trees_left) > 1:
+        while len(taxas) > 1:
             #determine two closest ones
+            q_matrix = calc_q(taxas)
             lowest_dst = float("inf")
             lowest_pair = None
-            for t_1, t_2 in combinations(trees_left, 2):
-                dst = tree_dist(t_1, t_2)
-                if dst < lowest_dst:
-                    lowest_dst = dst
+            for t_1, t_2 in combinations(taxas, 2):
+                if q_matrix[t_1][t_2] < lowest_dst:
+                    lowest_dst = q_matrix[t_1][t_2]
                     lowest_pair = (t_1, t_2)
 
-            new_tree = Tree()
-            new_tree.add_edge((lowest_pair[0], None, lowest_dst / 2))
-            new_tree.add_edge((lowest_pair[1], None, lowest_dst / 2))
-            trees_left.add(new_tree)
-            trees_left.remove(lowest_pair[0])
-            trees_left.remove(lowest_pair[1])
+            #calculate distances to new internal node from joinded taxas
+            new_taxa = Tree()
+            old_1, old_2 = lowest_pair
+            other_dist = 0
+            for other_taxa in taxas:
+                other_dist += distances[old_1][other_taxa]
+                other_dist -= distances[old_2][other_taxa]
+            div_dist = (0.5 / (len(taxas) - 2) * other_dist
+                        if len(taxas) > 2 else 0)
+            dist_1 = 0.5 * distances[old_1][old_2] + div_dist
+            dist_2 = distances[old_1][old_2] - dist_1
+            new_taxa.add_edge((old_1, None, dist_1))
+            new_taxa.add_edge((old_2, None, dist_2))
+            taxas.remove(old_1)
+            taxas.remove(old_2)
 
-        tree = list(trees_left)[0]
+            for other_taxa in taxas:
+                distances[new_taxa][other_taxa] = \
+                    0.5 * (distances[old_1][other_taxa] +
+                           distances[old_2][other_taxa] -
+                           distances[old_1][old_2])
+                distances[other_taxa][new_taxa] = distances[new_taxa][other_taxa]
+            distances[new_taxa][new_taxa] = 0
+            taxas.add(new_taxa)
+
+        tree = list(taxas)[0]
         print(tree)
