@@ -9,14 +9,15 @@ breakpoints data
 
 from __future__ import print_function
 from collections import defaultdict
-from itertools import combinations, product, combinations_with_replacement
+from itertools import combinations, product, combinations_with_replacement, chain
 
 from newick.tree import Leaf, Tree
 
-class TreeBuilder:
-    def __init__(self, permutations):
+class TreeInferer:
+    def __init__(self, perm_container):
         self.perms_by_genome = defaultdict(list)
-        for perm in permutations:
+        for perm in chain(perm_container.ref_perms,
+                          perm_container.target_perms):
             self.perms_by_genome[perm.genome_name].append(perm)
 
     def _genome_distance(self, genome_1, genome_2):
@@ -46,6 +47,9 @@ class TreeBuilder:
         """
         genomes = self.perms_by_genome.keys()
         taxas = set(map(Leaf, genomes))
+        for t in taxas:
+            t.terminal = True
+
         distances = defaultdict(lambda : {})
         for t_1, t_2 in combinations_with_replacement(taxas, 2):
             distances[t_1][t_2] = self._genome_distance(t_1.identifier,
@@ -81,6 +85,8 @@ class TreeBuilder:
 
             #calculate distances to new internal node from joinded taxas
             new_taxa = Tree()
+            new_taxa.terminal = False
+
             old_1, old_2 = lowest_pair
             other_dist = 0
             for other_taxa in taxas:
@@ -105,4 +111,4 @@ class TreeBuilder:
             taxas.add(new_taxa)
 
         tree = list(taxas)[0]
-        print(tree)
+        return tree

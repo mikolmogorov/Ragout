@@ -1,4 +1,4 @@
-.tree = (o395:0.0202325,(biovar:0.0047298,(h1:0.00867072,inaba:0.0280561):0.0054505):0.0054505);
+.references = o395,biovar,inaba
 .target = h1
 .blocks = 5000, 500, 100
 

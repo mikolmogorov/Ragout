@@ -21,7 +21,7 @@ import ragout.scaffolder.output_generator as out_gen
 import ragout.maf2synteny.maf2synteny as m2s
 import ragout.overlap.overlap as overlap
 from ragout.overlap.overlap import OverlapException
-from ragout.breakpoint_graph.phylogeny import Phylogeny, PhyloException
+from ragout.phylogeny.phylogeny import Phylogeny, PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
                                                  PermException)
 from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
@@ -114,11 +114,9 @@ def run_unsafe(args):
 
     enable_logging(out_log, args.debug)
     logger.info("Cooking Ragout...")
-
     check_extern_modules(args.synteny_backend)
-
     recipe = parse_ragout_recipe(args.recipe)
-    phylogeny = Phylogeny(recipe)
+
 
     #Running backend to get synteny blocks
     all_backends = SyntenyBackend.get_available_backends()
@@ -126,6 +124,19 @@ def run_unsafe(args):
     perm_files = backend.make_permutations(recipe, args.out_dir,
                                            args.overwrite, args.threads)
 
+    #phylogeny-related
+    if "tree" in recipe:
+        logger.info("Phylogeny is taken from the recipe")
+        phylogeny = Phylogeny.from_newick(recipe["tree"])
+    else:
+        logger.info("Inferring phylogeny from synteny blocks data")
+        small_blocks = min(recipe["blocks"])
+        perm_container = PermutationContainer(perm_files[small_blocks],
+                                              recipe, False, False, None)
+        phylogeny = Phylogeny.from_permutations(perm_container)
+        logger.info(phylogeny.tree_string)
+
+    #main loop
     last_scaffolds = None
     for block_size in recipe["blocks"]:
         logger.info("Running Ragout with the block size {0}".format(block_size))

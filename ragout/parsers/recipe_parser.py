@@ -27,11 +27,12 @@ def parse_ragout_recipe(filename):
 
     recipe_dict = {"genomes" : {}}
     known_params = ["tree", "target", "blocks", "maf", "hal", "fasta",
-                    "circular", "draft"]
-    required_params = ["tree", "target", "blocks"]
+                    "circular", "draft", "references"]
+    required_params = ["references", "target", "blocks"]
 
     cast_bool = ["circular", "draft"]
     cast_int_list = ["blocks"]
+    cast_str_list = ["references"]
     fix_path = ["fasta", "maf", "hal"]
 
     defaults = {"circular" : False,
@@ -66,6 +67,8 @@ def parse_ragout_recipe(filename):
                                           .format(lineno, value))
             if param_name in cast_int_list:
                 value = list(map(int, value.split(",")))
+            if param_name in cast_str_list:
+                value = list(map(str, value.split(",")))
             if param_name in fix_path:
                 value = os.path.expanduser(value)
                 value = os.path.join(prefix, value)
@@ -82,18 +85,20 @@ def parse_ragout_recipe(filename):
             raise RecipeException("Required parameter '{0}' not found in recipe"
                                   .format(param))
 
-    genomes = None
-    for param, value in recipe_dict.items():
-        if param == "tree":
-            try:
-                genomes = get_leaves_names(value)
-            except PhyloException as e:
-                raise RecipeException(e)
+    genomes = recipe_dict["references"] + [recipe_dict["target"]]
+    if "tree" in recipe_dict:
+        try:
+            leaves = get_leaves_names(recipe_dict["tree"])
+            if set(leaves) != set(genomes):
+                raise RecipeException("The tree in recipe does not agree with "
+                                      "the specified set of genomes")
+        except PhyloException as e:
+            raise RecipeException(e)
 
     for g in recipe_dict["genomes"]:
         if g not in genomes:
             raise RecipeException("Recipe error: genome '{0}' is not in "
-                                  "the tree".format(g))
+                                  "specified as reference or target".format(g))
 
     for g in genomes:
         recipe_dict["genomes"].setdefault(g, {})

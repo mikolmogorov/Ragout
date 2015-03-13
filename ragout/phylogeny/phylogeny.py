@@ -13,6 +13,7 @@ from itertools import chain
 import logging
 
 from ragout.parsers.phylogeny_parser import (parse_tree, PhyloException)
+from ragout.phylogeny.inferer import TreeInferer
 logger = logging.getLogger()
 
 class Phylogeny:
@@ -20,10 +21,19 @@ class Phylogeny:
     Represents phylogenetic tree and scores it with
     given half-breakpoint states
     """
-    def __init__(self, recipe):
-        self.tree_string = recipe["tree"]
-        self.tree = parse_tree(self.tree_string)
+    def __init__(self, tree):
+        self.tree = tree
+        self.tree_string = str(tree)
         self._scale_branches()
+
+    @classmethod
+    def from_newick(phylo, newick_str):
+        return phylo(parse_tree(newick_str))
+
+    @classmethod
+    def from_permutations(phylo, perm_container):
+        ti = TreeInferer(perm_container)
+        return phylo(ti.build())
 
     def _scale_branches(self):
         """

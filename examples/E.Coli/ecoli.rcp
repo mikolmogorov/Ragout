@@ -1,4 +1,4 @@
-.tree = (dh1,mg1655);
+.references = dh1
 .target = mg1655
 .blocks = 5000, 500, 100
 
