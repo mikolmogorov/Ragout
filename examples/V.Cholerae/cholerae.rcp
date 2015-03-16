@@ -1,6 +1,6 @@
 .references = o395,biovar,inaba
 .target = h1
-.blocks = 5000, 500, 100
+.blocks = small
 
 *.circular = true
 

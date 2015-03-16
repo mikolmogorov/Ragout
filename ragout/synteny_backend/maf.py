@@ -21,6 +21,8 @@ class MafBackend(SyntenyBackend):
         SyntenyBackend.__init__(self)
 
     def run_backend(self, recipe, output_dir, overwrite):
+        logger.warning("Maf support is deprecated and will be removed "
+                       "in future releases")
         workdir = os.path.join(output_dir, MAF_WORKDIR)
         if overwrite and os.path.isdir(workdir):
             shutil.rmtree(workdir)
@@ -34,7 +36,7 @@ class MafBackend(SyntenyBackend):
             #using existing results
             logger.warning("Using synteny blocks from previous run")
             logger.warning("Use --overwrite to force alignment")
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 if not os.path.isfile(coords_file):
@@ -45,10 +47,10 @@ class MafBackend(SyntenyBackend):
         else:
             os.mkdir(workdir)
             logger.info("Converting MAF to synteny")
-            if not m2s.make_synteny(recipe["maf"], workdir, recipe["blocks"]):
+            if not m2s.make_synteny(recipe["maf"], workdir, self.blocks):
                 raise BackendException("Something went wrong with maf2synteny")
 
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 files[block_size] = os.path.abspath(coords_file)

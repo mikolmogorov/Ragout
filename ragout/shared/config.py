@@ -31,6 +31,12 @@ vals =  {
                 (500, 1500)
             ],
 
+            "blocks" :
+            {
+                "small" : [5000, 500, 100],
+                "large" : [10000, 5000, 500, 100]
+            },
+
             "min_synteny_coverage" : 0.6,
             "min_overlap_rate" : 0.5,
         }

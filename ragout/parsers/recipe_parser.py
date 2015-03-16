@@ -12,6 +12,7 @@ import os
 import logging
 
 from ragout.parsers.phylogeny_parser import get_leaves_names, PhyloException
+import ragout.shared.config as config
 
 logger = logging.getLogger()
 
@@ -28,11 +29,9 @@ def parse_ragout_recipe(filename):
     recipe_dict = {"genomes" : {}}
     known_params = ["tree", "target", "blocks", "maf", "hal", "fasta",
                     "circular", "draft", "references"]
-    required_params = ["references", "target", "blocks"]
+    required_params = ["references", "target"]
 
     cast_bool = ["circular", "draft"]
-    cast_int_list = ["blocks"]
-    cast_str_list = ["references"]
     fix_path = ["fasta", "maf", "hal"]
 
     defaults = {"circular" : False,
@@ -55,23 +54,26 @@ def parse_ragout_recipe(filename):
                 raise RecipeException("Unknown recipe parameter '{0}' on line {1}"
                                       .format(param_name, lineno, filename))
 
-            #casting if necessary
+            #checking values, casting
             if param_name in cast_bool:
-                if value in ["True", "true", "1"]:
+                if value.lower() in ["true", "1"]:
                     value = True
-                elif value in ["False", "false", "0"]:
+                elif value.lower() in ["false", "0"]:
                     value = False
                 else:
                     raise RecipeException("Error parsing recipe on line "
                                           "{0}: wrong value '{1}' for bool param"
                                           .format(lineno, value))
-            if param_name in cast_int_list:
-                value = list(map(int, value.split(",")))
-            if param_name in cast_str_list:
-                value = list(map(str, value.split(",")))
+            if param_name == "blocks":
+                if value not in config.vals["blocks"]:
+                    raise RecipeException("Unknown synteny block size set: {0}"
+                                          .format(value))
+            if param_name == "references":
+                value = list(map(lambda s: s.strip(), value.split(",")))
             if param_name in fix_path:
                 value = os.path.expanduser(value)
                 value = os.path.join(prefix, value)
+            ###
 
             if obj == "":
                 recipe_dict[param_name] = value
@@ -90,7 +92,7 @@ def parse_ragout_recipe(filename):
         try:
             leaves = get_leaves_names(recipe_dict["tree"])
             if set(leaves) != set(genomes):
-                raise RecipeException("The tree in recipe does not agree with "
+                raise RecipeException("The tree does not agree with "
                                       "the specified set of genomes")
         except PhyloException as e:
             raise RecipeException(e)
@@ -106,15 +108,5 @@ def parse_ragout_recipe(filename):
     for g, g_params in recipe_dict["genomes"].items():
         for def_key, def_val in defaults.items():
             g_params.setdefault(def_key, def_val)
-
-    if len(recipe_dict["blocks"]) != len(set(recipe_dict["blocks"])):
-        raise RecipeException("Duplicated synteny block sizes in recipe")
-
-    if not recipe_dict["genomes"]:
-        raise RecipeException("No genomes were detected in the recipe")
-
-    if recipe_dict["target"] not in recipe_dict["genomes"]:
-        raise RecipeException("Error parsing recipe: target genome "
-                              "is not in the tree")
 
     return recipe_dict

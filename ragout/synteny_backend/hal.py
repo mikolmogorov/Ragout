@@ -45,7 +45,7 @@ class HalBackend(SyntenyBackend):
             logger.warning("Use --overwrite to force alignment")
 
             all_good = True
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 if not os.path.isfile(coords_file):
@@ -86,10 +86,10 @@ class HalBackend(SyntenyBackend):
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 
             logger.info("Extracting synteny blocks from MAF")
-            if not m2s.make_synteny(out_maf, workdir, recipe["blocks"]):
+            if not m2s.make_synteny(out_maf, workdir, self.blocks):
                 raise BackendException("Something went wrong with maf2synteny")
 
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 files[block_size] = os.path.abspath(coords_file)
