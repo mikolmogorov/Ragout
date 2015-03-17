@@ -115,15 +115,21 @@ def run_unsafe(args):
 
     enable_logging(out_log, args.debug)
     logger.info("Cooking Ragout...")
+
     check_extern_modules(args.synteny_backend)
+    all_backends = SyntenyBackend.get_available_backends()
+    backend = all_backends[args.synteny_backend]
     recipe = parse_ragout_recipe(args.recipe)
 
     #Setting synteny block sizes
-    synteny_blocks = config.vals["blocks"][recipe["blocks"]]
+    if "blocks" in recipe:
+        scale = recipe["blocks"]
+    else:
+        scale = backend.infer_block_scale(recipe)
+        logger.info("Synteny block scale set to '{0}'".format(scale))
+    synteny_blocks = config.vals["blocks"][scale]
 
     #Running backend to get synteny blocks
-    all_backends = SyntenyBackend.get_available_backends()
-    backend = all_backends[args.synteny_backend]
     perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
                                            args.overwrite, args.threads)
 

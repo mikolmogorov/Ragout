@@ -1,6 +1,5 @@
 .references = rf122,col,jkd,n315
 .target = usa
-.blocks = small
 
 *.circular = true
 

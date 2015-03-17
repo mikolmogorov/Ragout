@@ -22,12 +22,31 @@ logger = logging.getLogger()
 HAL_WORKDIR = "hal-workdir"
 HAL2MAF = "hal2mafMP.py"
 HAL2FASTA = "hal2fasta"
+HAL_STATS = "halStats"
 TARGET_FASTA = "target.fasta"
 
 
 class HalBackend(SyntenyBackend):
     def __init__(self):
         SyntenyBackend.__init__(self)
+
+    def infer_block_scale(self, recipe):
+        HAL_THRESHOLD = 500 * 1024 * 1024   #500Mb
+        hal = recipe.get("hal")
+        if not hal or not os.path.exists(hal):
+            raise BackendException("Could not open HAL file "
+                                   "or it is not specified")
+        stats = subprocess.check_output([HAL_STATS, hal])
+        size = 0
+        for line in stats.splitlines():
+            tokens = line.split(",")
+            if tokens[0] == recipe["target"]:
+                size = int(tokens[2])
+
+        if size < HAL_THRESHOLD:
+            return "small"
+        else:
+            return "large"
 
     def run_backend(self, recipe, output_dir, overwrite):
         workdir = os.path.join(output_dir, HAL_WORKDIR)
@@ -99,5 +118,5 @@ class HalBackend(SyntenyBackend):
         return files
 
 
-if utils.which(HAL2MAF) and utils.which(HAL2FASTA):
+if utils.which(HAL2MAF) and utils.which(HAL2FASTA) and utils.which(HAL_STATS):
     SyntenyBackend.register_backend("hal", HalBackend())

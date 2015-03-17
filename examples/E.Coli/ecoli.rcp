@@ -1,6 +1,5 @@
 .references = dh1
 .target = mg1655
-.blocks = small
 
 *.circular = true
 
