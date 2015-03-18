@@ -1,31 +1,46 @@
 Usage instructions for Ragout
 =============================
 
-    Usage: ragout.py [-h] [-o OUTPUT_DIR] [-s {sibelia,cactus,maf}] [--no-refine]
-                     [--overwrite] [--debug] [--version]
-                     recipe_file
+Quick Usage
+-----------
+
+  usage: ragout.py [-h] [-o output_dir] [-s {sibelia,cactus,hal}]
+                   [--no-refine] [--overwrite] [--repeats] [--debug]
+                   [-t THREADS] [--version]
+                   recipe_file
+
+
+  positional arguments:
+    recipe_file           path to recipe file
+
+  optional arguments:
+    -h, --help            show this help message and exit
+
+    -o output_dir, --outdir output_dir
+                          path to the working directory (default: ragout-out)
     
-Supported arguments:
-
-    positional arguments:
-      recipe_file           path to recipe file
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -o OUTPUT_DIR, --outdir OUTPUT_DIR
-                            path to the working directory (default: ragout-out)
-      -s {sibelia,cactus,maf}, --synteny {sibelia,cactus,maf}
-                            which tool to use for synteny block decomposition.
-                            (default: sibelia)
-      --no-refine           disable refinement with assembly graph (default: False)
-      --overwrite           overwrite existing Sibelia/Cactus results (default:
-                            False)
-      --debug               enable debug output (default: False)
-      --version             show program's version number and exit
+    -s {sibelia,cactus,hal}, --synteny {sibelia,cactus,hal}
+                          backend for synteny block decomposition (default:
+                          sibelia)
+    
+    --no-refine           disable refinement with assembly graph (default:
+                          False)
+    
+    --overwrite           overwrite existing synteny blocks (default: False)
+    
+    --repeats             try to resolve repeats before constructing BG
+                          (default: False)
+    
+    --debug               enable debug output (default: False)
+    
+    -t THREADS, --threads THREADS
+                          number of threads for synteny backend (default: 1)
+    
+    --version             show program's version number and exit
 
 
 Examples
----------
+--------
 
 You can try Ragout on the provided ready-to-use examples:
 
@@ -35,34 +50,31 @@ You can try Ragout on the provided ready-to-use examples:
     python ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/
 
 
-Sequence data
+Sequence Data
 -------------
 
-Ragout takes as input contigs from a short-read assembly. We performed
+Ragout takes assembly fragments (contigs/scaffolds) as input. We performed
 our tests with SPAdes, ABySS and SOAPdenovo assemblers, others should
 work fine too, if their output satisfy the following conditions:
 
-* Assembly coverage should be acceptable (80-90%+) and contigs/scaffolds
-  should not overlap (except by ends, see below)
+* Assembly coverage should be good (80-90%+)
 * *All* contigs/scaffolds output by assembler should be used (including
   short ones)
 * For the better performance of the refinment module, contigs/scaffolds
   that were connected in a graph used by assembler should overlap on a
-  certain constant value (usully k-mer or (k-1)-mer). This holds true
+  constant value (usually k-mer or (k-1)-mer). This works
   for the most of assemblers which utilize de Bruijn graphs. Currently,
-  for other types of assemblers (such as SGA) support of
-  refinement procedure is limited.
+  for other types of assemblers (such as SGA) performance of
+  the refinement procedure is limited.
+
+Input references could be both in complete or draft form.
 
 
-Algorithm overview
-------------------
-
-This is a very brief description of the algorithm. See our paper 
-for the detailed explanation.
+Brief Algorithm Overview
+------------------------
 
 Ragout works with genomes represented as sequences of synteny blocks
-and firstly uses *Sibelia* or local multiple sequence alignment
-for this decomposition. 
+and firstly uses *Sibelia* or *Progressive Cactus* for this decomposition. 
 
 Next, Ragout constructs a breakpoint graph and predicts missing 
 adjacencies between synteny blocks in target genome (as it is fragmented
@@ -81,10 +93,13 @@ Input
 
 Ragout takes as input:
 
-* Reference genomes in *FASTA* format
-* Target genome in *FASTA* format (a set of contigs/scaffolds)
-* Phylogenetic tree containing reference and target genomes in *NEWICK* format
-* Synteny block sizes (in multiple scales)
+* Reference genomes [in *FASTA* format or packed into *HAL*]
+* Target assembly in [in *FASTA* format or packed into *HAL*]
+
+Optionally, you can add:
+
+* Phylogenetic tree containing reference and target genomes [in *NEWICK* format]
+* Synteny block scale
 
 All these parameters should be described in a single recipe file.
 See the example of such file below.
@@ -93,28 +108,13 @@ See the example of such file below.
 Output
 ------
 
-After running Ragout, an output directory will contain:
+After running Ragout, output directory will contain:
 
-* __scaffolds.links__: detailed description of adjacencies
+* __scaffolds.links__: scaffolds description (see below)
 * __scaffolds.fasta__: scaffolds sequences
-* __scaffolds_refined.links__: contigs order after refinement (if --refine was specified)
-* __scaffolds_refined.fasta__: adjacencies description after refinement (if --refine was specified)
+* __scaffolds_refined.links__: scaffolds description after refinement (see below)
+* __scaffolds_refined.fasta__: scaffolds sequences after refinement
 
-
-Links file
-----------
-
-Ragout outputs information about generated adjacencies in "*.links" file.
-It is organized as a table for each scaffold and includes values described below:
-
-* __contig_1__ : first contig in adjacency
-* __contig_2__ : second contig in adjacency
-* __gap__ : estimated gap between contigs
-* __ref_support__ : reference genomes that support this adjacency
-* __~>__ : indicates that this adjacency was generated during the refinement procedure
-
-Gap < 0 means overlap on corresponding value. "~>" does not
-apply for assemblies without refinement.
 
 
 Recipe file
@@ -123,27 +123,25 @@ Recipe file
 If you want to cook Ragout, you need to write a recipe first.
 Here is an example of such recipe file:
 
-    .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
+    .references = rf122,col,jkd,n315
     .target = usa
-    .blocks = 5000, 500, 100
-
-    *.circular = true
 
     col.fasta = references/COL.fasta
     jkd.fasta = references/JKD6008.fasta
     rf122.fasta = references/RF122.fasta
     n315.fasta = references/N315.fasta
     usa.fasta = usa300_contigs.fasta
+
+    *.circular = true
+    .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
+    .blocks = small
     
 
-or, if using *MAF* as input:
+or, if using *HAL* as input, tree and blocks scale are inffered automatically
 
-    .tree = (miranda:0.04,(yakuba:0.12,(melanogaster:0.04,simulans:0.04):0.08):0.15);
+    .references = miranda,simulans,melanogaster
     .target = yakuba
-    .maf = genomes/alignment.maf
-    .blocks = 5000, 500
-
-    yakuba.fasta = genomes/D.yakuba_contigs.fasta
+    .hal = genomes/alignment.hal
    
 
 ###Parameters description:
@@ -159,14 +157,15 @@ To set local parameter, use:
 
 ###Global parameters
 
-* __tree__: phylogenetic tree in NEWICK format [required]
+* __references__: comma-separated list of reference names 
 * __target__: target genome name [required]
-* __blocks__: comma-separated list of minimum synteny block sizes [required]
-* __maf__: path to local multiple sequence alignment in *MAF* format [default = not set]
+* __tree__: phylogenetic tree in NEWICK format [optional]
+* __blocks__: syntany block scale [optional]
+* __hal__: path to the alignment in *HAL* format [optional]
 
 ###Local parameters
 
-* __fasta__: path to *FASTA* with genomic sequences [default = not set]
+* __fasta__: path to *FASTA* [default = not set]
 * __circular__: indicates that reference chromosomes are circular [default = false]
 * __draft__: indicates that reference is in draft form (contigs/scaffolds) [default = false]
 
@@ -179,55 +178,48 @@ For instance, if all input references except one are in draft form, you can writ
     *.draft = true
     complete_ref.draft = false
 
-###Detailed description
+###Quick comments
 
-Genomes are picked form the terminal nodes of the phylogenetic tree.
-All those names should be uniqe. If the branch length is ommited, it would
-be set to 1.
+Paths to *FASTA*/*HAL* can be both relative and absolute. 
 
-Paths to *FASTA*/*MAF* can be both relative and absolute. Running with 
-Sibelia requires all sequence headers among ALL *FASTA* files to be unique.
+If you use *Sibelia* or *Progressive Cactus*, you must specify 
+FASTA for each input genome. If you use *HAL*, everything is taken from it.
 
-Ragout firstly decomposes genomes into set of synteny blocks.
-You can use either a set of *FASTA* files corresponding to each input genome
-or local multiple alignment of all the genomes in *MAF* format.
-In both cases you should specify target's *FASTA* since it will be
-used to generate output. See "Synteny backends" section for more information.
+Running with Sibelia requires all sequence headers (">gi...") 
+among ALL *FASTA* files to be unique.
+
+If you do not specify phylogenetic tree or synteny block scale, 
+they are inferred automatically.
 
 
 The parameters choice
 ---------------------
 
-### Minimum synteny block size
+### Synteny block size
 
 Because the decomposition procedure is parameter-dependent, the assembly
 is performed in multiple iterations with different synteny block
-scale. Intuitively, the algorithm firstly considers only contigs
-that are long enough and then insert shorter ones in the assembly.
+scale. Intuitively, the algorithm firstly considers only fragments
+that are long enough and then insert shorter ones into final scaffolds.
 
-For bacterial genomes, we recommend to run Ragout in three
-iterations with the block size equal to 5000, 500, 100.
-However, you can specify our own configuration which better
-describes your dataset.
+There are two pre-defined scales: "small" and "large". We recommend
+"small" for relatively small genomes (bacterial) and large otherwise 
+(mammalian). If th parameter is not set, it is automatically inferred
+based on input genomes size.
+
 
 ### Phylogenetic tree
 
-Running with multiple references, the output of Ragout may highly
-depend of the given phylogenetic tree and can be biased if
-the tree is incorrect.
-
-If the phylogeny is unknown or ambiguous, you are still able run 
-Ragout assuming the "star" phylogeny and specifying the evolutionary
-distance between target and references (which is easier to find out):
-
-    .tree = (target, ref1:0.1, ref2:0.05, ref3:0.003);
+If this parameter is committed, Ragout infers phylogenetic tree 
+based on breakpoint data. Generally, it gives a good approximation.
+However, if you already know the tree, we recommended to
+guide the algorithm with it.
 
 ### Circular genomes
 
 If you are working with circular genomes (like bacterial ones) it is 
 recommended to set corresponding parameter in recipe file (see previous
-seqction). This would generate some extra adjacencies which could 
-be useful.
+section). This would generate some extra adjacencies for breakpoint graph.
 
 ### Reference genome in draft form
 
@@ -243,13 +235,12 @@ Ragout have three different options for synteny block decomposition:
 
 * Decompoition with *Sibelia*
 * Decomposition with *progressiveCactus*
-* Use of external local multiple sequence alignment (in *MAF* format)
+* Use of external local multiple sequence alignment (in *HAL* format)
 
 You can choose between backends by specifying --synteny (-s) option.
 If you use *Sibelia* or *progressiveCactus*, you should specify separate
-*FASTA* file for each input genome, while if you work with *MAF*, you
-should set only a path to *MAF* itself and a path to targset's *FASTA*
-(see below).
+*FASTA* file for each input genome, while if you work with *HAL*, it
+is not necessary.
 
 ### Sibelia
 
@@ -264,17 +255,9 @@ experimental. The tool also should be properly installed. Do not forget
 to mask repeats (with RepeatMasker, for instance) before applying 
 *progressiveCactus* to genomes with a big fraction of repetitive sequences.
 
-### Local alignment in *MAF* format
+### Local alignment in *HAL* format
 
-If you already have a local multiple alignment, you also can use it for
-synteny blocks decomposition. Alignment should be in *MAF* format and 
-sequence names should follow UCSC notation:
-
-    genome_name.sequence_name
-
-In case you are working with *MAF* input you should not specify *FASTA*
-files for references. All you need is to set *FASTA* for target genome 
-(which will be used for output generation and refinement).
+TBD
 
 
 Refinement with assembly graph
@@ -282,14 +265,14 @@ Refinement with assembly graph
 
 Ragout uses assembly (overlap) graph to incorporate very short / repetitive
 contigs into assembly. First, this graph is reconstructed by overlapping
-input contigs/scaffolds (see Sequence data seqction for requirements).
-Then ragout scaffolds which are already available are being "threaded"
+input contigs/scaffolds (see Sequence Data seqction for requirements).
+Then Ragout scaffolds which are already available are being "threaded"
 through this graph to find the true "genome path".
 
 This procedure:
 
 * Increases number of conitgs in output scaffolds
-* Improves estimation of distances between contigs (will be filled with Ns)
+* Improves estimates of distances between contigs
 
 However, sometimes the assembly graph is not accurate: some adjacencies
 between contigs could be missing and on the other hand, there also might
@@ -304,6 +287,22 @@ tools like Quast).
 
 As this step may take a lot of time for assemblies with big number of contigs,
 you may skip it by specifying "--no-refine" option.
+
+
+Links file
+----------
+
+Ragout outputs information about generated adjacencies in "*.links" file.
+It is organized as a table for each scaffold and includes values described below:
+
+* __contig_1__ : first contig in adjacency
+* __contig_2__ : second contig in adjacency
+* __gap__ : estimated gap between contigs
+* __ref_support__ : reference genomes that support this adjacency
+* __~>__ : indicates that this adjacency was generated during the refinement procedure
+
+Gap < 0 means overlap on a corresponding value. "~>" does not
+apply for assemblies without refinement.
 
 
 Useful scripts

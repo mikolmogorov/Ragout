@@ -44,13 +44,8 @@ Building
 
         python scripts/install-sibelia.py
 
-If you already have Sibelia installed, you can skip second step.
-
-After this, you can test your installation by running:
-
-    python ragout.py --help
-
-If no errors occured, installation was successful and you can start using Ragout!
+If you already have Sibelia installed or do not need it, 
+you can skip the second step.
 
 
 progressiveCactus
@@ -69,15 +64,14 @@ Then set "CACTUS_INSTALL" environment variable pointing to Cactus installation d
 Troubleshooting
 ---------------
 
-Q: Tons of errors during compilation, possibly with 
+Q: Different errors during compilation, possibly with 
 "unrecognized command line option '-std=c++0x'" message:
 
 A: Probably your compiler is too old and does not support C++0x. Minimum
 versions of GCC and Clang are mentioned at the beginnig of this documtent.
 
 
-Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" when running
-or something similar
+Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" or similar error when running
 
 A: Ensure, that version of libc++ which was used to compile Ragout is similar
 to one which is used to run it. You can specify an extra search path

@@ -31,7 +31,6 @@ class HalBackend(SyntenyBackend):
         SyntenyBackend.__init__(self)
 
     def infer_block_scale(self, recipe):
-        HAL_THRESHOLD = 500 * 1024 * 1024   #500Mb
         hal = recipe.get("hal")
         if not hal or not os.path.exists(hal):
             raise BackendException("Could not open HAL file "
@@ -43,7 +42,7 @@ class HalBackend(SyntenyBackend):
             if tokens[0] == recipe["target"]:
                 size = int(tokens[2])
 
-        if size < HAL_THRESHOLD:
+        if size < config.vals["big_genome_threshold"]:
             return "small"
         else:
             return "large"

@@ -9,7 +9,8 @@ breakpoints data
 
 from __future__ import print_function
 from collections import defaultdict
-from itertools import combinations, product, combinations_with_replacement, chain
+from itertools import (combinations, product,
+                       combinations_with_replacement, chain)
 
 from newick.tree import Leaf, Tree
 
@@ -21,6 +22,9 @@ class TreeInferer:
             self.perms_by_genome[perm.genome_name].append(perm)
 
     def _genome_distance(self, genome_1, genome_2):
+        """
+        Calculates breakpoint distance between two genomes
+        """
         breakpoints_1 = set()
         n_blocks_1 = 0
         for perm in self.perms_by_genome[genome_1]:
@@ -39,7 +43,8 @@ class TreeInferer:
 
         return (min(len(breakpoints_1), len(breakpoints_2)) -
                 len(breakpoints_1 & breakpoints_2))
-        #return max(n_blocks_1, n_blocks_2) - len(breakpoints_1 & breakpoints_2) - 2
+        #return (max(n_blocks_1, n_blocks_2) - 
+        #        len(breakpoints_1 & breakpoints_2) - 2)
 
     def build(self):
         """
@@ -83,7 +88,7 @@ class TreeInferer:
                     lowest_dst = q_matrix[t_1][t_2]
                     lowest_pair = (t_1, t_2)
 
-            #calculate distances to new internal node from joinded taxas
+            #calculate distances to new internal node from joined taxas
             new_taxa = Tree()
             new_taxa.terminal = False
 
@@ -96,6 +101,8 @@ class TreeInferer:
                         if len(taxas) > 2 else 0)
             dist_1 = 0.5 * distances[old_1][old_2] + div_dist
             dist_2 = distances[old_1][old_2] - dist_1
+            dist_1, dist_2 = max(0, dist_1), max(0, dist_2)
+
             new_taxa.add_edge((old_1, None, dist_1))
             new_taxa.add_edge((old_2, None, dist_2))
             taxas.remove(old_1)

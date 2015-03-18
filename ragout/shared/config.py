@@ -37,6 +37,8 @@ vals =  {
                 "large" : [10000, 5000, 500, 100]
             },
 
+            "big_genome_threshold" : 500 * 1024 * 1024,
+
             "min_synteny_coverage" : 0.6,
             "min_overlap_rate" : 0.5,
         }

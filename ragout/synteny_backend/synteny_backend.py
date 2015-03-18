@@ -52,13 +52,15 @@ class SyntenyBackend:
         return self.target_fasta
 
     def infer_block_scale(self, recipe):
-        FASTA_THRESHOLD = 500 * 1024 * 1024 #500mb
+        """
+        Infers synteny block scale based on target assembly size
+        """
         target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
         if not target_fasta or not os.path.exists(target_fasta):
             raise BackendException("Could not open target FASTA file "
                                    "or it is not specified")
         size = os.path.getsize(target_fasta)
-        if size < FASTA_THRESHOLD:
+        if size < config.vals["big_genome_threshold"]:
             return "small"
         else:
             return "large"
