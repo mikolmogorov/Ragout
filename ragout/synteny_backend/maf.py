@@ -22,7 +22,7 @@ class MafBackend(SyntenyBackend):
 
     def run_backend(self, recipe, output_dir, overwrite):
         logger.warning("Maf support is deprecated and will be removed "
-                       "in future releases")
+                       "in future releases. Use hal istead.")
         workdir = os.path.join(output_dir, MAF_WORKDIR)
         if overwrite and os.path.isdir(workdir):
             shutil.rmtree(workdir)

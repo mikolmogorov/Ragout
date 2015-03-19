@@ -32,6 +32,8 @@ class CactusBackend(SyntenyBackend):
 
 
     def run_backend(self, recipe, output_dir, overwrite):
+        logger.warning("cactus backend support is deprecated and will be "
+                       "removed in future releases. Use hal instead.")
         return _make_permutations(recipe, output_dir, overwrite, self.threads)
 
 

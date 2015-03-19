@@ -4,39 +4,39 @@ Usage Instructions for Ragout
 Quick Usage
 -----------
 
-  usage: ragout.py [-h] [-o output_dir] [-s {sibelia,hal}]
-                   [--no-refine] [--overwrite] [--repeats] [--debug]
-                   [-t THREADS] [--version]
-                   recipe_file
+    usage: ragout.py [-h] [-o output_dir] [-s {sibelia,hal}]
+                     [--no-refine] [--overwrite] [--repeats] [--debug]
+                     [-t THREADS] [--version]
+                     recipe_file
 
 
-  positional arguments:
-    recipe_file           path to recipe file
+    positional arguments:
+      recipe_file           path to recipe file
 
-  optional arguments:
-    -h, --help            show this help message and exit
+    optional arguments:
+      -h, --help            show this help message and exit
 
-    -o output_dir, --outdir output_dir
-                          path to the working directory (default: ragout-out)
+      -o output_dir, --outdir output_dir
+                            path to the working directory (default: ragout-out)
     
-    -s {sibelia,hal}, --synteny {sibelia,hal}
-                          backend for synteny block decomposition (default:
-                          sibelia)
+      -s {sibelia,hal}, --synteny {sibelia,hal}
+                            backend for synteny block decomposition (default:
+                            sibelia)
     
-    --no-refine           disable refinement with assembly graph (default:
-                          False)
+      --no-refine           disable refinement with assembly graph (default:
+                            False)
     
-    --overwrite           overwrite existing synteny blocks (default: False)
+      --overwrite           overwrite existing synteny blocks (default: False)
     
-    --repeats             try to resolve repeats before constructing breakpoint
-                          graph (default: False)
+      --repeats             try to resolve repeats before constructing breakpoint
+                            graph (default: False)
     
-    --debug               enable debug output (default: False)
+      --debug               enable debug output (default: False)
     
-    -t THREADS, --threads THREADS
-                          number of threads for synteny backend (default: 1)
+      -t THREADS, --threads THREADS
+                            number of threads for synteny backend (default: 1)
     
-    --version             show program's version number and exit
+      --version             show program's version number and exit
 
 
 Examples
@@ -69,12 +69,12 @@ work fine too, if their output satisfy the following conditions:
 
 
 
-Brief Algorithm Overview
-------------------------
+Algorithm Overview
+-------------------
 
 Ragout works with genomes represented as sequences of synteny blocks
-and firstly uses *Sibelia* or *HAL* alignment for this decomposition. 
-This step is usually most time-consuming.
+and firstly uses *Sibelia* or *HAL alignment* for this decomposition. 
+This step is usually the most time-consuming.
 
 Next, Ragout constructs a breakpoint graph and predicts missing 
 adjacencies between synteny blocks in target genome (as it is fragmented, 
@@ -83,9 +83,10 @@ extended into scaffolds with respect to the inferred adjacencies. This
 procedure is repeated multiple times with the different scale of the synteny
 blocks decomposition. 
 
-Afterwards, a refinement step is performed. Ragout utilize assembly (overlap) 
-graph which is reconstructed by overlapping input contigs/scaffolds. This 
-helps to insert very short/repetitive contigs into the assembly.
+Afterwards, a refinement step is performed. Ragout reconstruct 
+assembly (overlap) graph by overlapping input assembly fragments. This 
+graph is used to insert very short/repetitive fragments into the 
+final scaffolds.
 
 
 Input
@@ -117,7 +118,7 @@ After running Ragout, output directory will contain:
 
 
 
-Recipe file
+Recipe File
 -----------
 
 If you want to cook Ragout, you need to write a recipe first.
@@ -157,11 +158,11 @@ To set local parameter, use:
 
 ###Global parameters
 
-* __references__: comma-separated list of reference names 
-* __target__: target genome name [required]
-* __tree__: phylogenetic tree in NEWICK format [optional]
-* __blocks__: syntany block scale [optional]
-* __hal__: path to the alignment in *HAL* format [optional]
+* __references__: comma-separated list of reference names [*required*]
+* __target__: target genome name [*required*]
+* __tree__: phylogenetic tree in NEWICK format
+* __blocks__: syntany block scale
+* __hal__: path to the alignment in *HAL* format
 
 ###Local parameters
 
@@ -219,7 +220,7 @@ guide the algorithm with it.
 
 If you are working with circular genomes (like bacterial ones) it is 
 recommended to set corresponding parameter in recipe file (see previous
-section). This would generate some extra adjacencies for breakpoint graph.
+section).
 
 ### Reference genome in draft form
 
@@ -231,7 +232,7 @@ section).
 Synteny backends
 ----------------
 
-Ragout have three different options for synteny block decomposition:
+Ragout have two different options for synteny block decomposition:
 
 * Decomposition with *Sibelia*
 * Use of whole genome alignment (in *HAL* format)
@@ -262,8 +263,8 @@ The support of MAF synteny backend is deprecated, because it is more
 convenient to work directly with *HAL*, which is a default output of
 Progressive Cactus.
 
-Progressive Cactus backend (which allowed to automatically run the aligner
-from Ragout) is also deprecated, because typical run of Progressive Cactus
+Progressive Cactus backend (not to be confused with HAL backend) 
+is also deprecated, because typical run of the aligner
 includes some parallelization steps, which are hard to automate.
 
 Please let us know, if you have any issues with that changes.
