@@ -10,6 +10,8 @@ import logging
 import os
 from collections import namedtuple, defaultdict
 
+import ragout.shared.config as config
+
 logger = logging.getLogger()
 
 
@@ -22,14 +24,17 @@ class SyntenyBackend:
     def __init__(self):
         pass
 
-    def make_permutations(self, recipe, output_dir, overwrite, threads):
+    def make_permutations(self, recipe, blocks,
+                          output_dir, overwrite, threads):
         """
         Runs backend and then prepare data for futher processing
         """
         self.target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
         self.threads = threads
+        self.blocks = blocks
+
         files = self.run_backend(recipe, output_dir, overwrite)
-        assert sorted(files.keys()) == sorted(recipe["blocks"])
+        assert sorted(files.keys()) == sorted(blocks)
 
         return files
 
@@ -45,6 +50,20 @@ class SyntenyBackend:
         Returns a path to a fasta file with contigs
         """
         return self.target_fasta
+
+    def infer_block_scale(self, recipe):
+        """
+        Infers synteny block scale based on target assembly size
+        """
+        target_fasta = recipe["genomes"][recipe["target"]].get("fasta")
+        if not target_fasta or not os.path.exists(target_fasta):
+            raise BackendException("Could not open target FASTA file "
+                                   "or it is not specified")
+        size = os.path.getsize(target_fasta)
+        if size < config.vals["big_genome_threshold"]:
+            return "small"
+        else:
+            return "large"
 
     @staticmethod
     def get_available_backends():

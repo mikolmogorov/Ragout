@@ -17,7 +17,7 @@ from copy import deepcopy
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
 from ragout.shared.datatypes import Block, Permutation
-from .repeat_resolver import resolve_repeats
+import ragout.breakpoint_graph.repeat_resolver as rr
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -29,7 +29,7 @@ class PermException(Exception):
 
 class PermutationContainer:
     def __init__(self, block_coords_file, recipe,
-                 resolve_repeats, conservative):
+                 resolve_repeats, conservative, phylogeny):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
@@ -72,18 +72,18 @@ class PermutationContainer:
                                 "target sequences")
 
         self.filter_indels()
-
+        repeats = _find_repeats(self.ref_perms + self.target_perms)
         ###
-        #before_filtering = deepcopy(self.target_perms)
-        self.filter_repeats(resolve_repeats)
+        if resolve_repeats:
+            if phylogeny is None:
+                raise PermException("Resolving repeats with "
+                                    "yet unknown phylogeny")
+            rr.resolve_repeats(self.ref_perms, self.target_perms,
+                               repeats, phylogeny)
+        ###
+        self.filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
-        #if debugger.debugging:
-            #file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
-            #ids = set(map(lambda p: p.chr_id, self.target_perms))
-            #filtered_perms = [p for p in before_filtering if p.chr_id not in ids]
-            #_write_permutations(filtered_perms, open(file, "w"))
-        ###
 
         self.build_chr_index()
         self.filter_chimeras()
@@ -109,21 +109,10 @@ class PermutationContainer:
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
 
-    def filter_repeats(self, resolve):
+    def filter_repeats(self, repeats):
         """
         Filters repetitive blocks
         """
-        index = defaultdict(set)
-        repeats = set()
-        for perm in self.ref_perms + self.target_perms:
-            for block in perm.blocks:
-                if perm.genome_name in index[block.block_id]:
-                    repeats.add(block.block_id)
-                else:
-                    index[block.block_id].add(perm.genome_name)
-        if resolve:
-            resolve_repeats(self.ref_perms, self.target_perms, repeats)
-
         self.target_perms = _filter_permutations(self.target_perms, repeats,
                                                  inverse=True)
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
@@ -181,6 +170,21 @@ class PermutationContainer:
                 return True
 
         return False
+
+
+def _find_repeats(permutations):
+    """
+    Returns a set of repetitive blocks
+    """
+    index = defaultdict(set)
+    repeats = set()
+    for perm in permutations:
+        for block in perm.blocks:
+            if perm.genome_name in index[block.block_id]:
+                repeats.add(block.block_id)
+            else:
+                index[block.block_id].add(perm.genome_name)
+    return repeats
 
 
 def _filter_permutations(permutations, blocks, inverse=False):

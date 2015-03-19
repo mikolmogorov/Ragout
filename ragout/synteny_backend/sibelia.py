@@ -44,7 +44,7 @@ class SibeliaBackend(SyntenyBackend):
             #using existing results
             logger.warning("Using existing Sibelia results from previous run")
             logger.warning("Use --overwrite to force alignment")
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(work_dir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 if not os.path.isfile(coords_file):
@@ -62,7 +62,7 @@ class SibeliaBackend(SyntenyBackend):
                                .format(total_size / 1024 / 1024))
 
             os.mkdir(work_dir)
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(work_dir, str(block_size))
                 perm_file = os.path.join(block_dir, "genomes_permutations.txt")
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")

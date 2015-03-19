@@ -1,6 +1,6 @@
 .tree = (((sjm180:0.0400823,els:0.0217168):0.0344596,gambia:0.0652494):0.0217168,(puno:0.064641,g27:0.0526246):0.008389);
+.references = els,gambia,puno,g27
 .target = sjm180
-.blocks = 5000, 500, 100
 
 *.circular = true
 

@@ -20,8 +20,9 @@ import ragout.scaffolder.merge_iters as merge
 import ragout.scaffolder.output_generator as out_gen
 import ragout.maf2synteny.maf2synteny as m2s
 import ragout.overlap.overlap as overlap
+import ragout.shared.config as config
 from ragout.overlap.overlap import OverlapException
-from ragout.breakpoint_graph.phylogeny import Phylogeny, PhyloException
+from ragout.phylogeny.phylogeny import Phylogeny, PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
                                                  PermException)
 from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
@@ -116,18 +117,37 @@ def run_unsafe(args):
     logger.info("Cooking Ragout...")
 
     check_extern_modules(args.synteny_backend)
-
-    recipe = parse_ragout_recipe(args.recipe)
-    phylogeny = Phylogeny(recipe)
-
-    #Running backend to get synteny blocks
     all_backends = SyntenyBackend.get_available_backends()
     backend = all_backends[args.synteny_backend]
-    perm_files = backend.make_permutations(recipe, args.out_dir,
+    recipe = parse_ragout_recipe(args.recipe)
+
+    #Setting synteny block sizes
+    if "blocks" in recipe:
+        scale = recipe["blocks"]
+    else:
+        scale = backend.infer_block_scale(recipe)
+        logger.info("Synteny block scale set to '{0}'".format(scale))
+    synteny_blocks = config.vals["blocks"][scale]
+
+    #Running backend to get synteny blocks
+    perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
                                            args.overwrite, args.threads)
 
+    #phylogeny-related
+    if "tree" in recipe:
+        logger.info("Phylogeny is taken from the recipe")
+        phylogeny = Phylogeny.from_newick(recipe["tree"])
+    else:
+        logger.info("Inferring phylogeny from synteny blocks data")
+        small_blocks = min(synteny_blocks)
+        perm_container = PermutationContainer(perm_files[small_blocks],
+                                              recipe, False, False, None)
+        phylogeny = Phylogeny.from_permutations(perm_container)
+        logger.info(phylogeny.tree_string)
+
+    #main loop
     last_scaffolds = None
-    for block_size in recipe["blocks"]:
+    for block_size in synteny_blocks:
         logger.info("Running Ragout with the block size {0}".format(block_size))
 
         if args.debug:
@@ -137,7 +157,7 @@ def run_unsafe(args):
         conservative = last_scaffolds is None
         perm_container = PermutationContainer(perm_files[block_size],
                                               recipe, args.resolve_repeats,
-                                              conservative)
+                                              conservative, phylogeny)
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
@@ -166,7 +186,7 @@ def run_unsafe(args):
                                                    target_fasta_dict)
         out_gen.output_links(refined_scaffolds, out_refined_links)
         out_gen.output_fasta(target_fasta_dict, refined_scaffolds,
-                            out_refined_scaffolds)
+                             out_refined_scaffolds)
         if args.debug:
             shutil.copy(out_overlap, debugger.debug_dir)
             out_colored_overlap = os.path.join(debugger.debug_dir,
@@ -182,7 +202,8 @@ def run_unsafe(args):
 def main():
     parser = argparse.ArgumentParser(description="A tool for assisted assembly"
                                                  " using multiple references",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class= \
+                                        argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("recipe", metavar="recipe_file",
                         help="path to recipe file")
@@ -191,7 +212,8 @@ def main():
                         help="path to the working directory",
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
-                        default="sibelia", choices=["sibelia", "cactus", "maf", "hal"],
+                        default="sibelia",
+                        choices=["sibelia", "cactus", "maf", "hal"],
                         help="backend for synteny block decomposition")
     parser.add_argument("--no-refine", action="store_true",
                         dest="no_refine", default=False,
@@ -201,13 +223,14 @@ def main():
                         help="overwrite existing synteny blocks")
     parser.add_argument("--repeats", action="store_true", default=False,
                         dest="resolve_repeats",
-                        help="try to resolve repeats before constructing BG")
+                        help="try to resolve repeats before constructing "
+                             "breakpoint graph")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")
     parser.add_argument("-t", "--threads", dest="threads", type=int,
                         default=1, help="number of threads for synteny backend")
-    parser.add_argument("--version", action="version", version="Ragout v1.0")
+    parser.add_argument("--version", action="version", version="Ragout v1.1")
     args = parser.parse_args()
 
     return run_ragout(args)

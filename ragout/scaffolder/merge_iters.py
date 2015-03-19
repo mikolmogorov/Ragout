@@ -92,9 +92,12 @@ def merge(big_scaffolds, small_scaffolds):
             else:
                 new_contigs.extend(big_scf.contigs[left_idx+1:right_idx])
 
-        new_contigs.append(right_cnt)
-        s = Scaffold(big_scf.name)
-        s.contigs = new_contigs
-        new_scafflods.append(s)
+        if len(new_contigs) > 1:
+            new_contigs.append(right_cnt)
+            s = Scaffold(big_scf.name)
+            s.contigs = new_contigs
+            new_scafflods.append(s)
+        else:   #because of repeats
+            new_scafflods.append(big_scf)
 
     return new_scafflods

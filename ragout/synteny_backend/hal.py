@@ -22,12 +22,30 @@ logger = logging.getLogger()
 HAL_WORKDIR = "hal-workdir"
 HAL2MAF = "hal2mafMP.py"
 HAL2FASTA = "hal2fasta"
+HAL_STATS = "halStats"
 TARGET_FASTA = "target.fasta"
 
 
 class HalBackend(SyntenyBackend):
     def __init__(self):
         SyntenyBackend.__init__(self)
+
+    def infer_block_scale(self, recipe):
+        hal = recipe.get("hal")
+        if not hal or not os.path.exists(hal):
+            raise BackendException("Could not open HAL file "
+                                   "or it is not specified")
+        stats = subprocess.check_output([HAL_STATS, hal])
+        size = 0
+        for line in stats.splitlines():
+            tokens = line.split(",")
+            if tokens[0] == recipe["target"]:
+                size = int(tokens[2])
+
+        if size < config.vals["big_genome_threshold"]:
+            return "small"
+        else:
+            return "large"
 
     def run_backend(self, recipe, output_dir, overwrite):
         workdir = os.path.join(output_dir, HAL_WORKDIR)
@@ -45,7 +63,7 @@ class HalBackend(SyntenyBackend):
             logger.warning("Use --overwrite to force alignment")
 
             all_good = True
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 if not os.path.isfile(coords_file):
@@ -86,10 +104,10 @@ class HalBackend(SyntenyBackend):
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 
             logger.info("Extracting synteny blocks from MAF")
-            if not m2s.make_synteny(out_maf, workdir, recipe["blocks"]):
+            if not m2s.make_synteny(out_maf, workdir, self.blocks):
                 raise BackendException("Something went wrong with maf2synteny")
 
-            for block_size in recipe["blocks"]:
+            for block_size in self.blocks:
                 block_dir = os.path.join(workdir, str(block_size))
                 coords_file = os.path.join(block_dir, "blocks_coords.txt")
                 files[block_size] = os.path.abspath(coords_file)
@@ -99,5 +117,5 @@ class HalBackend(SyntenyBackend):
         return files
 
 
-if utils.which(HAL2MAF) and utils.which(HAL2FASTA):
+if utils.which(HAL2MAF) and utils.which(HAL2FASTA) and utils.which(HAL_STATS):
     SyntenyBackend.register_backend("hal", HalBackend())

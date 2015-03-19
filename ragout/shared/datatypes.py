@@ -46,6 +46,11 @@ class Permutation:
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
             yield pb, nb
 
+    def __str__(self):
+        return "[{0}, {1}, {2}]".format(self.genome_name, self.chr_name,
+                                        list(map(lambda b: b.signed_id(),
+                                                 self.blocks)))
+
 
 class Contig:
     """
