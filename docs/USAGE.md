@@ -1,10 +1,10 @@
-Usage instructions for Ragout
+Usage Instructions for Ragout
 =============================
 
 Quick Usage
 -----------
 
-  usage: ragout.py [-h] [-o output_dir] [-s {sibelia,cactus,hal}]
+  usage: ragout.py [-h] [-o output_dir] [-s {sibelia,hal}]
                    [--no-refine] [--overwrite] [--repeats] [--debug]
                    [-t THREADS] [--version]
                    recipe_file
@@ -19,7 +19,7 @@ Quick Usage
     -o output_dir, --outdir output_dir
                           path to the working directory (default: ragout-out)
     
-    -s {sibelia,cactus,hal}, --synteny {sibelia,cactus,hal}
+    -s {sibelia,hal}, --synteny {sibelia,hal}
                           backend for synteny block decomposition (default:
                           sibelia)
     
@@ -28,8 +28,8 @@ Quick Usage
     
     --overwrite           overwrite existing synteny blocks (default: False)
     
-    --repeats             try to resolve repeats before constructing BG
-                          (default: False)
+    --repeats             try to resolve repeats before constructing breakpoint
+                          graph (default: False)
     
     --debug               enable debug output (default: False)
     
@@ -50,8 +50,8 @@ You can try Ragout on the provided ready-to-use examples:
     python ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/
 
 
-Sequence Data
--------------
+Assembly Requirements
+---------------------
 
 Ragout takes assembly fragments (contigs/scaffolds) as input. We performed
 our tests with SPAdes, ABySS and SOAPdenovo assemblers, others should
@@ -64,24 +64,24 @@ work fine too, if their output satisfy the following conditions:
   that were connected in a graph used by assembler should overlap on a
   constant value (usually k-mer or (k-1)-mer). This works
   for the most of assemblers which utilize de Bruijn graphs. Currently,
-  for other types of assemblers (such as SGA) performance of
+  for other types of assemblers (such as SGA) the performance of
   the refinement procedure is limited.
 
-Input references could be both in complete or draft form.
 
 
 Brief Algorithm Overview
 ------------------------
 
 Ragout works with genomes represented as sequences of synteny blocks
-and firstly uses *Sibelia* or *Progressive Cactus* for this decomposition. 
+and firstly uses *Sibelia* or *HAL* alignment for this decomposition. 
+This step is usually most time-consuming.
 
 Next, Ragout constructs a breakpoint graph and predicts missing 
-adjacencies between synteny blocks in target genome (as it is fragmented
-into contigs, some adjacencies are missing). Then, contigs are being 
-extended into scaffolds with respect to inferred adjacencies. This 
-procedure is repeated multiple times with the different scale of synteny
-block decomposition. 
+adjacencies between synteny blocks in target genome (as it is fragmented, 
+some adjacencies are missing). Then, assembly fragments are being 
+extended into scaffolds with respect to the inferred adjacencies. This 
+procedure is repeated multiple times with the different scale of the synteny
+blocks decomposition. 
 
 Afterwards, a refinement step is performed. Ragout utilize assembly (overlap) 
 graph which is reconstructed by overlapping input contigs/scaffolds. This 
@@ -192,7 +192,7 @@ If you do not specify phylogenetic tree or synteny block scale,
 they are inferred automatically.
 
 
-The parameters choice
+The Parameters Choice
 ---------------------
 
 ### Synteny block size
@@ -210,8 +210,8 @@ based on input genomes size.
 
 ### Phylogenetic tree
 
-If this parameter is committed, Ragout infers phylogenetic tree 
-based on breakpoint data. Generally, it gives a good approximation.
+If this parameter is omitted, Ragout infers phylogenetic tree 
+based on breakpoints data. Generally, it gives a good approximation.
 However, if you already know the tree, we recommended to
 guide the algorithm with it.
 
@@ -233,39 +233,63 @@ Synteny backends
 
 Ragout have three different options for synteny block decomposition:
 
-* Decompoition with *Sibelia*
-* Decomposition with *progressiveCactus*
-* Use of external local multiple sequence alignment (in *HAL* format)
+* Decomposition with *Sibelia*
+* Use of whole genome alignment (in *HAL* format)
 
 You can choose between backends by specifying --synteny (-s) option.
-If you use *Sibelia* or *progressiveCactus*, you should specify separate
-*FASTA* file for each input genome, while if you work with *HAL*, it
-is not necessary.
+If you use *Sibelia*, you should specify separate *FASTA* file for 
+each input genome, while if you work with *HAL*, it is not necessary.
 
 ### Sibelia
 
-"Sibelia" option is set by default and is recommended for small genomes
-(like bacterial ones).
+"Sibelia" option is set by default and is recommended for bacterial genomes.
 
-### progressiveCactus
+### Whole genome alignment in *HAL* format
 
-"progressiveCactus" can be used for bigger genomes, up to multuple 
-mammalian species. Please note, that current implementation is still 
-experimental. The tool also should be properly installed. Do not forget 
-to mask repeats (with RepeatMasker, for instance) before applying 
-*progressiveCactus* to genomes with a big fraction of repetitive sequences.
+Alternatively, Ragout can use *HAL* whole genome alignment for synteny blocks
+decomposition. This is recommended for large (mammalian) genomes, which
+*Sibelia* can not process. This alignment is ouput by Progressive Cactus 
+aligner [https://github.com/glennhickey/progressiveCactus].
 
-### Local alignment in *HAL* format
+The pipeline is as follows: first, align references and target genomes using
+Progressive Cactus (you will need phylogenetic tree) and then run Ragout
+on the resulted *HAL* file. This would require *HAL Tools* package to be 
+installed in your system.
 
-TBD
+### Progressive Cactus and MAF backends are deprecated
+
+The support of MAF synteny backend is deprecated, because it is more 
+convenient to work directly with *HAL*, which is a default output of
+Progressive Cactus.
+
+Progressive Cactus backend (which allowed to automatically run the aligner
+from Ragout) is also deprecated, because typical run of Progressive Cactus
+includes some parallelization steps, which are hard to automate.
+
+Please let us know, if you have any issues with that changes.
+
+Repeat Resolution
+-----------------
+As the main Ragout algorithm works only with unique synteny blocks, we filter
+all repetitive ones before building the breakpoint graph. Therefore, some
+target sequences (generally, short and repetitive contigs) will be ignored.
+Some portion of them is put back on the refinement step of the algorithm.
+
+To incorporate these repetitive fragments into final scaffolds you can
+turn on new experimental algorithm, which tries to separate different instances
+of each single repeat based on their "context" (--repeats option). Depending
+on the input assembly, you may get a significant increase in the number of
+incorporated fragments, therefore decreasing scaffolds gaps. However,
+if there are copy number variations between reference and target genomes,
+the algorithm could make some false insertions.
 
 
-Refinement with assembly graph
+Refinement with Assembly Graph
 ------------------------------
 
 Ragout uses assembly (overlap) graph to incorporate very short / repetitive
 contigs into assembly. First, this graph is reconstructed by overlapping
-input contigs/scaffolds (see Sequence Data seqction for requirements).
+input contigs/scaffolds (see Sequence Data section for requirements).
 Then Ragout scaffolds which are already available are being "threaded"
 through this graph to find the true "genome path".
 
@@ -289,7 +313,7 @@ As this step may take a lot of time for assemblies with big number of contigs,
 you may skip it by specifying "--no-refine" option.
 
 
-Links file
+Links File
 ----------
 
 Ragout outputs information about generated adjacencies in "*.links" file.
@@ -305,14 +329,14 @@ Gap < 0 means overlap on a corresponding value. "~>" does not
 apply for assemblies without refinement.
 
 
-Useful scripts
+Useful Scripts
 --------------
 
 Scripts are located in "scripts" directory
 
 **verify-order.py:**
 
-Tests the correctness of the infered contigs order if a "true" reference
+Tests the correctness of the inferred contigs order if a "true" reference
 is available. First, contigs should be mapped on that reference using 
 *nucmer* software:
 

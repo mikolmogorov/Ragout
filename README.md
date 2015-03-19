@@ -1,9 +1,9 @@
 Ragout
 ======
 
-Version: 1.0
+Version: 1.1
 
-Release date: 08 Aug 2014
+Release date: ?? Mar 2015
 
 Website: http://fenderglass.github.io/Ragout/
 
@@ -35,9 +35,6 @@ genome. Even if each reference is structurally divergent, it is possible
 to assemble the target into the correct set of scaffolds. Enlarge your
 contigs with Ragout!
 
-The current version of Ragout was mostly tested on bacterial genomes,
-however it also contains an experimental support of mamalian-scaled ones.
-
 
 Install
 -------
@@ -50,10 +47,10 @@ See *docs/USAGE.md* file.
 
 Authors
 -------
-- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences)
+- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)
 - Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
 - Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
-- Son Pham (University of California, San Diego)
+- Son Pham (UCSD)
 
 
 Citation
@@ -81,13 +78,14 @@ Acknowledgements
 The work was partially supported by VP Foundation.
 
 We would like to thank:
-- Nikolay Vyahhi (testing and some useful suggestions)
+- Anna Liosnova (benchmarks and useful suggestions)
+- Nikolay Vyahhi (testing and useful suggestions)
 - Aleksey Gurevich (testing)
 
 
 Third-party
 -----------
-Ragout includes some third-patry software (see INSTALL.md for details)
+Ragout package includes some third-patry software (see INSTALL.md for details)
 
 * Networkx Python library [http://networkx.github.io/]
 * Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]

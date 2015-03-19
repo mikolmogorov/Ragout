@@ -212,7 +212,8 @@ def main():
                         help="path to the working directory",
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
-                        default="sibelia", choices=["sibelia", "cactus", "maf", "hal"],
+                        default="sibelia",
+                        choices=["sibelia", "cactus", "maf", "hal"],
                         help="backend for synteny block decomposition")
     parser.add_argument("--no-refine", action="store_true",
                         dest="no_refine", default=False,
@@ -222,13 +223,14 @@ def main():
                         help="overwrite existing synteny blocks")
     parser.add_argument("--repeats", action="store_true", default=False,
                         dest="resolve_repeats",
-                        help="try to resolve repeats before constructing BG")
+                        help="try to resolve repeats before constructing "
+                             "breakpoint graph")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")
     parser.add_argument("-t", "--threads", dest="threads", type=int,
                         default=1, help="number of threads for synteny backend")
-    parser.add_argument("--version", action="version", version="Ragout v1.0")
+    parser.add_argument("--version", action="version", version="Ragout v1.1")
     args = parser.parse_args()
 
     return run_ragout(args)
