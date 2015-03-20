@@ -60,11 +60,6 @@ class TreeInferer:
             distances[t_1][t_2] = self._genome_distance(t_1.identifier,
                                                         t_2.identifier)
             distances[t_2][t_1] = distances[t_1][t_2]
-        for t_1 in taxas:
-            print(t_1, "\t", end="")
-            for t_2 in taxas:
-                print(distances[t_1][t_2], "\t", end="")
-            print("")
 
         def calc_q(taxas):
             q_matrix = defaultdict(lambda : {})
