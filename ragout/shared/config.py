@@ -42,5 +42,5 @@ vals =  {
             "min_synteny_coverage" : 0.6,
             "min_overlap_rate" : 0.5,
 
-            "detect_chimera" : False
+            "detect_chimera" : True
         }
