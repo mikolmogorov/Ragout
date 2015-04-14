@@ -108,18 +108,24 @@ void renumerate(PermVec& permutations)
 {
 	int nextId = 1;
 	std::unordered_map<int, int> newIds;
-	auto newId = [&nextId, &newIds] (int oldId)
+	std::unordered_map<int, int> newSigns;
+	auto newIdAndSign = [&nextId, &newIds, &newSigns] (Block& block)
 	{
-		if (!newIds.count(oldId))
-			newIds[oldId] = nextId++;
-		return newIds[oldId];
+		if (!newIds.count(block.blockId))
+		{
+			newIds[block.blockId] = nextId++;
+			newSigns[block.blockId] = block.sign;
+		}
+		return std::make_pair(newIds[block.blockId], newSigns[block.blockId]);
 	};
 
 	for (Permutation& perm : permutations)
 	{
 		for (Block& block : perm.blocks)
 		{
-			block.blockId = newId(block.blockId);
+			auto idAndSign = newIdAndSign(block);
+			block.blockId = idAndSign.first;
+			block.sign *= idAndSign.second;
 		}
 	}
 }
