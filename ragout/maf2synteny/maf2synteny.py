@@ -30,7 +30,7 @@ def check_binary():
 
     try:
         devnull = open(os.devnull, "w")
-        subprocess.check_call([M2S_EXEC, "--help"], stderr=devnull)
+        subprocess.check_call([M2S_EXEC, "-h"], stderr=devnull)
     except subprocess.CalledProcessError as e:
         logger.error("Some error inside native {0} module: {1}"
                      .format(M2S_EXEC, e))
@@ -48,8 +48,8 @@ def make_synteny(maf_file, out_dir, min_blocks_list):
 
     params_file = os.path.join(out_dir, "simpl_params.txt")
     _make_params_file(config.vals["maf2synteny"], params_file)
-    cmdline = [M2S_EXEC, maf_file, out_dir, params_file]
-    cmdline.extend(list(map(str, min_blocks_list)))
+    cmdline = [M2S_EXEC, maf_file, "-o", out_dir, "-s", params_file,
+               "-b", ",".join(map(str, min_blocks_list))]
 
     logger.info("Running maf2synteny module")
     proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)

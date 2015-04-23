@@ -57,7 +57,7 @@ Ragout takes assembly fragments (contigs/scaffolds) as input. We performed
 our tests with SPAdes, ABySS and SOAPdenovo assemblers, others should
 work fine too, if their output satisfy the following conditions:
 
-* Assembly coverage should be good (80-90%+)
+* Assembly coverage should be sufficient (80-90%+)
 * *All* contigs/scaffolds output by assembler should be used (including
   short ones)
 * For the better performance of the refinment module, contigs/scaffolds
@@ -66,6 +66,11 @@ work fine too, if their output satisfy the following conditions:
   for the most of assemblers which utilize de Bruijn graphs. Currently,
   for other types of assemblers (such as SGA) the performance of
   the refinement procedure is limited.
+
+One current limitation of Ragout is that the algorithm is sensitive to
+chimeric sequences. They may be expanded, which will result in 
+artifically fused scaffolds. We recommend to reduce the fraction of chimeric
+sequences as much as possible before running Ragout.
 
 
 

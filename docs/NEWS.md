@@ -1,4 +1,4 @@
-Ragout 1.1 (?? Mar 2015)
+Ragout 1.1 (22 Mar 2015)
 ================
 * Added optional repeat resolution algorithm
 * Automatic phylogenetic tree inference

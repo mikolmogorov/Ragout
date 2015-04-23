@@ -36,7 +36,7 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
         self.recipe = recipe
-        self.conservative = conservative
+        self.conservative = conservative and config.vals["detect_chimera"]
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
