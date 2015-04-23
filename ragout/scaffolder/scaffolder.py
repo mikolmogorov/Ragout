@@ -33,7 +33,7 @@ def get_scaffolds(adjacencies, perm_container):
 
     num_contigs = sum(map(lambda s: len(s.contigs), scaffolds))
     logger.debug("{0} contigs were joined into {1} scaffolds"
-                        .format(num_contigs), len(scaffolds))
+                        .format(num_contigs, len(scaffolds)))
 
     if debugger.debugging:
         links_out = os.path.join(debugger.debug_dir, "scaffolds.links")
