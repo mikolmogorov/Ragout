@@ -193,19 +193,13 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
 
     return profiles
 
-#g_discarded = 0
-#g_unmatched = 0
 def _match_target_contexts(profiles, target_contexts, repeats):
     """
     Tries to find a mapping between reference profiles and target contexts
     """
-    #global g_discarded
-    #global g_unmatched
     def is_unique(context):
         return any(b not in repeats for b in
                    map(lambda b: b.block_id, context.perm.blocks))
-    #def is_unique(context):
-    #    return True
 
     unique_matches = []
     repetitive_matches = []

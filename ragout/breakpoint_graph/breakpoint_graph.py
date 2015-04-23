@@ -16,6 +16,9 @@ import logging
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
+from ragout.breakpoint_graph.algorithms import (min_weight_matching,
+                                                alternating_cycle,
+                                                mark_preferred_edges)
 
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
@@ -31,7 +34,7 @@ class BreakpointGraph:
         self.targets = []
         self.references = []
 
-    def build_from(self, perm_container, recipe):
+    def build_from(self, perm_container, recipe, prev_scaffolds):
         """
         Builds breakpoint graph from permutations
         """
@@ -77,6 +80,12 @@ class BreakpointGraph:
                                        genome_id=perm.genome_name,
                                        distance=distance,
                                        infinity=infinity)
+
+        if prev_scaffolds is not None:
+            trusted = _get_trusted_adjacencies(perm_container.target_perms,
+                                               prev_scaffolds)
+            print(trusted)
+            mark_preferred_edges(self.bp_graph, trusted)
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
@@ -148,7 +157,7 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
                 continue
 
-            matching_edges = _split_graph(trim_subgraph)
+            matching_edges = min_weight_matching(trim_subgraph)
 
             for edge in matching_edges:
                 for n in edge:
@@ -160,7 +169,7 @@ class BreakpointGraph:
             node_1, node_2 = tuple(unused_nodes)
             if (self.perm_container.good_adj(abs(node_1), abs(node_2)) and
                 abs(node_1) != abs(node_2) and
-                _alternating_cycle(subgraph, node_1, node_2, self.targets[0])):
+                alternating_cycle(subgraph, node_1, node_2, self.targets[0])):
 
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
@@ -240,63 +249,6 @@ class BreakpointGraph:
         return _median(distances) #currently, just a median :(
 
 
-def _split_graph(graph):
-    """
-    Finds a perfect matching with minimum weight
-    """
-    for v1, v2 in graph.edges_iter():
-        graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weight
-
-    MIN_LOG_SIZE = 20
-    if len(graph) > MIN_LOG_SIZE:
-        logger.debug("Finding perfect matching for a component of "
-                     "size {0}".format(len(graph)))
-    edges = nx.max_weight_matching(graph, maxcardinality=True)
-    unique_edges = set()
-    for v1, v2 in edges.items():
-        if not (v2, v1) in unique_edges:
-            unique_edges.add((v1, v2))
-
-    return list(unique_edges)
-
-
-def _alternating_cycle(graph, node_1, node_2, target_id):
-    """
-    Determines if there is a cycle of alternating colors
-    that goes through the given edge
-    """
-    def get_genome_ids((u, v)):
-        return list(map(lambda e: e["genome_id"], graph[u][v].values()))
-
-    simple_graph = nx.Graph()
-    for (u, v) in graph.edges_iter():
-        simple_graph.add_edge(u, v)
-    assert not simple_graph.has_edge(node_1, node_2)
-
-    good_path = False
-    for path in nx.all_simple_paths(simple_graph, node_1, node_2):
-        #2-break or 3-break
-        if len(path) % 2 == 1 or len(path) / 2 > 3:
-            continue
-
-        edges = list(zip(path[:-1], path[1:]))
-        odd_colors = list(map(get_genome_ids, edges[0::2]))
-        even_colors = list(map(get_genome_ids, edges[1::2]))
-
-        if not all(map(lambda e: set(e) == set([target_id]), even_colors)):
-            continue
-
-        common_genomes = set(odd_colors[0])
-        for edge_colors in odd_colors:
-            common_genomes = common_genomes.intersection(edge_colors)
-
-        if common_genomes:
-            good_path = True
-            break
-
-    return good_path
-
-
 def _update_edge(graph, v1, v2, weight):
     """
     Helper function to update edge's weight
@@ -305,6 +257,27 @@ def _update_edge(graph, v1, v2, weight):
         graph.add_edge(v1, v2, weight=weight)
     else:
         graph[v1][v2]["weight"] += weight
+
+
+def _get_trusted_adjacencies(permutations, prev_scaffolds):
+    trusted_adj = {}
+    perm_by_id = {perm.chr_name : perm for perm in permutations}
+
+    for scf in prev_scaffolds:
+        for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
+            if (prev_cont.seq_name in perm_by_id and
+                next_cont.seq_name in perm_by_id):
+                left_blocks = perm_by_id[prev_cont.seq_name].blocks
+                left = (left_blocks[-1].signed_id() if prev_cont.sign > 0
+                        else -left_blocks[0].signed_id())
+
+                right_blocks = perm_by_id[next_cont.seq_name].blocks
+                right = (right_blocks[0].signed_id() if prev_cont.sign > 0
+                         else -right_blocks[-1].signed_id())
+
+                trusted_adj[-left] = right
+                trusted_adj[right] = -left
+    return trusted_adj
 
 
 def _median(values):
