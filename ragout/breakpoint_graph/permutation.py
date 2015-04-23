@@ -72,6 +72,9 @@ class PermutationContainer:
                                 "target sequences")
 
         self.filter_indels()
+        logger.debug("{0} target sequences left after indel filtering"
+                                        .format(len(self.target_perms)))
+
         repeats = _find_repeats(self.ref_perms + self.target_perms)
         ###
         if resolve_repeats:

@@ -232,7 +232,7 @@ class BreakpointGraph:
         Tries to guess the distance between synteny blocks
         in a target genome
         """
-        DEFAULT_DISTANCE = 11
+        DEFAULT_DISTANCE = 100
         if not self.bp_graph.has_edge(node_1, node_2):
             return DEFAULT_DISTANCE
         distances = [e["distance"]

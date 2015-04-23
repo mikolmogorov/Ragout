@@ -45,6 +45,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
     Does the job
     """
     logger.info("Resolving repeats")
+    logger.debug("Unique repeat blocks: {0}".format(len(repeats)))
 
     next_block_id = 0
     for perm in chain(ref_perms, target_perms):
@@ -56,6 +57,12 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
     ref_contexts = _get_contexts(ref_perms, repeats)
     trg_contexts = _get_contexts(target_perms, repeats)
 
+    purely_repetitive = 0
+    for perm in target_perms:
+        if all(map(lambda b: b.block_id in repeats, perm.blocks)):
+            purely_repetitive += 1
+    logger.debug("Purely repetitive sequences: {0}".format(purely_repetitive))
+
     #getting matches
     repetitive_matches = []
     unique_matches = []
@@ -64,7 +71,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
-        logger.debug("==Resolving {0}".format(repeat_id))
+        #logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
         profiles = list(filter(lambda p: _parsimony_test(p, phylogeny,
                                         target_name), profiles))
@@ -73,14 +80,25 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
         unique_matches.extend(unique_m)
         repetitive_matches.extend(repetitive_m)
 
-        for matches in [unique_m, repetitive_m]:
-            for trg_ctx, profile in matches:
-                logger.debug("T: {0}".format(trg_ctx))
-                for ref_ctx in profile:
-                    logger.debug("R: {0}".format(ref_ctx))
-                logger.debug("--")
-            logger.debug("~~~~~~~~~~~~~~~~")
+        #for matches in [unique_m, repetitive_m]:
+        #    for trg_ctx, profile in matches:
+        #        logger.debug("T: {0}".format(trg_ctx))
+        #        for ref_ctx in profile:
+        #            logger.debug("R: {0}".format(ref_ctx))
+        #        logger.debug("--")
+        #    logger.debug("~~~~~~~~~~~~~~~~")
     ##
+
+    matched_contigs = set()
+    for m in repetitive_matches:
+        if all(map(lambda b: b.block_id in repeats, m.trg.perm.blocks)):
+            matched_contigs.add(m.trg.perm)
+    logger.debug("Repetitive sequences with matches: {0}".format(len(matched_contigs)))
+
+    #logger.debug("Discarded: {0}".format(g_discarded))
+    #logger.debug("Unmatched: {0}".format(g_unmatched))
+    logger.debug("Unique matches: {0}".format(len(unique_matches)))
+    logger.debug("Repetitive matches: {0}".format(len(repetitive_matches)))
 
     ##resolving unique
     for trg_ctx, profile in unique_matches:
@@ -120,6 +138,7 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
 
     logger.debug("Resolved {0} unique repeat instances"
                         .format(next_block_id - first_block_id))
+    logger.debug("Saved sequences: {0}".format(len(to_remove)))
     logger.debug("Added {0} extra contigs".format(new_contigs))
 
 
@@ -174,14 +193,19 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
 
     return profiles
 
-
+#g_discarded = 0
+#g_unmatched = 0
 def _match_target_contexts(profiles, target_contexts, repeats):
     """
     Tries to find a mapping between reference profiles and target contexts
     """
+    #global g_discarded
+    #global g_unmatched
     def is_unique(context):
         return any(b not in repeats for b in
                    map(lambda b: b.block_id, context.perm.blocks))
+    #def is_unique(context):
+    #    return True
 
     unique_matches = []
     repetitive_matches = []
@@ -205,10 +229,17 @@ def _match_target_contexts(profiles, target_contexts, repeats):
             graph.add_edge(node_prof, node_genome, weight=score, match="unq")
 
     #repetetive ones
-    different = all(not c_1.equal(c_2) for c_1, c_2 in
-                    combinations(t_repetitive, 2))
+    dups = set()
+    for ctx_1, ctx_2 in combinations(t_repetitive, 2):
+        if ctx_1.equal(ctx_2):
+            dups.add(ctx_1)
+            dups.add(ctx_2)
+    different = [ctx for ctx in t_repetitive if ctx not in dups]
+    #if dups:
+    #    logger.debug(map(str, dups))
+
     if different:
-        many_rep = t_repetitive * len(profiles)
+        many_rep = different * len(profiles)
         for (pr_id, prof), (ctx_id, ctx) in product(enumerate(profiles),
                                                     enumerate(many_rep)):
             node_prof = "profile" + str(pr_id)
@@ -222,6 +253,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
                                match="rep")
 
     #get matching
+    target_matched = set()
     edges = _max_weight_matching(graph)
     for edge in edges:
         prof_node, genome_node = edge
@@ -235,6 +267,21 @@ def _match_target_contexts(profiles, target_contexts, repeats):
             unique_matches.append(MatchPair(trg_ctx, profile))
         else:
             repetitive_matches.append(MatchPair(trg_ctx, profile))
+            target_matched.add(trg_ctx)
+
+    """
+    if different:
+        g_unmatched += len(t_repetitive) - len(target_matched)
+        for cxt in t_repetitive:
+            if cxt not in target_matched:
+                logger.debug("{0}".format(str(cxt)))
+        if len(t_repetitive) - len(target_matched) > 0:
+            logger.debug("trg: {0}, prof: {1}".format(len(target_contexts),
+                                                      len(profiles)))
+            logger.debug(map(str, target_contexts))
+    else:
+        g_discarded += len(t_repetitive)
+    """
 
     return unique_matches, repetitive_matches
 
@@ -249,9 +296,9 @@ def _split_by_instance(matches):
     if len(target_perm.blocks) == 1:    #trivial case
         return list(map(lambda m: [m], matches))
 
-    logger.debug("=========")
-    logger.debug(target_perm)
-    logger.debug("=========")
+    #logger.debug("=========")
+    #logger.debug(target_perm)
+    #logger.debug("=========")
 
     by_pos = defaultdict(list)
     for match in matches:
@@ -294,15 +341,15 @@ def _split_by_instance(matches):
 
     #min_group = max(2, (len(target_perm.blocks) + 1) / 2)
     min_group = len(target_perm.blocks) / 2 + 1
-    for group in groups:
-        if len(group) < min_group:
-            continue
-        logger.debug("##group")
-        for match in group:
-            logger.debug("####profile pos {0}".format(match.trg.pos))
-            for ctx in match.prof:
-                logger.debug(ctx)
-        logger.debug("")
+    #for group in groups:
+    #    if len(group) < min_group:
+    #        continue
+    #    logger.debug("##group")
+    #    for match in group:
+    #        logger.debug("####profile pos {0}".format(match.trg.pos))
+    #        for ctx in match.prof:
+    #            logger.debug(ctx)
+    #    logger.debug("")
 
     return list(filter(lambda g: len(g) >= min_group, groups))
 
