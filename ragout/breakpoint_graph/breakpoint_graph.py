@@ -18,7 +18,7 @@ import networkx as nx
 from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.algorithms import (min_weight_matching,
                                                 alternating_cycle,
-                                                mark_preferred_edges)
+                                                get_preferred_edges)
 
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
@@ -40,6 +40,7 @@ class BreakpointGraph:
         """
         logger.debug("Building breakpoint graph")
         self.perm_container = perm_container
+        self.preferred_edges = {}
 
         for perm in perm_container.ref_perms:
             if perm.genome_name not in self.references:
@@ -84,8 +85,8 @@ class BreakpointGraph:
         if prev_scaffolds is not None:
             trusted = _get_trusted_adjacencies(perm_container.target_perms,
                                                prev_scaffolds)
-            print(trusted)
-            mark_preferred_edges(self.bp_graph, trusted)
+            self.preferred_edges = get_preferred_edges(self.bp_graph, trusted)
+            #print(len(self.preferred_edges))
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
@@ -157,7 +158,8 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
                 continue
 
-            matching_edges = min_weight_matching(trim_subgraph)
+            matching_edges = min_weight_matching(trim_subgraph,
+                                                 self.preferred_edges)
 
             for edge in matching_edges:
                 for n in edge:
@@ -179,7 +181,6 @@ class BreakpointGraph:
 
         return chosen_edges
 
-
     def _trim_known_edges(self, graph):
         """
         Removes edges with known adjacencies in target (red edges from paper)
@@ -196,7 +197,6 @@ class BreakpointGraph:
                 for node in [v1, v2]:
                     trimmed_graph.remove_node(node)
                 self.trimmed_count += 1
-
 
         return trimmed_graph
 
@@ -260,6 +260,9 @@ def _update_edge(graph, v1, v2, weight):
 
 
 def _get_trusted_adjacencies(permutations, prev_scaffolds):
+    """
+    Get trusted adjaencies from previous iteration
+    """
     trusted_adj = {}
     perm_by_id = {perm.chr_name : perm for perm in permutations}
 

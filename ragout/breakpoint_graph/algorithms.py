@@ -6,16 +6,26 @@
 Various algorithms for breakpoint graph processing
 """
 
+from __future__ import print_function
 from collections import deque
 
 import networkx as nx
 
-def min_weight_matching(graph):
+def min_weight_matching(graph, preferred_edges):
     """
     Finds a perfect matching with minimum weight
     """
+    max_weight, min_weight = float("-inf"), float("inf")
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weght
+        max_weight = max(max_weight, graph[v1][v2]["weight"])
+        min_weight = min(min_weight, graph[v1][v2]["weight"])
+
+    boost = max_weight - min_weight
+    for v1, v2 in graph.edges_iter():
+        if preferred_edges.get(v1, None) == v2:
+            #print(boost)
+            graph[v1][v2]["weight"] += boost + 1
 
     MIN_LOG_SIZE = 20
     if len(graph) > MIN_LOG_SIZE:
@@ -67,29 +77,46 @@ def alternating_cycle(graph, node_1, node_2, target_id):
     return good_path
 
 
-def mark_preferred_edges(graph, trusted_adjacencies):
+def get_preferred_edges(graph, trusted_adjacencies):
     """
     Try to bring edges that are supported by previous iteration
     to the front
     """
+    preferred_edges = {}
+
     def bfs_search(start_node, goal_node):
+        #print("Search from", start_node, "to", goal_node)
         queue = deque()
-        visited = set([start_node])
-        queue.append((start_node, 0))
+        visited = set([start_node, -start_node])
+        queue.append((-start_node, 0))
         while len(queue):
             cur_node, cur_depth = queue.popleft()
+            #print("Cur", cur_node)
             if cur_node == goal_node:
                 return cur_depth
+            if cur_node == -goal_node:
+                return float("inf")
 
             for other_node in graph.neighbors(cur_node):
                 if -other_node not in visited:
+                    #print("Other", other_node, "depth", cur_depth)
                     queue.append((-other_node, cur_depth + 1))
                     visited.add(-other_node)
+                    visited.add(other_node)
 
     for node in graph.nodes():
         if len(graph.neighbors(node)) == 1 or node not in trusted_adjacencies:
             continue
 
+        #print("Trusted adj: {0} -- {1}".format(node, trusted_adjacencies[node]))
+        steps = {}
         for neighbor in graph.neighbors(node):
             num_steps = bfs_search(neighbor, trusted_adjacencies[node])
-            print(node, neighbor, num_steps)
+            steps[neighbor] = num_steps
+        #print(steps)
+
+        if sorted(steps.values())[0] < sorted(steps.values())[1]:
+            preferred_edges[node] = neighbor
+            preferred_edges[neighbor] = node
+
+    return preferred_edges
