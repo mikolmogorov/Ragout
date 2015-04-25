@@ -7,25 +7,17 @@ Various algorithms for breakpoint graph processing
 """
 
 from __future__ import print_function
-from collections import deque
+#from Queue import PriorityQueue
+import heapq
 
 import networkx as nx
 
-def min_weight_matching(graph, preferred_edges):
+def min_weight_matching(graph):
     """
     Finds a perfect matching with minimum weight
     """
-    max_weight, min_weight = float("-inf"), float("inf")
     for v1, v2 in graph.edges_iter():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weght
-        max_weight = max(max_weight, graph[v1][v2]["weight"])
-        min_weight = min(min_weight, graph[v1][v2]["weight"])
-
-    boost = max_weight - min_weight
-    for v1, v2 in graph.edges_iter():
-        if preferred_edges.get(v1, None) == v2:
-            #print(boost)
-            graph[v1][v2]["weight"] += boost + 1
 
     MIN_LOG_SIZE = 20
     if len(graph) > MIN_LOG_SIZE:
@@ -77,46 +69,132 @@ def alternating_cycle(graph, node_1, node_2, target_id):
     return good_path
 
 
-def get_preferred_edges(graph, trusted_adjacencies):
+def get_path_cover(graph, trusted_adj):
+    adjacencies = []
+    prohibited_nodes = set()
+    for adj in trusted_adj:
+        prohibited_nodes.add(abs(adj[0]))
+        prohibited_nodes.add(abs(adj[1]))
+
+    for (adj_left, adj_right) in trusted_adj:
+        p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes)
+        if not p:
+            p = [adj_left, adj_right]
+
+        assert len(p) % 2 == 0
+        for i in xrange(len(p) / 2):
+            adj_left, adj_right = p[i * 2], p[i * 2 + 1]
+            adjacencies.append((adj_left, adj_right))
+            prohibited_nodes.add(abs(adj_left))
+            prohibited_nodes.add(abs(adj_right))
+
+    return adjacencies
+
+
+def _shortest_path(graph, src, dst, prohibited_nodes):
     """
-    Try to bring edges that are supported by previous iteration
-    to the front
+    Finds shortest path wrt to restricted nodes
     """
-    preferred_edges = {}
+    #print("Finding path from {0} to {1}".format(src, dst))
+    dist = {n : float("inf") for n in graph.nodes()}
+    dist[src] = 0
+    parent = {n : n for n in graph.nodes()}
+    queue = PriorityQueue()
+    queue.insert((src, True), 0)
 
-    def bfs_search(start_node, goal_node):
-        #print("Search from", start_node, "to", goal_node)
-        queue = deque()
-        visited = set([start_node, -start_node])
-        queue.append((-start_node, 0))
-        while len(queue):
-            cur_node, cur_depth = queue.popleft()
-            #print("Cur", cur_node)
-            if cur_node == goal_node:
-                return cur_depth
-            if cur_node == -goal_node:
-                return float("inf")
+    found = False
+    #print(graph[-186])
+    #print(graph[186])
+    while queue.get_length():
+        cur_dist, (cur_node, colored) = queue.pop()
+        if cur_node == dst:
+            found = True
+            break
 
-            for other_node in graph.neighbors(cur_node):
-                if -other_node not in visited:
-                    #print("Other", other_node, "depth", cur_depth)
-                    queue.append((-other_node, cur_depth + 1))
-                    visited.add(-other_node)
-                    visited.add(other_node)
-
-    for node in graph.nodes():
-        if len(graph.neighbors(node)) == 1 or node not in trusted_adjacencies:
+        if cur_node != src and abs(cur_node) in prohibited_nodes:
             continue
 
-        #print("Trusted adj: {0} -- {1}".format(node, trusted_adjacencies[node]))
-        steps = {}
-        for neighbor in graph.neighbors(node):
-            num_steps = bfs_search(neighbor, trusted_adjacencies[node])
-            steps[neighbor] = num_steps
-        #print(steps)
+        neighbors = graph.neighbors(cur_node) if colored else [-cur_node]
+        #if 186 in neighbors:
+        #    print(neighbors, cur_node)
+        #    print(graph.neighbors(cur_node))
+        #    print(graph[186])
+        #    print(graph[-186])
 
-        if sorted(steps.values())[0] < sorted(steps.values())[1]:
-            preferred_edges[node] = neighbor
-            preferred_edges[neighbor] = node
+        for other_node in neighbors:
+            weight = graph[cur_node][other_node]["weight"] if colored else 0
+            #if other_node == -186:
+            #    print(cur_node)
+            #print(graph[other_node])
+            #print(cur_node, colored)
+            if dist[other_node] > dist[cur_node] + weight:
+                dist[other_node] = dist[cur_node] + weight
+                parent[other_node] = cur_node
+                queue.insert((other_node, not colored), dist[other_node])
 
-    return preferred_edges
+    if not found:
+        return None
+
+    path = [dst]
+    cur_node = dst
+    while cur_node != src:
+        path.append(parent[cur_node])
+        cur_node = parent[cur_node]
+    return path[::-1]
+
+
+class PriorityQueue(object):
+    """
+    Priority queue based on heap, capable of inserting a new node with
+    desired priority, updating the priority of an existing node and deleting
+    an abitrary node while keeping invariant
+    """
+
+    def __init__(self, heap=[]):
+        """
+        if 'heap' is not empty, make sure it's heapified
+        """
+        heapq.heapify(heap)
+        self.heap = heap
+        self.entry_finder = dict({i[-1]: i for i in heap})
+        self.REMOVED = "<remove_marker>"
+        self.length = 0
+
+    def get_length(self):
+        return self.length
+
+    def insert(self, node, priority=0):
+        """
+        'entry_finder' bookkeeps all valid entries, which are bonded in
+        'heap'. Changing an entry in either leads to changes in both.
+        """
+        if node in self.entry_finder:
+            self.delete(node)
+        entry = [priority, node]
+        self.entry_finder[node] = entry
+        heapq.heappush(self.heap, entry)
+        self.length += 1
+
+    def delete(self, node):
+        """
+        Instead of breaking invariant by direct removal of an entry, mark
+        the entry as "REMOVED" in 'heap' and remove it from 'entry_finder'.
+        Logic in 'pop()' properly takes care of the deleted nodes.
+        """
+        entry = self.entry_finder.pop(node)
+        entry[-1] = self.REMOVED
+        self.length -= 1
+        return entry[0]
+
+    def pop(self):
+        """
+        Any popped node marked by "REMOVED" does not return, the deleted
+        nodes might be popped or still in heap, either case is fine.
+        """
+        while self.heap:
+            priority, node = heapq.heappop(self.heap)
+            if node is not self.REMOVED:
+                del self.entry_finder[node]
+                self.length -= 1
+                return priority, node
+        raise KeyError('pop from an empty priority queue')

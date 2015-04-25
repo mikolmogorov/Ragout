@@ -160,9 +160,14 @@ def run_unsafe(args):
                                               conservative, phylogeny)
 
         graph = bg.BreakpointGraph()
-        graph.build_from(perm_container, recipe, last_scaffolds)
+        graph.build_from(perm_container, recipe)
 
-        adjacencies = graph.find_adjacencies(phylogeny)
+        if last_scaffolds is None:
+        #if True:
+            adjacencies = graph.find_adjacencies(phylogeny)
+        else:
+            adjacencies = graph.find_consistent_adjacencies(phylogeny, last_scaffolds)
+
         scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
 
         if last_scaffolds is not None:

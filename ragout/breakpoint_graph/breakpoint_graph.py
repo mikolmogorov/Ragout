@@ -18,7 +18,7 @@ import networkx as nx
 from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.algorithms import (min_weight_matching,
                                                 alternating_cycle,
-                                                get_preferred_edges)
+                                                get_path_cover)
 
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
@@ -34,7 +34,7 @@ class BreakpointGraph:
         self.targets = []
         self.references = []
 
-    def build_from(self, perm_container, recipe, prev_scaffolds):
+    def build_from(self, perm_container, recipe):
         """
         Builds breakpoint graph from permutations
         """
@@ -82,13 +82,33 @@ class BreakpointGraph:
                                        distance=distance,
                                        infinity=infinity)
 
-        if prev_scaffolds is not None:
-            trusted = _get_trusted_adjacencies(perm_container.target_perms,
-                                               prev_scaffolds)
-            self.preferred_edges = get_preferred_edges(self.bp_graph, trusted)
-            #print(len(self.preferred_edges))
-
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
+
+    def find_consistent_adjacencies(self, phylogeny, prev_scaffolds):
+        weighted_graph = self._make_weighted(self.bp_graph, phylogeny)
+        trusted_adj = _get_trusted_adjacencies(self.perm_container.target_perms,
+                                               prev_scaffolds)
+        chosen_edges = get_path_cover(weighted_graph, trusted_adj)
+
+        adjacencies = {}
+        for edge in chosen_edges:
+            #infinity edges correspond to joined chromosome ends -- ignore them
+            if self._is_infinity(edge[0], edge[1]):
+                continue
+
+            distance = self._get_distance(edge[0], edge[1])
+            supporting_genomes = []
+            if self.bp_graph.has_edge(edge[0], edge[1]):
+                for e in self.bp_graph[edge[0]][edge[1]].values():
+                    supporting_genomes.append(e["genome_id"])
+            assert abs(edge[0]) != abs(edge[1])
+            adjacencies[edge[0]] = Adjacency(edge[1], distance,
+                                              supporting_genomes)
+            adjacencies[edge[1]] = Adjacency(edge[0], distance,
+                                              supporting_genomes)
+
+        return adjacencies
+
 
     def find_adjacencies(self, phylogeny):
         """
@@ -158,8 +178,7 @@ class BreakpointGraph:
                     unused_nodes.remove(n)
                 continue
 
-            matching_edges = min_weight_matching(trim_subgraph,
-                                                 self.preferred_edges)
+            matching_edges = min_weight_matching(trim_subgraph)
 
             for edge in matching_edges:
                 for n in edge:
@@ -263,7 +282,7 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
     """
     Get trusted adjaencies from previous iteration
     """
-    trusted_adj = {}
+    trusted_adj = []
     perm_by_id = {perm.chr_name : perm for perm in permutations}
 
     for scf in prev_scaffolds:
@@ -275,11 +294,11 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
                         else -left_blocks[0].signed_id())
 
                 right_blocks = perm_by_id[next_cont.seq_name].blocks
-                right = (right_blocks[0].signed_id() if prev_cont.sign > 0
+                right = (right_blocks[0].signed_id() if next_cont.sign > 0
                          else -right_blocks[-1].signed_id())
 
-                trusted_adj[-left] = right
-                trusted_adj[right] = -left
+                trusted_adj.append((-left, right))
+
     return trusted_adj
 
 
