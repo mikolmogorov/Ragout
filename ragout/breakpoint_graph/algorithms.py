@@ -77,7 +77,7 @@ def alternating_cycle(graph, node_1, node_2, target_id):
     return good_path
 
 
-def get_preferred_edges(graph, trusted_adjacencies):
+def get_preferred_edges(graph, trusted_adjacencies, restricted_nodes):
     """
     Try to bring edges that are supported by previous iteration
     to the front
@@ -94,8 +94,8 @@ def get_preferred_edges(graph, trusted_adjacencies):
             #print("Cur", cur_node)
             if cur_node == goal_node:
                 return cur_depth
-            if cur_node == -goal_node:
-                return float("inf")
+            if abs(cur_node) in restricted_nodes:
+                continue
 
             for other_node in graph.neighbors(cur_node):
                 if -other_node not in visited:
@@ -103,6 +103,8 @@ def get_preferred_edges(graph, trusted_adjacencies):
                     queue.append((-other_node, cur_depth + 1))
                     visited.add(-other_node)
                     visited.add(other_node)
+
+        return float("inf")
 
     for node in graph.nodes():
         if len(graph.neighbors(node)) == 1 or node not in trusted_adjacencies:

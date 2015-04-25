@@ -83,9 +83,11 @@ class BreakpointGraph:
                                        infinity=infinity)
 
         if prev_scaffolds is not None:
-            trusted = _get_trusted_adjacencies(perm_container.target_perms,
-                                               prev_scaffolds)
-            self.preferred_edges = get_preferred_edges(self.bp_graph, trusted)
+            trusted, restricted = \
+                _get_trusted_adjacencies(perm_container.target_perms,
+                                         prev_scaffolds)
+            self.preferred_edges = get_preferred_edges(self.bp_graph, trusted,
+                                                       restricted)
             #print(len(self.preferred_edges))
 
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
@@ -264,6 +266,7 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
     Get trusted adjaencies from previous iteration
     """
     trusted_adj = {}
+    restricted_nodes = set()
     perm_by_id = {perm.chr_name : perm for perm in permutations}
 
     for scf in prev_scaffolds:
@@ -280,7 +283,13 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
 
                 trusted_adj[-left] = right
                 trusted_adj[right] = -left
-    return trusted_adj
+
+        for cnt in scf.contigs:
+            if cnt.seq_name in perm_by_id:
+                for block in perm_by_id[cnt.seq_name].blocks:
+                    restricted_nodes.add(block.block_id)
+
+    return trusted_adj, restricted_nodes
 
 
 def _median(values):
