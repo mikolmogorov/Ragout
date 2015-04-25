@@ -7,10 +7,12 @@ Various algorithms for breakpoint graph processing
 """
 
 from __future__ import print_function
-#from Queue import PriorityQueue
 import heapq
+import logging
 
 import networkx as nx
+
+logger = logging.getLogger()
 
 def min_weight_matching(graph):
     """
@@ -78,6 +80,7 @@ def get_path_cover(graph, trusted_adj):
 
     for (adj_left, adj_right) in trusted_adj:
         p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes)
+        logger.debug(p)
         if not p:
             p = [adj_left, adj_right]
 
@@ -95,16 +98,14 @@ def _shortest_path(graph, src, dst, prohibited_nodes):
     """
     Finds shortest path wrt to restricted nodes
     """
-    #print("Finding path from {0} to {1}".format(src, dst))
+    logger.debug("Finding path from {0} to {1}".format(src, dst))
     dist = {n : float("inf") for n in graph.nodes()}
     dist[src] = 0
-    parent = {n : n for n in graph.nodes()}
+    parent = {}
     queue = PriorityQueue()
     queue.insert((src, True), 0)
 
     found = False
-    #print(graph[-186])
-    #print(graph[186])
     while queue.get_length():
         cur_dist, (cur_node, colored) = queue.pop()
         if cur_node == dst:
@@ -115,18 +116,8 @@ def _shortest_path(graph, src, dst, prohibited_nodes):
             continue
 
         neighbors = graph.neighbors(cur_node) if colored else [-cur_node]
-        #if 186 in neighbors:
-        #    print(neighbors, cur_node)
-        #    print(graph.neighbors(cur_node))
-        #    print(graph[186])
-        #    print(graph[-186])
-
         for other_node in neighbors:
             weight = graph[cur_node][other_node]["weight"] if colored else 0
-            #if other_node == -186:
-            #    print(cur_node)
-            #print(graph[other_node])
-            #print(cur_node, colored)
             if dist[other_node] > dist[cur_node] + weight:
                 dist[other_node] = dist[cur_node] + weight
                 parent[other_node] = cur_node
@@ -150,13 +141,12 @@ class PriorityQueue(object):
     an abitrary node while keeping invariant
     """
 
-    def __init__(self, heap=[]):
+    def __init__(self):
         """
         if 'heap' is not empty, make sure it's heapified
         """
-        heapq.heapify(heap)
-        self.heap = heap
-        self.entry_finder = dict({i[-1]: i for i in heap})
+        self.heap = []
+        self.entry_finder = {}
         self.REMOVED = "<remove_marker>"
         self.length = 0
 

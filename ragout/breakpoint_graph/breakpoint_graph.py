@@ -297,7 +297,9 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
                 right = (right_blocks[0].signed_id() if next_cont.sign > 0
                          else -right_blocks[-1].signed_id())
 
-                trusted_adj.append((-left, right))
+                #TODO: fix it
+                if prev_cont.seq_name != next_cont.seq_name:
+                    trusted_adj.append((-left, right))
 
     return trusted_adj
 
