@@ -275,7 +275,7 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
                         else -left_blocks[0].signed_id())
 
                 right_blocks = perm_by_id[next_cont.seq_name].blocks
-                right = (right_blocks[0].signed_id() if prev_cont.sign > 0
+                right = (right_blocks[0].signed_id() if next_cont.sign > 0
                          else -right_blocks[-1].signed_id())
 
                 trusted_adj[-left] = right
