@@ -9,6 +9,7 @@ Various algorithms for breakpoint graph processing
 from __future__ import print_function
 import heapq
 import logging
+from collections import defaultdict
 
 import networkx as nx
 
@@ -80,7 +81,7 @@ def get_path_cover(graph, trusted_adj):
 
     for (adj_left, adj_right) in trusted_adj:
         p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes)
-        logger.debug(p)
+        #logger.debug(p)
         if not p:
             p = [adj_left, adj_right]
 
@@ -98,8 +99,8 @@ def _shortest_path(graph, src, dst, prohibited_nodes):
     """
     Finds shortest path wrt to restricted nodes
     """
-    logger.debug("Finding path from {0} to {1}".format(src, dst))
-    dist = {n : float("inf") for n in graph.nodes()}
+    #logger.debug("Finding path from {0} to {1}".format(src, dst))
+    dist = defaultdict(lambda: float("inf"))
     dist[src] = 0
     parent = {}
     queue = PriorityQueue()
