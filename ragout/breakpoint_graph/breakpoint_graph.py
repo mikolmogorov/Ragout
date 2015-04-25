@@ -86,9 +86,11 @@ class BreakpointGraph:
 
     def find_consistent_adjacencies(self, phylogeny, prev_scaffolds):
         weighted_graph = self._make_weighted(self.bp_graph, phylogeny)
-        trusted_adj = _get_trusted_adjacencies(self.perm_container.target_perms,
-                                               prev_scaffolds)
-        chosen_edges = get_path_cover(weighted_graph, trusted_adj)
+        trusted_adj, mandatory_adj = \
+            _get_trusted_adjacencies(self.perm_container.target_perms,
+                                     prev_scaffolds)
+        chosen_edges = get_path_cover(weighted_graph, trusted_adj,
+                                      mandatory_adj)
 
         adjacencies = {}
         for edge in chosen_edges:
@@ -283,6 +285,7 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
     Get trusted adjaencies from previous iteration
     """
     trusted_adj = []
+    mandatory_adj = []
     perm_by_id = {perm.chr_name : perm for perm in permutations}
 
     for scf in prev_scaffolds:
@@ -298,10 +301,15 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
                          else -right_blocks[-1].signed_id())
 
                 #TODO: fix it
-                if prev_cont.seq_name != next_cont.seq_name:
-                    trusted_adj.append((-left, right))
+                assert prev_cont.seq_name != next_cont.seq_name
+                trusted_adj.append((-left, right))
 
-    return trusted_adj
+        for cnt in scf.contigs:
+            blocks = perm_by_id[cnt.seq_name].blocks
+            mandatory_adj.append((-perm_by_id[cnt.seq_name].blocks[0].signed_id(),
+                                  perm_by_id[cnt.seq_name].blocks[-1].signed_id()))
+
+    return trusted_adj, mandatory_adj
 
 
 def _median(values):

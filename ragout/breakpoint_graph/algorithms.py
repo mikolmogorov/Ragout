@@ -72,17 +72,24 @@ def alternating_cycle(graph, node_1, node_2, target_id):
     return good_path
 
 
-def get_path_cover(graph, trusted_adj):
+def get_path_cover(graph, trusted_adj, mandatory_adj):
     adjacencies = []
     prohibited_nodes = set()
+    black_adj = {}
+    for (u, v) in mandatory_adj:
+        black_adj[u] = v
+        black_adj[v] = u
+
     for adj in trusted_adj:
         prohibited_nodes.add(abs(adj[0]))
         prohibited_nodes.add(abs(adj[1]))
 
     for (adj_left, adj_right) in trusted_adj:
-        p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes)
+        p = _shortest_path(graph, adj_left, adj_right,
+                           prohibited_nodes, black_adj)
         #logger.debug(p)
         if not p:
+            print(adj_left, adj_right)
             p = [adj_left, adj_right]
 
         assert len(p) % 2 == 0
@@ -95,7 +102,7 @@ def get_path_cover(graph, trusted_adj):
     return adjacencies
 
 
-def _shortest_path(graph, src, dst, prohibited_nodes):
+def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
     """
     Finds shortest path wrt to restricted nodes
     """
@@ -115,8 +122,11 @@ def _shortest_path(graph, src, dst, prohibited_nodes):
 
         if cur_node != src and abs(cur_node) in prohibited_nodes:
             continue
+        if not colored and cur_node not in black_adj:
+            continue
 
-        neighbors = graph.neighbors(cur_node) if colored else [-cur_node]
+        neighbors = (graph.neighbors(cur_node) if colored
+                     else [black_adj[cur_node]])
         for other_node in neighbors:
             weight = graph[cur_node][other_node]["weight"] if colored else 0
             if dist[other_node] > dist[cur_node] + weight:
