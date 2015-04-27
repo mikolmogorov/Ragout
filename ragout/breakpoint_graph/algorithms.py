@@ -87,9 +87,8 @@ def get_path_cover(graph, trusted_adj, mandatory_adj):
     for (adj_left, adj_right) in trusted_adj:
         p = _shortest_path(graph, adj_left, adj_right,
                            prohibited_nodes, black_adj)
-        #logger.debug(p)
+        logger.debug(p)
         if not p:
-            print(adj_left, adj_right)
             p = [adj_left, adj_right]
 
         assert len(p) % 2 == 0
@@ -116,17 +115,19 @@ def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
     found = False
     while queue.get_length():
         cur_dist, (cur_node, colored) = queue.pop()
+        #print(cur_node)
         if cur_node == dst:
             found = True
             break
 
         if cur_node != src and abs(cur_node) in prohibited_nodes:
             continue
-        if not colored and cur_node not in black_adj:
+        if not colored and -cur_node not in black_adj:
             continue
 
         neighbors = (graph.neighbors(cur_node) if colored
-                     else [black_adj[cur_node]])
+                     #else [-cur_node])
+                     else [-black_adj[-cur_node]])
         for other_node in neighbors:
             weight = graph[cur_node][other_node]["weight"] if colored else 0
             if dist[other_node] > dist[cur_node] + weight:

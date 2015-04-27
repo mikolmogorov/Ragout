@@ -304,10 +304,9 @@ def _get_trusted_adjacencies(permutations, prev_scaffolds):
                 assert prev_cont.seq_name != next_cont.seq_name
                 trusted_adj.append((-left, right))
 
-        for cnt in scf.contigs:
-            blocks = perm_by_id[cnt.seq_name].blocks
-            mandatory_adj.append((-perm_by_id[cnt.seq_name].blocks[0].signed_id(),
-                                  perm_by_id[cnt.seq_name].blocks[-1].signed_id()))
+        for perm in permutations:
+            mandatory_adj.append((-perm.blocks[0].signed_id(),
+                                  perm.blocks[-1].signed_id()))
 
     return trusted_adj, mandatory_adj
 
