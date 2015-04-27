@@ -53,8 +53,7 @@ class BreakpointGraph:
         for perm in chain(perm_container.ref_perms,
                           perm_container.target_perms):
 
-            if len(perm.blocks) < 2:
-                continue
+            assert perm.blocks
 
             for prev_block, next_block in perm.iter_pairs():
                 self.bp_graph.add_node(-prev_block.signed_id())
