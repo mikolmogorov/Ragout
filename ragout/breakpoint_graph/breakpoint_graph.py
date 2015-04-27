@@ -18,7 +18,8 @@ import networkx as nx
 from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.algorithms import (min_weight_matching,
                                                 alternating_cycle,
-                                                get_path_cover)
+                                                get_path_cover,
+                                                add_candidate_edges)
 
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
@@ -84,7 +85,8 @@ class BreakpointGraph:
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
     def find_consistent_adjacencies(self, phylogeny, prev_scaffolds):
-        weighted_graph = self._make_weighted(self.bp_graph, phylogeny)
+        candidate_graph = add_candidate_edges(self.bp_graph, self.targets[0])
+        weighted_graph = self._make_weighted(candidate_graph, phylogeny)
         trusted_adj, mandatory_adj = \
             _get_trusted_adjacencies(self.perm_container.target_perms,
                                      prev_scaffolds)
@@ -189,9 +191,9 @@ class BreakpointGraph:
         #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
+            cycle = alternating_cycle(subgraph, node_1, node_2, self.targets[0])
             if (self.perm_container.good_adj(abs(node_1), abs(node_2)) and
-                abs(node_1) != abs(node_2) and
-                alternating_cycle(subgraph, node_1, node_2, self.targets[0])):
+                abs(node_1) != abs(node_2) and cycle is not None):
 
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
@@ -233,7 +235,8 @@ class BreakpointGraph:
             adjacencies = {}
             for neighbor in graph.neighbors(node):
                 for edge in graph[node][neighbor].values():
-                    adjacencies[edge["genome_id"]] = neighbor
+                    if "candidate" not in edge:
+                        adjacencies[edge["genome_id"]] = neighbor
 
             for ref_id in self.references:
                 if ref_id not in adjacencies:

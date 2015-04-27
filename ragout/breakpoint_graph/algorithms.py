@@ -10,6 +10,7 @@ from __future__ import print_function
 import heapq
 import logging
 from collections import defaultdict
+from itertools import product
 
 import networkx as nx
 
@@ -50,8 +51,7 @@ def alternating_cycle(graph, node_1, node_2, target_id):
 
     good_path = False
     for path in nx.all_simple_paths(simple_graph, node_1, node_2):
-        #2-break or 3-break
-        if len(path) % 2 == 1 or len(path) / 2 > 3:
+        if len(path) % 2 == 1:
             continue
 
         edges = list(zip(path[:-1], path[1:]))
@@ -69,7 +69,39 @@ def alternating_cycle(graph, node_1, node_2, target_id):
             good_path = True
             break
 
-    return good_path
+    return len(path) / 2 if good_path else None
+
+
+def add_candidate_edges(graph, target_id):
+    graph = graph.copy()
+    candidate_nodes = set()
+
+    subgraphs = list(nx.connected_component_subgraphs(graph))
+    for subgr in subgraphs:
+        known_nodes = set(subgr.nodes())
+        for v1, v2, data in subgr.edges_iter(data=True):
+            genome_ids = list(map(lambda e: e["genome_id"],
+                                  subgr[v1][v2].values()))
+            if target_id in genome_ids:
+                known_nodes.discard(v1)
+                known_nodes.discard(v2)
+
+        if len(known_nodes) == 2:
+            node_1, node_2 = tuple(known_nodes)
+            if subgr.has_edge(node_1, node_2):
+                continue
+
+            cycle = alternating_cycle(subgr, node_1, node_2, target_id)
+            if (abs(node_1) != abs(node_2) and cycle is not None):
+                candidate_nodes.add(node_1)
+                candidate_nodes.add(node_2)
+
+    for n1, n2 in product(candidate_nodes, repeat=2):
+        if abs(n1) != abs(n2):
+            graph.add_edge(n1, n2, candidate=True)
+        #logger.debug("Added candidate edge {0} -- {1}".format(n1, n2))
+
+    return graph
 
 
 def get_path_cover(graph, trusted_adj, mandatory_adj):
@@ -87,11 +119,15 @@ def get_path_cover(graph, trusted_adj, mandatory_adj):
     for (adj_left, adj_right) in trusted_adj:
         p = _shortest_path(graph, adj_left, adj_right,
                            prohibited_nodes, black_adj)
-        logger.debug(p)
+        #logger.debug(p)
         if not p:
             p = [adj_left, adj_right]
 
-        assert len(p) % 2 == 0
+        #assert len(p) % 2 == 0
+        if len(p) % 2 != 0:
+            print(p)
+            p = [adj_left, adj_right]
+
         for i in xrange(len(p) / 2):
             adj_left, adj_right = p[i * 2], p[i * 2 + 1]
             adjacencies.append((adj_left, adj_right))
@@ -115,10 +151,13 @@ def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
     found = False
     while queue.get_length():
         cur_dist, (cur_node, colored) = queue.pop()
-        #print(cur_node)
+        #print(cur_node, colored)
         if cur_node == dst:
-            found = True
-            break
+            if not colored:
+                found = True
+                break
+            else:
+                continue
 
         if cur_node != src and abs(cur_node) in prohibited_nodes:
             continue
