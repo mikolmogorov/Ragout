@@ -16,6 +16,7 @@ import networkx as nx
 
 logger = logging.getLogger()
 
+
 def min_weight_matching(graph):
     """
     Finds a perfect matching with minimum weight
@@ -72,8 +73,12 @@ def alternating_cycle(graph, node_1, node_2, target_id):
     return len(path) / 2 if good_path else None
 
 
-def add_candidate_edges(graph, target_id):
-    graph = graph.copy()
+def get_orphaned_nodes(graph, target_id):
+    """
+    Get nodes suspected to rearrangements
+    """
+    logger.debug("Getting candidate nodes")
+    #graph = graph.copy()
     candidate_nodes = set()
 
     subgraphs = list(nx.connected_component_subgraphs(graph))
@@ -96,15 +101,23 @@ def add_candidate_edges(graph, target_id):
                 candidate_nodes.add(node_1)
                 candidate_nodes.add(node_2)
 
+    return candidate_nodes
+
+    """
+    logger.debug("Modifying graph")
+    counter = 0
     for n1, n2 in product(candidate_nodes, repeat=2):
         if abs(n1) != abs(n2):
             graph.add_edge(n1, n2, candidate=True)
-        #logger.debug("Added candidate edge {0} -- {1}".format(n1, n2))
+            counter += 1
+    logger.debug("Added {0} extra edges".format(counter))
 
     return graph
+    """
 
 
-def get_path_cover(graph, trusted_adj, mandatory_adj):
+def get_path_cover(graph, trusted_adj, mandatory_adj, candidate_nodes):
+    logger.debug("Computing path cover")
     adjacencies = []
     prohibited_nodes = set()
     black_adj = {}
@@ -117,8 +130,8 @@ def get_path_cover(graph, trusted_adj, mandatory_adj):
         prohibited_nodes.add(abs(adj[1]))
 
     for (adj_left, adj_right) in trusted_adj:
-        p = _shortest_path(graph, adj_left, adj_right,
-                           prohibited_nodes, black_adj)
+        p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes,
+                           black_adj, candidate_nodes)
         #logger.debug(p)
         if not p:
             p = [adj_left, adj_right]
@@ -137,7 +150,8 @@ def get_path_cover(graph, trusted_adj, mandatory_adj):
     return adjacencies
 
 
-def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
+def _shortest_path(graph, src, dst, prohibited_nodes,
+                   black_adj, candidate_nodes):
     """
     Finds shortest path wrt to restricted nodes
     """
@@ -151,7 +165,6 @@ def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
     found = False
     while queue.get_length():
         cur_dist, (cur_node, colored) = queue.pop()
-        #print(cur_node, colored)
         if cur_node == dst:
             if not colored:
                 found = True
@@ -165,10 +178,20 @@ def _shortest_path(graph, src, dst, prohibited_nodes, black_adj):
             continue
 
         neighbors = (graph.neighbors(cur_node) if colored
-                     #else [-cur_node])
                      else [-black_adj[-cur_node]])
+        if colored and cur_node in candidate_nodes:
+            extra_neighbors = candidate_nodes - set([cur_node])
+            neighbors.extend(list(extra_neighbors))
+
         for other_node in neighbors:
-            weight = graph[cur_node][other_node]["weight"] if colored else 0
+            if colored:
+                if graph.has_edge(cur_node, other_node):
+                    weight = graph[cur_node][other_node]["weight"]
+                else:
+                    weight = 1
+            else:
+                weight = 0
+
             if dist[other_node] > dist[cur_node] + weight:
                 dist[other_node] = dist[cur_node] + weight
                 parent[other_node] = cur_node

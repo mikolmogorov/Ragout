@@ -19,7 +19,7 @@ from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.algorithms import (min_weight_matching,
                                                 alternating_cycle,
                                                 get_path_cover,
-                                                add_candidate_edges)
+                                                get_orphaned_nodes)
 
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
@@ -85,13 +85,16 @@ class BreakpointGraph:
         logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
 
     def find_consistent_adjacencies(self, phylogeny, prev_scaffolds):
-        candidate_graph = add_candidate_edges(self.bp_graph, self.targets[0])
-        weighted_graph = self._make_weighted(candidate_graph, phylogeny)
+        """
+        Finding adjacencies consisten with previous iteration
+        """
+        candidate_nodes = get_orphaned_nodes(self.bp_graph, self.targets[0])
+        weighted_graph = self._make_weighted(self.bp_graph, phylogeny)
         trusted_adj, mandatory_adj = \
             _get_trusted_adjacencies(self.perm_container.target_perms,
                                      prev_scaffolds)
         chosen_edges = get_path_cover(weighted_graph, trusted_adj,
-                                      mandatory_adj)
+                                      mandatory_adj, candidate_nodes)
 
         adjacencies = {}
         for edge in chosen_edges:

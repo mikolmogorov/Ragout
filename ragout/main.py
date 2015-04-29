@@ -155,15 +155,15 @@ def run_unsafe(args):
             debugger.set_debug_dir(debug_dir)
 
         conservative = last_scaffolds is None
+        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
         perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, args.resolve_repeats,
+                                              recipe, rr,
                                               conservative, phylogeny)
 
         graph = bg.BreakpointGraph()
         graph.build_from(perm_container, recipe)
 
         if last_scaffolds is None:
-        #if True:
             adjacencies = graph.find_adjacencies(phylogeny)
         else:
             adjacencies = graph.find_consistent_adjacencies(phylogeny, last_scaffolds)
