@@ -4,52 +4,39 @@
 
 """
 This module implements a breakpoint graph
-as well as the main algorithm which recovers missing
-adjacencies
+which is widely used in Ragout
 """
 
-from collections import namedtuple
 from itertools import chain
 import os
 import logging
+from copy import copy
 
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
-from ragout.breakpoint_graph.algorithms import (min_weight_matching,
-                                                alternating_cycle,
-                                                get_path_cover,
-                                                get_orphaned_nodes)
 
-Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
 
-class BreakpointGraph:
+class BreakpointGraph(object):
     """
     Breakpoint graph implementation
     """
     def __init__(self):
         self.bp_graph = nx.MultiGraph()
-        self.targets = []
+        self.target = None
         self.references = []
 
-    def build_from(self, perm_container, recipe):
+    def build_from(self, perm_container):
         """
         Builds breakpoint graph from permutations
         """
-        logger.debug("Building breakpoint graph")
-        self.perm_container = perm_container
-        self.preferred_edges = {}
-
         for perm in perm_container.ref_perms:
             if perm.genome_name not in self.references:
                 self.references.append(perm.genome_name)
-
-        for perm in perm_container.target_perms:
-            if perm.genome_name not in self.targets:
-                self.targets.append(perm.genome_name)
+        self.target = perm_container.target_perms[0].genome_name
 
         for perm in chain(perm_container.ref_perms,
                           perm_container.target_perms):
@@ -68,192 +55,130 @@ class BreakpointGraph:
                                        distance=distance,
                                        infinity=False)
 
-            if (perm.genome_name in self.references and
-                not recipe["genomes"][perm.genome_name]["draft"]):
-
+            if (perm.genome_name in self.references and not perm.draft):
                 distance = (perm.chr_len - perm.blocks[-1].end +
                             perm.blocks[0].start)
                 assert distance >= 0
 
-                infinity = not recipe["genomes"][perm.genome_name]["circular"]
+                infinity = not perm.circular
                 self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                        perm.blocks[0].signed_id(),
                                        genome_id=perm.genome_name,
                                        distance=distance,
                                        infinity=infinity)
 
-        logger.debug("Built graph with {0} nodes".format(len(self.bp_graph)))
+        logger.debug("Built breakpoint graph with {0} nodes"
+                                        .format(len(self.bp_graph)))
 
-    def find_consistent_adjacencies(self, phylogeny, prev_scaffolds):
+    def connected_components(self):
+        subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+        bp_graphs = []
+        for subgr in subgraphs:
+            bg = BreakpointGraph()
+            bg.target = self.target
+            bg.references = copy(self.references)
+            bg.bp_graph = subgr
+            bp_graphs.append(bg)
+        return bp_graphs
+
+    def supporting_genomes(self, node_1, node_2):
+        if not self.bp_graph.has_edge(node_1, node_2):
+            return []
+        return list(map(lambda e: e["genome_id"],
+                    self.bp_graph[node_1][node_2].values()))
+
+    def make_weighted(self, phylogeny):
         """
-        Finding adjacencies consisten with previous iteration
+        Converts a breakpoint graph into a weighted adjacency graph
+        using half-breakpoint state parsimony problem
         """
-        candidate_nodes = get_orphaned_nodes(self.bp_graph, self.targets[0])
-        weighted_graph = self._make_weighted(self.bp_graph, phylogeny)
-        trusted_adj, mandatory_adj = \
-            _get_trusted_adjacencies(self.perm_container.target_perms,
-                                     prev_scaffolds)
-        chosen_edges = get_path_cover(weighted_graph, trusted_adj,
-                                      mandatory_adj, candidate_nodes)
-
-        adjacencies = {}
-        for edge in chosen_edges:
-            #infinity edges correspond to joined chromosome ends -- ignore them
-            if self._is_infinity(edge[0], edge[1]):
-                continue
-
-            distance = self._get_distance(edge[0], edge[1])
-            supporting_genomes = []
-            if self.bp_graph.has_edge(edge[0], edge[1]):
-                for e in self.bp_graph[edge[0]][edge[1]].values():
-                    supporting_genomes.append(e["genome_id"])
-            assert abs(edge[0]) != abs(edge[1])
-            adjacencies[edge[0]] = Adjacency(edge[1], distance,
-                                              supporting_genomes)
-            adjacencies[edge[1]] = Adjacency(edge[0], distance,
-                                              supporting_genomes)
-
-        return adjacencies
-
-
-    def find_adjacencies(self, phylogeny):
-        """
-        Infers missing adjacencies (the main Ragout part)
-        """
-        logger.info("Resolving breakpoint graph")
-
-        subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
-        logger.debug("Found {0} connected components"
-                     .format(len(subgraphs)))
-
-        chosen_edges = []
-        self.orphans_count = 0
-        self.guessed_count = 0
-        self.trimmed_count = 0
-        for subgraph in subgraphs:
-            chosen_edges.extend(self._process_component(subgraph, phylogeny))
-
-        logger.debug("Inferred {0} adjacencies".format(len(chosen_edges)))
-        logger.debug("{0} orphaned nodes".format(self.orphans_count))
-        logger.debug("{0} guessed edges".format(self.guessed_count))
-        logger.debug("{0} trimmed edges".format(self.trimmed_count))
-
-        adjacencies = {}
-        for edge in chosen_edges:
-            #infinity edges correspond to joined chromosome ends -- ignore them
-            if self._is_infinity(edge[0], edge[1]):
-                continue
-
-            distance = self._get_distance(edge[0], edge[1])
-            supporting_genomes = []
-            if self.bp_graph.has_edge(edge[0], edge[1]):
-                for e in self.bp_graph[edge[0]][edge[1]].values():
-                    supporting_genomes.append(e["genome_id"])
-            assert abs(edge[0]) != abs(edge[1])
-            adjacencies[edge[0]] = Adjacency(edge[1], distance,
-                                              supporting_genomes)
-            adjacencies[edge[1]] = Adjacency(edge[0], distance,
-                                              supporting_genomes)
-
-        if debugger.debugging:
-            phylo_out = os.path.join(debugger.debug_dir, "phylogeny.txt")
-            graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
-            edges_out = os.path.join(debugger.debug_dir, "predicted_edges.dot")
-            _output_graph(self.bp_graph, graph_out)
-            _output_edges(chosen_edges, edges_out)
-            _output_phylogeny(phylogeny.tree_string, self.targets[0], phylo_out)
-
-        return adjacencies
-
-    def _process_component(self, subgraph, phylogeny):
-        """
-        Processes a connected component of the breakpoint graph
-        """
-        weighted_graph = self._make_weighted(subgraph, phylogeny)
-        trimmed_graph = self._trim_known_edges(weighted_graph)
-        unused_nodes = set(trimmed_graph.nodes())
-
-        chosen_edges = []
-        for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
-            if len(trim_subgraph) < 2:
-                continue
-
-            if len(trim_subgraph) == 2:
-                chosen_edges.append(tuple(trim_subgraph.nodes()))
-                for n in trim_subgraph.nodes():
-                    unused_nodes.remove(n)
-                continue
-
-            matching_edges = min_weight_matching(trim_subgraph)
-
-            for edge in matching_edges:
-                for n in edge:
-                    unused_nodes.remove(n)
-            chosen_edges.extend(matching_edges)
-
-        #predicting target-specific rearrangement
-        if len(unused_nodes) == 2:
-            node_1, node_2 = tuple(unused_nodes)
-            cycle = alternating_cycle(subgraph, node_1, node_2, self.targets[0])
-            if (self.perm_container.good_adj(abs(node_1), abs(node_2)) and
-                abs(node_1) != abs(node_2) and cycle is not None):
-
-                self.guessed_count += 1
-                chosen_edges.append((node_1, node_2))
-                unused_nodes.clear()
-
-        self.orphans_count += len(unused_nodes)
-
-        return chosen_edges
-
-    def _trim_known_edges(self, graph):
-        """
-        Removes edges with known adjacencies in target (red edges from paper)
-        """
-        trimmed_graph = graph.copy()
-        for v1, v2, data in graph.edges_iter(data=True):
-            if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
-                continue
-
-            genome_ids = list(map(lambda e: e["genome_id"],
-                                  self.bp_graph[v1][v2].values()))
-            target_id = self.targets[0]
-            if target_id in genome_ids:
-                for node in [v1, v2]:
-                    trimmed_graph.remove_node(node)
-                self.trimmed_count += 1
-
-        return trimmed_graph
-
-    def _make_weighted(self, graph, phylogeny):
-        """
-        Converts a breakpoint graph into a weighted graph
-        """
-        assert len(graph) >= 2
+        assert len(self.bp_graph) >= 2
         g = nx.Graph()
-        g.add_nodes_from(graph.nodes())
-        target_id = self.targets[0]
+        g.add_nodes_from(self.bp_graph.nodes())
 
-        for node in graph.nodes():
+        for node in self.bp_graph.nodes():
             adjacencies = {}
-            for neighbor in graph.neighbors(node):
-                for edge in graph[node][neighbor].values():
-                    if "candidate" not in edge:
-                        adjacencies[edge["genome_id"]] = neighbor
+            for neighbor in self.bp_graph.neighbors(node):
+                for edge in self.bp_graph[node][neighbor].values():
+                    adjacencies[edge["genome_id"]] = neighbor
 
             for ref_id in self.references:
                 if ref_id not in adjacencies:
                     adjacencies[ref_id] = None  #"void" state in paper
 
-            for neighbor in graph.neighbors(node):
-                adjacencies[target_id] = neighbor
+            for neighbor in self.bp_graph.neighbors(node):
+                adjacencies[self.target] = neighbor
                 break_weight = phylogeny.estimate_tree(adjacencies)
 
                 _update_edge(g, node, neighbor, break_weight)
 
         return g
 
-    def _is_infinity(self, node_1, node_2):
+    def get_orphaned_nodes(self):
+        """
+        Get nodes suspected to rearrangements
+        """
+        logger.debug("Getting candidate nodes")
+        candidate_nodes = set()
+
+        subgraphs = self.connected_components()
+        for subgr in subgraphs:
+            known_nodes = set(subgr.bp_graph.nodes())
+            for v1, v2, data in subgr.bp_graph.edges_iter(data=True):
+                genome_ids = subgr.supporting_genomes(v1, v2)
+                if self.target in genome_ids:
+                    known_nodes.discard(v1)
+                    known_nodes.discard(v2)
+
+            if len(known_nodes) == 2:
+                node_1, node_2 = tuple(known_nodes)
+                if subgr.bp_graph.has_edge(node_1, node_2):
+                    continue
+
+                cycle = subgr.alternating_cycle(node_1, node_2)
+                if (abs(node_1) != abs(node_2) and cycle is not None):
+                    candidate_nodes.add(node_1)
+                    candidate_nodes.add(node_2)
+
+        return candidate_nodes
+
+    def alternating_cycle(self, node_1, node_2):
+        """
+        Determines if there is a cycle of alternating colors
+        that goes through the given edge
+        """
+        def get_genome_ids((u, v)):
+            return self.supporting_genomes(u, v)
+
+        simple_graph = nx.Graph()
+        for (u, v) in self.bp_graph.edges_iter():
+            simple_graph.add_edge(u, v)
+        assert not simple_graph.has_edge(node_1, node_2)
+
+        good_path = False
+        for path in nx.all_simple_paths(simple_graph, node_1, node_2):
+            if len(path) % 2 == 1:
+                continue
+
+            edges = list(zip(path[:-1], path[1:]))
+            odd_colors = list(map(get_genome_ids, edges[0::2]))
+            even_colors = list(map(get_genome_ids, edges[1::2]))
+
+            if not all(map(lambda e: set(e) == set([self.target]),
+                           even_colors)):
+                continue
+
+            common_genomes = set(odd_colors[0])
+            for edge_colors in odd_colors:
+                common_genomes = common_genomes.intersection(edge_colors)
+
+            if common_genomes:
+                good_path = True
+                break
+
+        return len(path) / 2 if good_path else None
+
+    def is_infinity(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):
             return False
 
@@ -262,7 +187,7 @@ class BreakpointGraph:
                 return True
         return False
 
-    def _get_distance(self, node_1, node_2):
+    def get_distance(self, node_1, node_2):
         """
         Tries to guess the distance between synteny blocks
         in a target genome
@@ -274,6 +199,13 @@ class BreakpointGraph:
                      for e in self.bp_graph[node_1][node_2].values()]
         return _median(distances) #currently, just a median :(
 
+    def debug_output(self):
+        if not debugger.debugging:
+            return
+
+        graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
+        _output_graph(self.bp_graph, graph_out)
+
 
 def _update_edge(graph, v1, v2, weight):
     """
@@ -283,37 +215,6 @@ def _update_edge(graph, v1, v2, weight):
         graph.add_edge(v1, v2, weight=weight)
     else:
         graph[v1][v2]["weight"] += weight
-
-
-def _get_trusted_adjacencies(permutations, prev_scaffolds):
-    """
-    Get trusted adjaencies from previous iteration
-    """
-    trusted_adj = []
-    mandatory_adj = []
-    perm_by_id = {perm.chr_name : perm for perm in permutations}
-
-    for scf in prev_scaffolds:
-        for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            if (prev_cont.seq_name in perm_by_id and
-                next_cont.seq_name in perm_by_id):
-                left_blocks = perm_by_id[prev_cont.seq_name].blocks
-                left = (left_blocks[-1].signed_id() if prev_cont.sign > 0
-                        else -left_blocks[0].signed_id())
-
-                right_blocks = perm_by_id[next_cont.seq_name].blocks
-                right = (right_blocks[0].signed_id() if next_cont.sign > 0
-                         else -right_blocks[-1].signed_id())
-
-                #TODO: fix it
-                assert prev_cont.seq_name != next_cont.seq_name
-                trusted_adj.append((-left, right))
-
-        for perm in permutations:
-            mandatory_adj.append((-perm.blocks[0].signed_id(),
-                                  perm.blocks[-1].signed_id()))
-
-    return trusted_adj, mandatory_adj
 
 
 def _median(values):
@@ -338,23 +239,3 @@ def _output_graph(graph, out_file):
                 fout.write(" [" + ", ".join(extra) + "]")
             fout.write(";\n")
         fout.write("}")
-
-
-def _output_edges(edges, out_file):
-    """
-    Outputs list of edges in dot format
-    """
-    with open(out_file, "w") as fout:
-        fout.write("graph {\n")
-        for (v1, v2) in edges:
-            fout.write("{0} -- {1};\n".format(v1, v2))
-        fout.write("}")
-
-
-def _output_phylogeny(tree_string, target_name, out_file):
-    """
-    Outputs phylogenetic tree in plain text
-    """
-    with open(out_file, "w") as fout:
-        fout.write(tree_string + "\n")
-        fout.write(target_name)

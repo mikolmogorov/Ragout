@@ -48,6 +48,8 @@ class PermutationContainer:
         for p in permutations:
             if p.genome_name not in recipe["genomes"]:
                 continue
+            p.draft = recipe["genomes"][p.genome_name]["draft"]
+            p.circular = recipe["genomes"][p.genome_name]["circular"]
 
             has_sequences.add(p.genome_name)
             if p.genome_name == recipe["target"]:

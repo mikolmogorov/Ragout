@@ -14,7 +14,6 @@ import argparse
 
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.assembly_graph.assembly_graph as asgraph
-import ragout.breakpoint_graph.breakpoint_graph as bg
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
 import ragout.scaffolder.output_generator as out_gen
@@ -30,6 +29,9 @@ from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
 from ragout.parsers.recipe_parser import parse_ragout_recipe, RecipeException
 from ragout.parsers.fasta_parser import read_fasta_dict, FastaError
 from ragout.shared.debug import DebugConfig
+from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
+from ragout.breakpoint_graph.adjacency_inferer import AdjacencyInferer
+from ragout.breakpoint_graph.refiner import AdjacencyRefiner
 
 #register backends
 import synteny_backend.sibelia
@@ -133,6 +135,7 @@ def run_unsafe(args):
     perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
                                            args.overwrite, args.threads)
 
+    #####
     #phylogeny-related
     if "tree" in recipe:
         logger.info("Phylogeny is taken from the recipe")
@@ -140,40 +143,55 @@ def run_unsafe(args):
     else:
         logger.info("Inferring phylogeny from synteny blocks data")
         small_blocks = min(synteny_blocks)
-        perm_container = PermutationContainer(perm_files[small_blocks],
-                                              recipe, False, False, None)
-        phylogeny = Phylogeny.from_permutations(perm_container)
+        simple_perm = PermutationContainer(perm_files[small_blocks],
+                                           recipe, False, False, None)
+        phylogeny = Phylogeny.from_permutations(simple_perm)
         logger.info(phylogeny.tree_string)
+    ####
 
-    #main loop
+    #####
+    #perparing stuff
+    breakpoint_graphs = {}
+    perm_containers = {}
+    for block_size in synteny_blocks:
+        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
+        conservative = block_size == synteny_blocks[0]
+        perm_container = PermutationContainer(perm_files[block_size],
+                                              recipe, rr,
+                                              conservative, phylogeny)
+        perm_containers[block_size] = perm_container
+        breakpoint_graphs[block_size] = BreakpointGraph()
+        breakpoint_graphs[block_size].build_from(perm_container)
+    #####
+
+    #######
+    #Inferring adjacencies and building scaffolds
     last_scaffolds = None
     for block_size in synteny_blocks:
-        logger.info("Running Ragout with the block size {0}".format(block_size))
-
+        logger.info("Inferring adjacencies at {0}".format(block_size))
         if args.debug:
             debug_dir = os.path.join(debug_root, str(block_size))
             debugger.set_debug_dir(debug_dir)
 
-        conservative = last_scaffolds is None
-        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
-        perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, rr,
-                                              conservative, phylogeny)
-
-        graph = bg.BreakpointGraph()
-        graph.build_from(perm_container, recipe)
-
-        if last_scaffolds is None:
-            adjacencies = graph.find_adjacencies(phylogeny)
+        conservative = block_size == synteny_blocks[0]
+        if conservative:
+            adj_inferer = AdjacencyInferer(breakpoint_graphs, block_size,
+                                           phylogeny,
+                                           perm_containers[block_size])
+            adjacencies = adj_inferer.infer_adjacencies()
         else:
-            adjacencies = graph.find_consistent_adjacencies(phylogeny, last_scaffolds)
-
-        scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
+            adj_refiner = AdjacencyRefiner(breakpoint_graphs[block_size],
+                                           phylogeny,
+                                           perm_containers[block_size])
+            adjacencies = adj_refiner.refine_adjacencies(last_scaffolds)
+        scaffolds = scfldr.get_scaffolds(adjacencies,
+                                         perm_containers[block_size])
 
         if last_scaffolds is not None:
             last_scaffolds = merge.merge(last_scaffolds, scaffolds)
         else:
             last_scaffolds = scaffolds
+    ####
 
     if args.debug:
         debugger.set_debug_dir(debug_root)
