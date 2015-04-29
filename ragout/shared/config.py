@@ -9,10 +9,10 @@ This module stores some configuration parameters
 vals =  {
             "overlap" :
             {
-                "min_overlap" : 77,
+                "min_overlap" : 33,
                 "max_overlap" : 200,
                 "max_path_len" : 30,
-                "detect_kmer" : False
+                "detect_kmer" : True
             },
 
             "maf2synteny" :
@@ -33,7 +33,7 @@ vals =  {
 
             "blocks" :
             {
-                "small" : [5000, 100],
+                "small" : [5000, 500, 100],
                 "large" : [10000, 500, 100]
             },
 

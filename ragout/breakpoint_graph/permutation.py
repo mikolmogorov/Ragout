@@ -13,6 +13,7 @@ import logging
 import os
 import math
 from copy import deepcopy
+from itertools import chain
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
@@ -71,7 +72,10 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        self.filter_indels()
+        if not conservative:
+            self.filter_indels()
+        else:
+            self.filter_indels_agressive()
         logger.debug("{0} target sequences left after indel filtering"
                                         .format(len(self.target_perms)))
 
@@ -111,6 +115,19 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
+    def filter_indels_agressive(self):
+        """
+        Keep only blocks that appear in target and all references
+        """
+        multiplicity = defaultdict(int)
+        for perm in chain(self.target_perms, self.ref_perms):
+            for block in perm.blocks:
+                multiplicity[block.block_id] += 1
+
+        num_genomes = len(self.recipe["genomes"])
+        to_keep = filter(lambda b: multiplicity[b] == num_genomes, multiplicity)
+        self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
+        self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
     def filter_repeats(self, repeats):
         """
