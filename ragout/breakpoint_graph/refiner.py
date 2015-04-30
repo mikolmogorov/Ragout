@@ -13,7 +13,7 @@ from itertools import product
 
 import networkx as nx
 
-from ragout.shared.priority_queue import PriorityQueue
+from ragout.breakpoint_graph.adjacency_graph import AdjacencyGraph
 
 logger = logging.getLogger()
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
@@ -29,10 +29,9 @@ class AdjacencyRefiner(object):
         Finding adjacencies consisten with previous iteration
         """
         orphaned_nodes = self.bp_graph.get_orphaned_nodes()
-        weighted_graph = self.bp_graph.make_weighted(self.phylogeny)
-        trusted_adj, mandatory_adj = self._get_trusted_adjacencies(scaffolds)
-        chosen_edges = _get_path_cover(weighted_graph, trusted_adj,
-                                       mandatory_adj, orphaned_nodes)
+        adj_graph = AdjacencyGraph(self.bp_graph, self.phylogeny)
+        trusted_adj = self._get_trusted_adjacencies(scaffolds)
+        chosen_edges = _get_path_cover(adj_graph, trusted_adj, orphaned_nodes)
 
         adjacencies = {}
         for node_1, node_2 in chosen_edges:
@@ -55,7 +54,6 @@ class AdjacencyRefiner(object):
         Get trusted adjaencies from previous iteration
         """
         trusted_adj = []
-        mandatory_adj = []
         perm_by_id = {perm.chr_name : perm for perm in
                       self.perm_container.target_perms}
 
@@ -71,104 +69,32 @@ class AdjacencyRefiner(object):
                     right = (right_blocks[0].signed_id() if next_cont.sign > 0
                              else -right_blocks[-1].signed_id())
 
-                    #TODO: fix it
                     assert prev_cont.seq_name != next_cont.seq_name
                     trusted_adj.append((-left, right))
 
-            for perm in self.perm_container.target_perms:
-                mandatory_adj.append((-perm.blocks[0].signed_id(),
-                                      perm.blocks[-1].signed_id()))
-
-        return trusted_adj, mandatory_adj
+        return trusted_adj
 
 
-def _get_path_cover(graph, trusted_adj, mandatory_adj, candidate_nodes):
+def _get_path_cover(adj_graph, trusted_adj, orphaned_nodes):
     logger.debug("Computing path cover")
     adjacencies = []
     prohibited_nodes = set()
-    black_adj = {}
-    for (u, v) in mandatory_adj:
-        black_adj[u] = v
-        black_adj[v] = u
-
     for adj in trusted_adj:
-        prohibited_nodes.add(abs(adj[0]))
-        prohibited_nodes.add(abs(adj[1]))
+        prohibited_nodes.add(adj[0])
+        prohibited_nodes.add(adj[1])
 
     for (adj_left, adj_right) in trusted_adj:
-        p = _shortest_path(graph, adj_left, adj_right, prohibited_nodes,
-                           black_adj, candidate_nodes)
+        p = adj_graph.shortest_path(adj_left, adj_right, prohibited_nodes,
+                                    orphaned_nodes)
         #logger.debug(p)
         if not p:
             p = [adj_left, adj_right]
-
-        #assert len(p) % 2 == 0
-        if len(p) % 2 != 0:
-            print(p)
-            p = [adj_left, adj_right]
+        assert len(p) % 2 == 0
 
         for i in xrange(len(p) / 2):
             adj_left, adj_right = p[i * 2], p[i * 2 + 1]
             adjacencies.append((adj_left, adj_right))
-            prohibited_nodes.add(abs(adj_left))
-            prohibited_nodes.add(abs(adj_right))
+            prohibited_nodes.add(adj_left)
+            prohibited_nodes.add(adj_right)
 
     return adjacencies
-
-
-def _shortest_path(graph, src, dst, prohibited_nodes,
-                   black_adj, candidate_nodes):
-    """
-    Finds shortest path wrt to restricted nodes
-    """
-    #logger.debug("Finding path from {0} to {1}".format(src, dst))
-    dist = defaultdict(lambda: float("inf"))
-    dist[src] = 0
-    parent = {}
-    queue = PriorityQueue()
-    queue.insert((src, True), 0)
-
-    found = False
-    while queue.get_length():
-        cur_dist, (cur_node, colored) = queue.pop()
-        if cur_node == dst:
-            if not colored:
-                found = True
-                break
-            else:
-                continue
-
-        if cur_node != src and abs(cur_node) in prohibited_nodes:
-            continue
-        if not colored and -cur_node not in black_adj:
-            continue
-
-        neighbors = (graph.neighbors(cur_node) if colored
-                     else [-black_adj[-cur_node]])
-        if colored and cur_node in candidate_nodes:
-            extra_neighbors = candidate_nodes - set([cur_node])
-            neighbors.extend(list(extra_neighbors))
-
-        for other_node in neighbors:
-            if colored:
-                if graph.has_edge(cur_node, other_node):
-                    weight = graph[cur_node][other_node]["weight"]
-                else:
-                    weight = 1
-            else:
-                weight = 0
-
-            if dist[other_node] > dist[cur_node] + weight:
-                dist[other_node] = dist[cur_node] + weight
-                parent[other_node] = cur_node
-                queue.insert((other_node, not colored), dist[other_node])
-
-    if not found:
-        return None
-
-    path = [dst]
-    cur_node = dst
-    while cur_node != src:
-        path.append(parent[cur_node])
-        cur_node = parent[cur_node]
-    return path[::-1]

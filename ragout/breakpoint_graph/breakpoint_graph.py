@@ -38,6 +38,11 @@ class BreakpointGraph(object):
                 self.references.append(perm.genome_name)
         self.target = perm_container.target_perms[0].genome_name
 
+        self.contig_ends = []
+        for perm in perm_container.target_perms:
+            self.contig_ends.append((perm.blocks[0].signed_id(),
+                                     -perm.blocks[-1].signed_id()))
+
         for perm in chain(perm_container.ref_perms,
                           perm_container.target_perms):
 
@@ -87,7 +92,7 @@ class BreakpointGraph(object):
         return list(map(lambda e: e["genome_id"],
                     self.bp_graph[node_1][node_2].values()))
 
-    def make_weighted(self, phylogeny):
+    def to_weighted_graph(self, phylogeny):
         """
         Converts a breakpoint graph into a weighted adjacency graph
         using half-breakpoint state parsimony problem
@@ -109,7 +114,6 @@ class BreakpointGraph(object):
             for neighbor in self.bp_graph.neighbors(node):
                 adjacencies[self.target] = neighbor
                 break_weight = phylogeny.estimate_tree(adjacencies)
-
                 _update_edge(g, node, neighbor, break_weight)
 
         return g

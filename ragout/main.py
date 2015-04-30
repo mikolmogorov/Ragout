@@ -30,7 +30,7 @@ from ragout.parsers.recipe_parser import parse_ragout_recipe, RecipeException
 from ragout.parsers.fasta_parser import read_fasta_dict, FastaError
 from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
-from ragout.breakpoint_graph.adjacency_inferer import AdjacencyInferer
+from ragout.breakpoint_graph.inferer import AdjacencyInferer
 from ragout.breakpoint_graph.refiner import AdjacencyRefiner
 
 #register backends
