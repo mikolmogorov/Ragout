@@ -75,9 +75,9 @@ class PermutationContainer:
                                 "target sequences")
 
         if not conservative:
-            self.filter_indels()
+            self._filter_indels()
         else:
-            self.filter_indels_agressive()
+            self._filter_indels_agressive()
         logger.debug("{0} target sequences left after indel filtering"
                                         .format(len(self.target_perms)))
 
@@ -90,18 +90,33 @@ class PermutationContainer:
             rr.resolve_repeats(self.ref_perms, self.target_perms,
                                repeats, phylogeny)
         ###
-        self.filter_repeats(repeats)
+        self._filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
 
-        self.build_chr_index()
-        self.filter_chimeras()
+        #self._build_chr_index()
+        #self._filter_chimeras()
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
             _write_permutations(self.target_perms, open(file, "w"))
 
-    def filter_indels(self):
+    def filter_target_perms(self, chimeric_adj):
+        #return
+        bad_blocks = set()
+        for (u, v) in chimeric_adj:
+            bad_blocks.add(abs(u))
+            bad_blocks.add(abs(v))
+        new_perms = []
+        for perm in self.target_perms:
+            if all(map(lambda b: b.block_id not in bad_blocks, perm.blocks)):
+                new_perms.append(perm)
+        logger.debug("{0} contigs are marked as chimeric"
+                        .format(len(self.target_perms) - len(new_perms)))
+        self.target_perms = new_perms
+        self._filter_indels()
+
+    def _filter_indels(self):
         """
         Keep only blocks that appear in target and one of the references
         """
@@ -117,7 +132,7 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
-    def filter_indels_agressive(self):
+    def _filter_indels_agressive(self):
         """
         Keep only blocks that appear in target and all references
         """
@@ -131,7 +146,7 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
 
-    def filter_repeats(self, repeats):
+    def _filter_repeats(self, repeats):
         """
         Filters repetitive blocks
         """
@@ -140,7 +155,7 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
                                               inverse=True)
 
-    def filter_chimeras(self):
+    def _filter_chimeras(self):
         """
         Tries to find contigs that are suspective to chromosome fusions
         and fillter them out
@@ -161,7 +176,7 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, suspicious,
                                               inverse=True)
 
-    def build_chr_index(self):
+    def _build_chr_index(self):
         """
         Mapping synteny blocks on chromosomes
         Assumes that repeats are filtered
@@ -182,6 +197,8 @@ class PermutationContainer:
         Checks if adjacency blocks lie on a same chromosome for
         at least one reference
         """
+        return True
+
         if not self.conservative:
             return True
 

@@ -24,10 +24,12 @@ class BreakpointGraph(object):
     """
     Breakpoint graph implementation
     """
-    def __init__(self):
+    def __init__(self, perm_container=None):
         self.bp_graph = nx.MultiGraph()
         self.target = None
         self.references = []
+        if perm_container is not None:
+            self.build_from(perm_container)
 
     def build_from(self, perm_container):
         """
@@ -157,7 +159,8 @@ class BreakpointGraph(object):
         simple_graph = nx.Graph()
         for (u, v) in self.bp_graph.edges_iter():
             simple_graph.add_edge(u, v)
-        assert not simple_graph.has_edge(node_1, node_2)
+        if simple_graph.has_edge(node_1, node_2):
+            simple_graph.remove_edge(node_1, node_2)
 
         good_path = False
         for path in nx.all_simple_paths(simple_graph, node_1, node_2):

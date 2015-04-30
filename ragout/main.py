@@ -32,6 +32,7 @@ from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 from ragout.breakpoint_graph.inferer import AdjacencyInferer
 from ragout.breakpoint_graph.refiner import AdjacencyRefiner
+from ragout.breakpoint_graph.chimera_detector import ChimeraDetector
 
 #register backends
 import synteny_backend.sibelia
@@ -150,42 +151,34 @@ def run_unsafe(args):
     ####
 
     #####
-    #perparing stuff
-    breakpoint_graphs = {}
-    perm_containers = {}
-    for block_size in synteny_blocks:
-        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
-        conservative = block_size == synteny_blocks[0]
-        perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, rr,
-                                              conservative, phylogeny)
-        perm_containers[block_size] = perm_container
-        breakpoint_graphs[block_size] = BreakpointGraph()
-        breakpoint_graphs[block_size].build_from(perm_container)
-    #####
-
-    #######
-    #Inferring adjacencies and building scaffolds
     last_scaffolds = None
     for block_size in synteny_blocks:
         logger.info("Inferring adjacencies at {0}".format(block_size))
-        if args.debug:
-            debug_dir = os.path.join(debug_root, str(block_size))
-            debugger.set_debug_dir(debug_dir)
+        debug_dir = os.path.join(debug_root, str(block_size))
+        debugger.set_debug_dir(debug_dir)
 
+        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
         conservative = block_size == synteny_blocks[0]
+
+        perm_container = PermutationContainer(perm_files[block_size],
+                                              recipe, rr, conservative,
+                                              phylogeny)
+        breakpoint_graph = BreakpointGraph(perm_container)
         if conservative:
-            adj_inferer = AdjacencyInferer(breakpoint_graphs, block_size,
-                                           phylogeny,
-                                           perm_containers[block_size])
+            chim_detect = ChimeraDetector(breakpoint_graph)
+            chimeric_adj = chim_detect.get_chimeric_adj()
+            perm_container.filter_target_perms(chimeric_adj)
+            breakpoint_graph = BreakpointGraph(perm_container)
+
+        if conservative:
+            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny,
+                                           perm_container)
             adjacencies = adj_inferer.infer_adjacencies()
         else:
-            adj_refiner = AdjacencyRefiner(breakpoint_graphs[block_size],
-                                           phylogeny,
-                                           perm_containers[block_size])
+            adj_refiner = AdjacencyRefiner(breakpoint_graph,
+                                           phylogeny, perm_container)
             adjacencies = adj_refiner.refine_adjacencies(last_scaffolds)
-        scaffolds = scfldr.get_scaffolds(adjacencies,
-                                         perm_containers[block_size])
+        scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
 
         if last_scaffolds is not None:
             last_scaffolds = merge.merge(last_scaffolds, scaffolds)

@@ -76,8 +76,6 @@ def merge(big_scaffolds, small_scaffolds):
                 if left_scf != right_scf:
                     count_diff_scaf += 1
                     consistent = False
-                #if abs(left_pos - right_pos) == 1:
-                #    consistent = False
                 elif big_sign != small_sign:
                     count_diff_orient += 1
                     consistent = False

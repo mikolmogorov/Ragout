@@ -21,9 +21,8 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 
 class AdjacencyInferer(object):
-    def __init__(self, breakpoint_graphs, block, phylogeny, perm_container):
-        self.bp_graphs = breakpoint_graphs
-        self.main_graph = breakpoint_graphs[block]
+    def __init__(self, breakpoint_graph, phylogeny, perm_container):
+        self.main_graph = breakpoint_graph
         self.phylogeny = phylogeny
         self.perm_container = perm_container
 
@@ -65,6 +64,7 @@ class AdjacencyInferer(object):
                                             supporting_genomes)
 
         self.main_graph.debug_output()
+        self._debug_output(chosen_edges)
 
         return adjacencies
 
