@@ -113,6 +113,7 @@ def run_unsafe(args):
     if not os.path.isdir(args.out_dir):
         os.mkdir(args.out_dir)
     if args.debug:
+        debugger.set_debugging(True)
         debugger.set_debug_dir(debug_root)
         debugger.clear_debug_dir()
 

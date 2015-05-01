@@ -17,12 +17,16 @@ class DebugConfig():
         self.debug_dir = None
         self.debugging = False
 
+    def set_debugging(self, debugging):
+        self.debugging = debugging
+
     def set_debug_dir(self, debug_dir):
         """
         Also enables debugging
         """
+        if not self.debugging:
+            return
         self.debug_dir = debug_dir
-        self.debugging = True
         if not os.path.isdir(debug_dir):
             os.mkdir(debug_dir)
 
