@@ -90,7 +90,7 @@ class ChimeraDetector(object):
                 new_perms.append(cur_perm)
                 logger.debug(cur_perm)
 
-                shift += perm_cuts[0]
+                shift = perm_cuts[0]
                 perm_cuts.pop(0)
 
                 cur_perm = deepcopy(perm)
