@@ -61,7 +61,17 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
-            cont_seq = contigs_fasta[contig.seq_name]
+            ###
+            sep = contig.seq_name.find("[")
+            if sep == -1:
+                cont_seq = contigs_fasta[contig.seq_name]
+            else:
+                seq_name = contig.seq_name[:sep]
+                seg_start, seg_end = \
+                        map(int, contig.seq_name[sep + 1 : -1].split(":"))
+                cont_seq = contigs_fasta[seq_name][seg_start:seg_end]
+            ###
+
             used_contigs.add(contig.seq_name)
             total_contigs += 1
             total_len += len(cont_seq)

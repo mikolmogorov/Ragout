@@ -75,7 +75,7 @@ class PermutationContainer:
                                 "target sequences")
 
         if not conservative:
-            self._filter_indels()
+            self.filter_indels()
         else:
             self._filter_indels_agressive()
         logger.debug("{0} target sequences left after indel filtering"
@@ -101,6 +101,7 @@ class PermutationContainer:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
             _write_permutations(self.target_perms, open(file, "w"))
 
+    """
     def filter_target_perms(self, chimeric_adj):
         bad_blocks = set()
         for (u, v) in chimeric_adj:
@@ -114,8 +115,9 @@ class PermutationContainer:
                         .format(len(self.target_perms) - len(new_perms)))
         self.target_perms = new_perms
         self._filter_indels()
+    """
 
-    def _filter_indels(self):
+    def filter_indels(self):
         """
         Keep only blocks that appear in target and one of the references
         """
@@ -198,6 +200,7 @@ class PermutationContainer:
         """
         return True
 
+        """
         if not self.conservative:
             return True
 
@@ -208,6 +211,7 @@ class PermutationContainer:
                 return True
 
         return False
+        """
 
 
 def _find_repeats(permutations):

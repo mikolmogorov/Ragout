@@ -164,12 +164,11 @@ def run_unsafe(args):
         perm_container = PermutationContainer(perm_files[block_size],
                                               recipe, rr, conservative,
                                               phylogeny)
-        breakpoint_graph = BreakpointGraph(perm_container)
         if conservative:
-            chim_detect = ChimeraDetector(breakpoint_graph)
-            chimeric_adj = chim_detect.get_chimeric_adj()
-            perm_container.filter_target_perms(chimeric_adj)
             breakpoint_graph = BreakpointGraph(perm_container)
+            chim_detect = ChimeraDetector(breakpoint_graph, perm_container)
+        chim_detect.fix_container(perm_container)
+        breakpoint_graph = BreakpointGraph(perm_container)
 
         if conservative:
             adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny,

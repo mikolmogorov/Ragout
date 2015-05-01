@@ -42,7 +42,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                      "max_errors" : 1,
                      "max_errors_refine" : 3,
                      "min_contigs" : 100,
-                     "min_contigs_refine" : 186,
+                     "min_contigs_refine" : 182,
                      "max_scaffolds" : 1,
                      "outdir" : "aureus-test"}}
 
