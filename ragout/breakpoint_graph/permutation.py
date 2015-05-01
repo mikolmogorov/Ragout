@@ -102,7 +102,6 @@ class PermutationContainer:
             _write_permutations(self.target_perms, open(file, "w"))
 
     def filter_target_perms(self, chimeric_adj):
-        #return
         bad_blocks = set()
         for (u, v) in chimeric_adj:
             bad_blocks.add(abs(u))
@@ -236,8 +235,8 @@ def _filter_permutations(permutations, blocks, inverse=False):
     for perm in permutations:
         new_blocks = list(filter(filter_func, perm.blocks))
         if new_blocks:
-            new_perms.append(Permutation(perm.genome_name, perm.chr_name,
-                                         perm.chr_id, perm.chr_len, new_blocks))
+            new_perms.append(deepcopy(perm))
+            new_perms[-1].blocks = new_blocks
     return new_perms
 
 
