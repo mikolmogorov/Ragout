@@ -45,10 +45,13 @@ class PermutationContainer:
             raise PermException("Error reading permutations")
 
         has_sequences = set()
+        draft_names = set()
         for p in permutations:
             if p.genome_name not in recipe["genomes"]:
                 continue
             p.draft = recipe["genomes"][p.genome_name]["draft"]
+            if p.draft:
+                draft_names.add(p.genome_name)
             p.circular = recipe["genomes"][p.genome_name]["circular"]
 
             has_sequences.add(p.genome_name)
@@ -88,7 +91,7 @@ class PermutationContainer:
                 raise PermException("Resolving repeats with "
                                     "yet unknown phylogeny")
             rr.resolve_repeats(self.ref_perms, self.target_perms,
-                               repeats, phylogeny)
+                               repeats, phylogeny, draft_names)
         ###
         self._filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"

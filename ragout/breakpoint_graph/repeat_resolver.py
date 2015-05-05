@@ -40,7 +40,8 @@ class MatchPair(MP):
         return id(self)
 
 
-def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
+def resolve_repeats(ref_perms, target_perms, repeats,
+                    phylogeny, draft_refs):
     """
     Does the job
     """
@@ -73,8 +74,9 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
 
         #logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
-        profiles = list(filter(lambda p: _parsimony_test(p, phylogeny,
-                                        target_name), profiles))
+        parsimony_test = lambda p: _parsimony_test(p, phylogeny, target_name,
+                                                   draft_refs)
+        profiles = list(filter(parsimony_test, profiles))
         unique_m, repetitive_m = _match_target_contexts(profiles,
                                             trg_contexts[repeat_id], repeats)
         unique_matches.extend(unique_m)
@@ -142,14 +144,16 @@ def resolve_repeats(ref_perms, target_perms, repeats, phylogeny):
     logger.debug("Added {0} extra contigs".format(new_contigs))
 
 
-def _parsimony_test(profile, phylogeny, target_name):
+def _parsimony_test(profile, phylogeny, target_name, draft_refs):
     """
     Determines if the given uniqe instance of a repeat exists in target genome
     """
-    states = {g : False for g in phylogeny.terminals_dfs_order()}
+    states = {g : False if g not in draft_refs else None
+              for g in phylogeny.terminals_dfs_order()}
     for ctx in profile:
         states[ctx.perm.genome_name] = True
 
+    states[target_name] = False
     score_without = phylogeny.estimate_tree(states)
     states[target_name] = True
     score_with = phylogeny.estimate_tree(states)
