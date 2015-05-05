@@ -29,9 +29,10 @@ class ChimeraDetector(object):
         subgraphs = self.graph.connected_components()
         for subgr in subgraphs:
             if len(subgr.bp_graph) > 100:
-                continue
                 logger.debug("Processing component of size {0}"
-                                        .format(len(subgr.bp_graph)))
+                             .format(len(subgr.bp_graph)))
+                continue
+
             for (u, v) in subgr.bp_graph.edges_iter():
                 genomes = subgr.supporting_genomes(u, v)
                 if len(genomes) == 1 and genomes[0] == self.graph.target:
@@ -51,28 +52,31 @@ class ChimeraDetector(object):
 
         self.cuts = cuts
 
-    def cut_fasta(self, cuts, fasta_dict):
-        pass
-
     def fix_container(self, perm_container):
         perm_container.target_perms = self._cut_permutations(self.cuts,
-                                        perm_container.target_perms)
-        perm_container.filter_indels()
+                                                perm_container.target_perms)
+        perm_container.filter_indels(True)
 
     #TODO: refactoring
     def _cut_permutations(self, cuts, permutations):
         new_perms = []
+        num_chim_perms = 0
+        num_cuts = 0
         for perm in permutations:
             if perm.chr_name not in cuts:
                 new_perms.append(perm)
                 continue
 
-            logger.debug("Original {0}".format(perm))
+            #logger.debug("Original {0}".format(perm))
             perm_cuts = copy(cuts[perm.chr_name])
             perm_cuts.append(perm.chr_len)
             cur_perm = deepcopy(perm)
             cur_perm.blocks = []
             shift = 0
+
+            num_chim_perms += 1
+            num_cuts += len(perm_cuts) - 1
+
             for block in perm.blocks:
                 if block.end < perm_cuts[0]:
                     block.start -= shift
@@ -88,7 +92,7 @@ class ChimeraDetector(object):
                                    "[{0}:{1}]".format(shift, perm_cuts[0]))
                 cur_perm.chr_len = perm_cuts[0] - shift
                 new_perms.append(cur_perm)
-                logger.debug(cur_perm)
+                #logger.debug(cur_perm)
 
                 shift = perm_cuts[0]
                 perm_cuts.pop(0)
@@ -102,6 +106,8 @@ class ChimeraDetector(object):
                                "[{0}:{1}]".format(shift, perm_cuts[0]))
             cur_perm.chr_len = perm_cuts[0] - shift
             new_perms.append(cur_perm)
-            logger.debug(cur_perm)
+            #logger.debug(cur_perm)
 
+        logger.debug("Chimera Detector: {0} cuts made in {1} sequences"
+                        .format(num_cuts, num_chim_perms))
         return new_perms

@@ -37,7 +37,6 @@ class PermutationContainer:
         self.ref_perms = []
         self.target_perms = []
         self.recipe = recipe
-        self.conservative = conservative and config.vals["detect_chimera"]
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
@@ -77,10 +76,7 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        if not conservative:
-            self.filter_indels()
-        else:
-            self._filter_indels_agressive()
+        self.filter_indels(not conservative)
         logger.debug("{0} target sequences left after indel filtering"
                                         .format(len(self.target_perms)))
 
@@ -97,58 +93,38 @@ class PermutationContainer:
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
 
-        #self._build_chr_index()
-        #self._filter_chimeras()
-
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "used_contigs.txt")
             _write_permutations(self.target_perms, open(file, "w"))
 
-    """
-    def filter_target_perms(self, chimeric_adj):
-        bad_blocks = set()
-        for (u, v) in chimeric_adj:
-            bad_blocks.add(abs(u))
-            bad_blocks.add(abs(v))
-        new_perms = []
-        for perm in self.target_perms:
-            if all(map(lambda b: b.block_id not in bad_blocks, perm.blocks)):
-                new_perms.append(perm)
-        logger.debug("{0} contigs are marked as chimeric"
-                        .format(len(self.target_perms) - len(new_perms)))
-        self.target_perms = new_perms
-        self._filter_indels()
-    """
 
-    def filter_indels(self):
+    def filter_indels(self, allow_ref_indels):
         """
-        Keep only blocks that appear in target and one of the references
-        """
-        target_blocks = set()
-        for perm in self.target_perms:
-            target_blocks |= set(map(lambda b: b.block_id, perm.blocks))
-
-        reference_blocks = set()
-        for perm in self.ref_perms:
-            reference_blocks |= set(map(lambda b: b.block_id, perm.blocks))
-
-        to_keep = target_blocks.intersection(reference_blocks)
-        self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
-        self.target_perms = _filter_permutations(self.target_perms, to_keep)
-
-    def _filter_indels_agressive(self):
-        """
-        Keep only blocks that appear in target and all references
+        Keep only blocks that appear in target and
+        all references (or one reference, if allow_ref_indels is set)
         """
         multiplicity = defaultdict(int)
-        for perm in chain(self.target_perms, self.ref_perms):
-            for block in perm.blocks:
-                multiplicity[block.block_id] += 1
+        target_blocks = set()
+        reference_blocks = set()
+        def process(perms, block_set):
+            for perm in perms:
+                for block in perm.blocks:
+                    multiplicity[block.block_id] += 1
+                    block_set.add(block.block_id)
 
-        num_genomes = len(self.recipe["genomes"])
-        to_keep = filter(lambda b: multiplicity[b] == num_genomes, multiplicity)
+        process(self.target_perms, target_blocks)
+        process(self.ref_perms, reference_blocks)
+
+        if allow_ref_indels:
+            to_keep = target_blocks.intersection(reference_blocks)
+        else:
+            num_genomes = len(self.recipe["genomes"])
+            to_keep = filter(lambda b: multiplicity[b] >= num_genomes,
+                             multiplicity)
+
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
+
 
     def _filter_repeats(self, repeats):
         """
@@ -158,64 +134,6 @@ class PermutationContainer:
                                                  inverse=True)
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
                                               inverse=True)
-
-    def _filter_chimeras(self):
-        """
-        Tries to find contigs that are suspective to chromosome fusions
-        and fillter them out
-        """
-        suspicious = set()
-        counter = 0
-        for perm in self.target_perms:
-            for block_1, block_2 in perm.iter_pairs():
-                if not self.good_adj(block_1.block_id,
-                                     block_2.block_id):
-                    suspicious |= set(map(lambda b: b.block_id, perm.blocks))
-                    counter += 1
-                    break
-
-        logger.debug("{0} contigs were marked as chimeric".format(counter))
-        self.target_perms = _filter_permutations(self.target_perms, suspicious,
-                                                 inverse=True)
-        self.ref_perms = _filter_permutations(self.ref_perms, suspicious,
-                                              inverse=True)
-
-    def _build_chr_index(self):
-        """
-        Mapping synteny blocks on chromosomes
-        Assumes that repeats are filtered
-        """
-        by_genome = defaultdict(list)
-        for ref_perm in self.ref_perms:
-            by_genome[ref_perm.genome_name].append(ref_perm)
-
-        self.chr_index = defaultdict(lambda: defaultdict(lambda : None))
-
-        for genome_name, perms in by_genome.items():
-            for perm in perms:
-                for block in perm.blocks:
-                    self.chr_index[genome_name][block.block_id] = perm.chr_name
-
-    def good_adj(self, block_id_1, block_id_2):
-        """
-        Checks if adjacency blocks lie on a same chromosome for
-        at least one reference
-        """
-        return True
-
-        """
-        if not self.conservative:
-            return True
-
-        for ref in self.chr_index:
-            chr_1 = self.chr_index[ref][block_id_1]
-            chr_2 = self.chr_index[ref][block_id_2]
-            if None not in [chr_1, chr_2] and chr_1 == chr_2:
-                return True
-
-        return False
-        """
-
 
 def _find_repeats(permutations):
     """

@@ -21,10 +21,9 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 
 class AdjacencyInferer(object):
-    def __init__(self, breakpoint_graph, phylogeny, perm_container):
+    def __init__(self, breakpoint_graph, phylogeny):
         self.main_graph = breakpoint_graph
         self.phylogeny = phylogeny
-        self.perm_container = perm_container
 
     def infer_adjacencies(self):
         """
@@ -98,13 +97,10 @@ class AdjacencyInferer(object):
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
             cycle = subgraph.alternating_cycle(node_1, node_2)
-            if (self.perm_container.good_adj(abs(node_1), abs(node_2)) and
-                abs(node_1) != abs(node_2) and cycle is not None):
-
+            if (abs(node_1) != abs(node_2) and cycle is not None):
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
                 unused_nodes.clear()
-
         self.orphans_count += len(unused_nodes)
 
         return chosen_edges

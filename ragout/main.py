@@ -158,25 +158,26 @@ def run_unsafe(args):
         debug_dir = os.path.join(debug_root, str(block_size))
         debugger.set_debug_dir(debug_dir)
 
-        rr = args.resolve_repeats and block_size == synteny_blocks[-1]
+        resolve_repeats = (args.resolve_repeats and
+                           block_size == synteny_blocks[-1])
         conservative = block_size == synteny_blocks[0]
 
         perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, rr, conservative,
-                                              phylogeny)
+                                              recipe, resolve_repeats,
+                                              conservative, phylogeny)
         if conservative:
             breakpoint_graph = BreakpointGraph(perm_container)
             chim_detect = ChimeraDetector(breakpoint_graph, perm_container)
+
         chim_detect.fix_container(perm_container)
         breakpoint_graph = BreakpointGraph(perm_container)
 
         if conservative:
-            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny,
-                                           perm_container)
+            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
             adjacencies = adj_inferer.infer_adjacencies()
         else:
-            adj_refiner = AdjacencyRefiner(breakpoint_graph,
-                                           phylogeny, perm_container)
+            adj_refiner = AdjacencyRefiner(breakpoint_graph, phylogeny,
+                                           perm_container)
             adjacencies = adj_refiner.refine_adjacencies(last_scaffolds)
         scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
 
