@@ -31,7 +31,6 @@ class ChimeraDetector(object):
             if len(subgr.bp_graph) > 100:
                 logger.debug("Processing component of size {0}"
                              .format(len(subgr.bp_graph)))
-                continue
 
             for (u, v) in subgr.bp_graph.edges_iter():
                 genomes = subgr.supporting_genomes(u, v)

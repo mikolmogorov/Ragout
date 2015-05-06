@@ -124,7 +124,7 @@ class BreakpointGraph(object):
         """
         Get nodes suspected to rearrangements
         """
-        logger.debug("Getting candidate nodes")
+        logger.debug("Getting orphaned nodes")
         candidate_nodes = set()
 
         subgraphs = self.connected_components()
@@ -151,29 +151,19 @@ class BreakpointGraph(object):
     def alternating_cycle(self, node_1, node_2):
         """
         Determines if there is a cycle of alternating colors
-        that goes through the given edge
+        that goes through the given red-supported (!) edge
         """
         def get_genome_ids((u, v)):
             return self.supporting_genomes(u, v)
 
-        simple_graph = nx.Graph()
-        for (u, v) in self.bp_graph.edges_iter():
-            simple_graph.add_edge(u, v)
-        if simple_graph.has_edge(node_1, node_2):
-            simple_graph.remove_edge(node_1, node_2)
-
         good_path = False
-        for path in nx.all_simple_paths(simple_graph, node_1, node_2):
-            if len(path) % 2 == 1:
+        for path in self._alternating_paths(node_1, node_2):
+            assert len(path) % 2 == 0
+            if len(path) == 2:
                 continue
 
             edges = list(zip(path[:-1], path[1:]))
             odd_colors = list(map(get_genome_ids, edges[0::2]))
-            even_colors = list(map(get_genome_ids, edges[1::2]))
-
-            if not all(map(lambda e: set(e) == set([self.target]),
-                           even_colors)):
-                continue
 
             common_genomes = set(odd_colors[0])
             for edge_colors in odd_colors:
@@ -212,6 +202,40 @@ class BreakpointGraph(object):
 
         graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
         _output_graph(self.bp_graph, graph_out)
+
+
+    def _alternating_paths(self, src, dst):
+        """
+        Finds a path of alternating colors between two nodes
+        """
+        visited = set()
+        def rec_helper(node, colored):
+            if node == dst:
+                return [[dst]]
+
+            visited.add(node)
+            paths = []
+            for neighbor in self.bp_graph.neighbors(node):
+                if neighbor in visited:
+                    continue
+
+                ##
+                genomes = self.supporting_genomes(node, neighbor)
+                non_target = set(filter(lambda g: g != self.target, genomes))
+                if colored and len(non_target) == 0:
+                    continue
+                if not colored and self.target not in genomes:
+                    continue
+                ##
+
+                far_paths = rec_helper(neighbor, not colored)
+                map(lambda p: p.append(node), far_paths)
+                paths.extend(far_paths)
+            visited.remove(node)
+            return paths
+
+        paths = list(map(lambda p: p[::-1], rec_helper(src, True)))
+        return paths
 
 
 def _update_edge(graph, v1, v2, weight):
