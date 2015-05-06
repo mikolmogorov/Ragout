@@ -119,8 +119,8 @@ class PermutationContainer:
             to_keep = target_blocks.intersection(reference_blocks)
         else:
             num_genomes = len(self.recipe["genomes"])
-            to_keep = filter(lambda b: multiplicity[b] >= num_genomes,
-                             multiplicity)
+            to_keep = set(filter(lambda b: multiplicity[b] >= num_genomes,
+                                 multiplicity))
 
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
