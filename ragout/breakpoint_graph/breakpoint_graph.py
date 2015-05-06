@@ -164,6 +164,11 @@ class BreakpointGraph(object):
 
             edges = list(zip(path[:-1], path[1:]))
             odd_colors = list(map(get_genome_ids, edges[0::2]))
+            even_colors = list(map(get_genome_ids, edges[1::2]))
+
+            if not all(map(lambda e: set(e) == set([self.target]),
+                           even_colors)):
+                continue
 
             common_genomes = set(odd_colors[0])
             for edge_colors in odd_colors:
