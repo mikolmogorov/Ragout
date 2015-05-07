@@ -9,6 +9,8 @@ from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 
 logger = logging.getLogger()
 
+MIN_GAP = 11
+
 def output_links(scaffolds, out_links):
     """
     Outputs pretty table with information about adjacencies
@@ -58,6 +60,7 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     scf_length = []
     total_contigs = 0
     total_len = 0
+    #overlap = 0
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
@@ -82,9 +85,10 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
 
             if contig.link.gap >= 0:
                 scf_seqs.append(cont_seq)
-                scf_seqs.append("N" * contig.link.gap)
+                scf_seqs.append("N" * (max(MIN_GAP, contig.link.gap)))
             else:
                 scf_seqs.append(cont_seq[:contig.link.gap])
+
 
         scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
