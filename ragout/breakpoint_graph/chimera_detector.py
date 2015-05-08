@@ -17,8 +17,9 @@ from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 logger = logging.getLogger()
 
 class ChimeraDetector(object):
-    def __init__(self, breakpoint_graph, perm_container):
+    def __init__(self, breakpoint_graph, perm_container, target_seqs):
         self.graph = breakpoint_graph
+        self.target_seqs = target_seqs
         self._get_chimeric_adj()
         self._get_contig_cuts(perm_container.target_perms)
 
@@ -32,11 +33,21 @@ class ChimeraDetector(object):
                 logger.debug("Processing component of size {0}"
                              .format(len(subgr.bp_graph)))
 
-            for (u, v) in subgr.bp_graph.edges_iter():
+            for (u, v, data) in subgr.bp_graph.edges_iter(data=True):
                 genomes = subgr.supporting_genomes(u, v)
-                if len(genomes) == 1 and genomes[0] == self.graph.target:
-                    if not subgr.alternating_cycle(u, v):
-                        chimeric_adj.add(tuple(sorted([u, v])))
+                if set(genomes) != set([self.graph.target]):
+                    continue
+                if subgr.alternating_cycle(u, v):
+                    continue
+
+                gap_seq = (self.target_seqs[data["chr_name"]]
+                                           [data["start"]:data["end"]])
+                ns_rate = float(gap_seq.upper().count("N")) / len(gap_seq)
+                logger.debug(ns_rate)
+                if ns_rate < 0.1 and len(subgr.bp_graph) in [4, 6]:
+                    continue
+
+                chimeric_adj.add(tuple(sorted([u, v])))
 
         self.chimeric_adj = chimeric_adj
 

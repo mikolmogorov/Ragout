@@ -187,7 +187,7 @@ def _parse_permutations(filename):
                 genome_name, chr_name = tokens
             else:
                 permutations.append(Permutation(genome_name, chr_name,
-                                    chr_count, None, []))
+                                    None, []))
                 blocks_ids = map(int, line.split(" ")[:-1])
                 for b in blocks_ids:
                     permutations[-1].blocks.append(Block(abs(b),
@@ -225,7 +225,7 @@ def _parse_blocks_coords(filename):
 
                 genome_name, chr_name = tokens
                 perm_by_id[chr_id] = Permutation(genome_name, chr_name,
-                                                 chr_id, int(chr_size), [])
+                                                 int(chr_size), [])
 
             else:
                 if line.startswith("Seq_id") or line.startswith("-"):

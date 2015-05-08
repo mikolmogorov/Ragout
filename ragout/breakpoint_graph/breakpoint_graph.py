@@ -47,31 +47,31 @@ class BreakpointGraph(object):
 
         for perm in chain(perm_container.ref_perms,
                           perm_container.target_perms):
-
             assert perm.blocks
-
             for prev_block, next_block in perm.iter_pairs():
                 self.bp_graph.add_node(-prev_block.signed_id())
                 self.bp_graph.add_node(next_block.signed_id())
 
-                distance = next_block.start - prev_block.end
-                assert distance >= 0
+                #distance = next_block.start - prev_block.end
+                #assert distance >= 0
                 self.bp_graph.add_edge(-prev_block.signed_id(),
                                        next_block.signed_id(),
                                        genome_id=perm.genome_name,
-                                       distance=distance,
+                                       chr_name=perm.chr_name,
+                                       start=prev_block.end,
+                                       end=next_block.start,
                                        infinity=False)
 
-            if (perm.genome_name in self.references and not perm.draft):
-                distance = (perm.chr_len - perm.blocks[-1].end +
-                            perm.blocks[0].start)
-                assert distance >= 0
+            if perm.genome_name in self.references and not perm.draft:
+                #distance = (perm.chr_len - perm.blocks[-1].end +
+                #            perm.blocks[0].start)
+                #assert distance >= 0
 
                 infinity = not perm.circular
                 self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                        perm.blocks[0].signed_id(),
                                        genome_id=perm.genome_name,
-                                       distance=distance,
+                                       chr_name=perm.chr_name,
                                        infinity=infinity)
 
         logger.debug("Built breakpoint graph with {0} nodes"
@@ -197,7 +197,7 @@ class BreakpointGraph(object):
         DEFAULT_DISTANCE = 100
         if not self.bp_graph.has_edge(node_1, node_2):
             return DEFAULT_DISTANCE
-        distances = [e["distance"]
+        distances = [e["end"] - e["start"]
                      for e in self.bp_graph[node_1][node_2].values()]
         return _median(distances) #currently, just a median :(
 

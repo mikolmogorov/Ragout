@@ -35,10 +35,9 @@ class Permutation:
     """
     Represents signed permutation
     """
-    def __init__(self, genome_name, chr_name, chr_id, chr_len, blocks):
+    def __init__(self, genome_name, chr_name, chr_len, blocks):
         self.genome_name = genome_name
         self.chr_name = chr_name
-        self.chr_id = chr_id
         self.chr_len = chr_len
         self.blocks = blocks
         self.circular = False

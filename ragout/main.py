@@ -151,6 +151,10 @@ def run_unsafe(args):
         logger.info(phylogeny.tree_string)
     ####
 
+    logger.info("Reading contigs file")
+    target_fasta_file = backend.get_target_fasta()
+    target_fasta_dict = read_fasta_dict(target_fasta_file)
+
     #####
     last_scaffolds = None
     for block_size in synteny_blocks:
@@ -167,7 +171,8 @@ def run_unsafe(args):
                                               conservative, phylogeny)
         if conservative:
             breakpoint_graph = BreakpointGraph(perm_container)
-            chim_detect = ChimeraDetector(breakpoint_graph, perm_container)
+            chim_detect = ChimeraDetector(breakpoint_graph, perm_container,
+                                          target_fasta_dict)
 
         chim_detect.fix_container(perm_container)
         breakpoint_graph = BreakpointGraph(perm_container)
@@ -189,10 +194,6 @@ def run_unsafe(args):
 
     if args.debug:
         debugger.set_debug_dir(debug_root)
-
-    logger.info("Reading contigs file")
-    target_fasta_file = backend.get_target_fasta()
-    target_fasta_dict = read_fasta_dict(target_fasta_file)
 
     out_gen.output_links(last_scaffolds, out_links)
     out_gen.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)

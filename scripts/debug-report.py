@@ -214,6 +214,7 @@ def draw_phylogeny(phylogeny_txt, out_file):
     tree_string, target_name = open(phylogeny_txt, "r").read().splitlines()
     g2c.table[target_name] = "red"
 
+    tree_string = tree_string.replace(" ", "")
     tree = Phylo.read(StringIO(tree_string), "newick")
     tree.clade.branch_length = 0
     for clade in tree.find_clades():
