@@ -96,12 +96,15 @@ class AdjacencyInferer(object):
         #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
-            cycle = subgraph.alternating_cycle(node_1, node_2)
+            cycle = subgraph.alternating_cycle(node_1, node_2, False)
             if (abs(node_1) != abs(node_2) and cycle is not None):
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
                 unused_nodes.clear()
         self.orphans_count += len(unused_nodes)
+        #if len(unused_nodes):
+        #    for node in subgraph.bp_graph.nodes():
+        #        self.main_graph.add_debug_node(node)
 
         return chosen_edges
 

@@ -37,18 +37,22 @@ class ChimeraDetector(object):
                 genomes = subgr.supporting_genomes(u, v)
                 if set(genomes) != set([self.graph.target]):
                     continue
-                if subgr.alternating_cycle(u, v):
+                if subgr.alternating_cycle(u, v, False):
                     continue
 
                 gap_seq = (self.target_seqs[data["chr_name"]]
                                            [data["start"]:data["end"]])
-                ns_rate = float(gap_seq.upper().count("N")) / len(gap_seq)
-                logger.debug(ns_rate)
-                if ns_rate < 0.1 and len(subgr.bp_graph) in [4, 6]:
+                ns_rate = (float(gap_seq.upper().count("N")) / len(gap_seq)
+                           if len(gap_seq) else 0)
+                if ns_rate < 0.1 and len(subgr.bp_graph) in [4]:
+                    logger.debug(ns_rate)
+                    for node in subgr.bp_graph.nodes():
+                        self.graph.add_debug_node(node)
                     continue
 
                 chimeric_adj.add(tuple(sorted([u, v])))
 
+        self.graph.debug_output()
         self.chimeric_adj = chimeric_adj
 
     def _get_contig_cuts(self, permutations):
@@ -72,6 +76,7 @@ class ChimeraDetector(object):
         new_perms = []
         num_chim_perms = 0
         num_cuts = 0
+        num_lost = 0
         for perm in permutations:
             if perm.chr_name not in cuts:
                 new_perms.append(perm)
@@ -88,13 +93,14 @@ class ChimeraDetector(object):
             num_cuts += len(perm_cuts) - 1
 
             for block in perm.blocks:
-                if block.end < perm_cuts[0]:
+                if block.end <= perm_cuts[0]:
                     block.start -= shift
                     block.end -= shift
                     cur_perm.blocks.append(block)
                     continue
 
                 if block.start < perm_cuts[0]:
+                    num_lost += 1
                     continue
 
                 #we have passed the current cut
@@ -120,4 +126,5 @@ class ChimeraDetector(object):
 
         logger.debug("Chimera Detector: {0} cuts made in {1} sequences"
                         .format(num_cuts, num_chim_perms))
+        logger.debug("Lost {0} blocks".format(num_lost))
         return new_perms

@@ -28,6 +28,7 @@ class BreakpointGraph(object):
         self.bp_graph = nx.MultiGraph()
         self.target = None
         self.references = []
+        self.debug_nodes = set()
         if perm_container is not None:
             self.build_from(perm_container)
 
@@ -113,12 +114,22 @@ class BreakpointGraph(object):
                 if ref_id not in adjacencies:
                     adjacencies[ref_id] = None  #"void" state in paper
 
+            break_weights = {}
             for neighbor in self.bp_graph.neighbors(node):
                 adjacencies[self.target] = neighbor
-                break_weight = phylogeny.estimate_tree(adjacencies)
-                _update_edge(g, node, neighbor, break_weight)
+                break_weights[neighbor] = phylogeny.estimate_tree(adjacencies)
+
+            #normalization
+            total_weights = sum(break_weights.values())
+            for neighbor in self.bp_graph.neighbors(node):
+                weight = (break_weights[neighbor] / total_weights
+                          if total_weights != 0 else 0)
+                _update_edge(g, node, neighbor, weight)
 
         return g
+
+    def add_debug_node(self, node):
+        self.debug_nodes.add(node)
 
     def get_orphaned_nodes(self):
         """
@@ -141,14 +152,14 @@ class BreakpointGraph(object):
                 if subgr.bp_graph.has_edge(node_1, node_2):
                     continue
 
-                cycle = subgr.alternating_cycle(node_1, node_2)
+                cycle = subgr.alternating_cycle(node_1, node_2, False)
                 if (abs(node_1) != abs(node_2) and cycle is not None):
                     candidate_nodes.add(node_1)
                     candidate_nodes.add(node_2)
 
         return candidate_nodes
 
-    def alternating_cycle(self, node_1, node_2):
+    def alternating_cycle(self, node_1, node_2, require_red):
         """
         Determines if there is a cycle of alternating colors
         that goes through the given red-supported (!) edge
@@ -163,13 +174,13 @@ class BreakpointGraph(object):
                 continue
 
             edges = list(zip(path[:-1], path[1:]))
-            odd_colors = list(map(get_genome_ids, edges[0::2]))
             even_colors = list(map(get_genome_ids, edges[1::2]))
-
-            if not all(map(lambda e: set(e) == set([self.target]),
-                           even_colors)):
+            even_good = all(map(lambda e: set(e) == set([self.target]),
+                        even_colors))
+            if require_red and not even_good:
                 continue
 
+            odd_colors = list(map(get_genome_ids, edges[0::2]))
             common_genomes = set(odd_colors[0])
             for edge_colors in odd_colors:
                 common_genomes = common_genomes.intersection(edge_colors)
@@ -206,7 +217,7 @@ class BreakpointGraph(object):
             return
 
         graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
-        _output_graph(self.bp_graph, graph_out)
+        _output_graph(self.bp_graph, graph_out, self.debug_nodes)
 
 
     def _alternating_paths(self, src, dst):
@@ -261,13 +272,15 @@ def _median(values):
     return sorted_values[(len(values) - 1) / 2]
 
 
-def _output_graph(graph, out_file):
+def _output_graph(graph, out_file, dn):
     """
     Outputs graph in dot format
     """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
         for v1, v2, data in graph.edges_iter(data=True):
+            if v1 not in dn or v2 not in dn:
+                continue
             fout.write("{0} -- {1}".format(v1, v2))
             if len(data):
                 extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),
