@@ -44,16 +44,43 @@ class ChimeraDetector(object):
                                            [data["start"]:data["end"]])
                 ns_rate = (float(gap_seq.upper().count("N")) / len(gap_seq)
                            if len(gap_seq) else 0)
-                if ns_rate < 0.1 and len(subgr.bp_graph) in [4]:
-                    logger.debug(ns_rate)
-                    for node in subgr.bp_graph.nodes():
-                        self.graph.add_debug_node(node)
-                    continue
-
+                if ns_rate < 0.1 and len(subgr.bp_graph) == 4:
+                    if self._valid_2break(subgr.bp_graph, (u, v)):
+                        logger.debug(ns_rate)
+                        for node in subgr.bp_graph.nodes():
+                            self.graph.add_debug_node(node)
+                        continue
                 chimeric_adj.add(tuple(sorted([u, v])))
 
         self.graph.debug_output()
         self.chimeric_adj = chimeric_adj
+
+    def _valid_2break(self, bp_graph, red_edge):
+        assert len(bp_graph) == 4
+        red_1, red_2 = red_edge
+        cand_1, cand_2 = tuple(set(bp_graph.nodes()) - set(red_edge))
+        if abs(cand_1) == abs(cand_2):
+            return False
+
+        if bp_graph.has_edge(red_1, cand_1):
+            known_1 = red_1, cand_1
+            known_2 = red_2, cand_2
+        else:
+            known_1 = red_1, cand_2
+            known_2 = red_2, cand_1
+
+        chr_1 = {}
+        for data in bp_graph[known_1[0]][known_1[1]].values():
+            chr_1[data["genome_id"]] = data["chr_name"]
+        chr_2 = {}
+        for data in bp_graph[known_2[0]][known_2[1]].values():
+            chr_2[data["genome_id"]] = data["chr_name"]
+        common_genomes = set(chr_1.keys()).intersection(chr_2.keys())
+        for genome in common_genomes:
+            if chr_1[genome] != chr_2[genome]:
+                return False
+
+        return True
 
     def _get_contig_cuts(self, permutations):
         cuts = defaultdict(list)

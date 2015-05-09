@@ -62,7 +62,7 @@ class AdjacencyInferer(object):
             adjacencies[node_2] = Adjacency(node_1, distance,
                                             supporting_genomes)
 
-        self.main_graph.debug_output()
+        #self.main_graph.debug_output()
         self._debug_output(chosen_edges)
 
         return adjacencies
