@@ -119,11 +119,17 @@ class ChimeraDetector(object):
             return False
 
         if bp_graph.has_edge(red_1, cand_1):
+            if not bp_graph.has_edge(red_2, cand_2):
+                return False
             known_1 = red_1, cand_1
             known_2 = red_2, cand_2
-        else:
+        elif bp_graph.has_edge(red_1, cand_2):
+            if not bp_graph.has_edge(red_2, cand_1):
+                return False
             known_1 = red_1, cand_2
             known_2 = red_2, cand_1
+        else:
+            return False
 
         chr_1 = {}
         for data in bp_graph[known_1[0]][known_1[1]].values():
