@@ -155,6 +155,20 @@ def run_unsafe(args):
     target_fasta_file = backend.get_target_fasta()
     target_fasta_dict = read_fasta_dict(target_fasta_file)
 
+    ##Building chimera detector
+    ##
+    raw_bp_graphs = {}
+    raw_perms = {}
+    for block_size in synteny_blocks:
+        debug_dir = os.path.join(debug_root, str(block_size))
+        debugger.set_debug_dir(debug_dir)
+
+        raw_perms[block_size] = PermutationContainer(perm_files[block_size],
+                                                     recipe, False, True, None)
+        raw_bp_graphs[block_size] = BreakpointGraph(raw_perms[block_size])
+    chim_detect = ChimeraDetector(raw_bp_graphs, target_fasta_dict)
+    ##
+
     #####
     last_scaffolds = None
     for block_size in synteny_blocks:
@@ -169,27 +183,25 @@ def run_unsafe(args):
         perm_container = PermutationContainer(perm_files[block_size],
                                               recipe, resolve_repeats,
                                               conservative, phylogeny)
-        if conservative:
-            breakpoint_graph = BreakpointGraph(perm_container)
-            chim_detect = ChimeraDetector(breakpoint_graph, perm_container,
-                                          target_fasta_dict)
-
-        chim_detect.fix_container(perm_container)
+        chim_detect.break_contigs(perm_container, block_size)
         breakpoint_graph = BreakpointGraph(perm_container)
 
         if conservative:
             adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
             adjacencies = adj_inferer.infer_adjacencies()
         else:
+            last_scaffolds = scfldr.update_scaffolds(last_scaffolds,
+                                                     perm_container)
             adj_refiner = AdjacencyRefiner(breakpoint_graph, phylogeny,
                                            perm_container)
             adjacencies = adj_refiner.refine_adjacencies(last_scaffolds)
         scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
+        last_scaffolds = scaffolds
 
-        if last_scaffolds is not None:
-            last_scaffolds = merge.merge(last_scaffolds, scaffolds)
-        else:
-            last_scaffolds = scaffolds
+        #if last_scaffolds is not None:
+        #    last_scaffolds = merge.merge(last_scaffolds, scaffolds)
+        #else:
+        #    last_scaffolds = scaffolds
     ####
 
     if args.debug:

@@ -67,13 +67,12 @@ class BreakpointGraph(object):
                 #distance = (perm.chr_len - perm.blocks[-1].end +
                 #            perm.blocks[0].start)
                 #assert distance >= 0
-
-                infinity = not perm.circular
+                #infinity = not perm.circular
                 self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                        perm.blocks[0].signed_id(),
                                        genome_id=perm.genome_name,
                                        chr_name=perm.chr_name,
-                                       infinity=infinity)
+                                       infinity=True)
 
         logger.debug("Built breakpoint graph with {0} nodes"
                                         .format(len(self.bp_graph)))
@@ -152,14 +151,14 @@ class BreakpointGraph(object):
                 if subgr.bp_graph.has_edge(node_1, node_2):
                     continue
 
-                cycle = subgr.alternating_cycle(node_1, node_2, False)
+                cycle = subgr.alternating_cycle(node_1, node_2)
                 if (abs(node_1) != abs(node_2) and cycle is not None):
                     candidate_nodes.add(node_1)
                     candidate_nodes.add(node_2)
 
         return candidate_nodes
 
-    def alternating_cycle(self, node_1, node_2, require_red):
+    def alternating_cycle(self, node_1, node_2):
         """
         Determines if there is a cycle of alternating colors
         that goes through the given red-supported (!) edge
@@ -175,10 +174,10 @@ class BreakpointGraph(object):
 
             edges = list(zip(path[:-1], path[1:]))
             even_colors = list(map(get_genome_ids, edges[1::2]))
-            even_good = all(map(lambda e: set(e) == set([self.target]),
-                        even_colors))
-            if require_red and not even_good:
-                continue
+            #even_good = all(map(lambda e: set(e) == set([self.target]),
+            #            even_colors))
+            #if require_red and not even_good:
+            #    continue
 
             odd_colors = list(map(get_genome_ids, edges[0::2]))
             common_genomes = set(odd_colors[0])

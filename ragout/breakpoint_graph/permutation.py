@@ -264,7 +264,7 @@ def _check_coverage(permutations):
         total_length = 0
         total_covered = 0
         for perm in genome_perms:
-            total_length += perm.chr_len
+            total_length += perm.length()
             for block in perm.blocks:
                 total_covered += block.length()
 

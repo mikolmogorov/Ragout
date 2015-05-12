@@ -96,7 +96,7 @@ class AdjacencyInferer(object):
         #predicting target-specific rearrangement
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
-            cycle = subgraph.alternating_cycle(node_1, node_2, False)
+            cycle = subgraph.alternating_cycle(node_1, node_2)
             if (abs(node_1) != abs(node_2) and cycle is not None):
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))

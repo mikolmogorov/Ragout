@@ -56,23 +56,18 @@ class AdjacencyRefiner(object):
         Get trusted adjaencies from previous iteration
         """
         trusted_adj = []
-        perm_by_id = {perm.chr_name : perm for perm in
-                      self.perm_container.target_perms}
 
         for scf in prev_scaffolds:
             for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-                if (prev_cont.seq_name in perm_by_id and
-                    next_cont.seq_name in perm_by_id):
-                    left_blocks = perm_by_id[prev_cont.seq_name].blocks
-                    left = (left_blocks[-1].signed_id() if prev_cont.sign > 0
-                            else -left_blocks[0].signed_id())
+                left_blocks = prev_cont.perm.blocks
+                left = (left_blocks[-1].signed_id() if prev_cont.sign > 0
+                        else -left_blocks[0].signed_id())
 
-                    right_blocks = perm_by_id[next_cont.seq_name].blocks
-                    right = (right_blocks[0].signed_id() if next_cont.sign > 0
-                             else -right_blocks[-1].signed_id())
+                right_blocks = next_cont.perm.blocks
+                right = (right_blocks[0].signed_id() if next_cont.sign > 0
+                         else -right_blocks[-1].signed_id())
 
-                    assert prev_cont.seq_name != next_cont.seq_name
-                    trusted_adj.append((-left, right))
+                trusted_adj.append((-left, right))
 
         return trusted_adj
 

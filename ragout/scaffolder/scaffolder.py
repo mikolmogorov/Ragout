@@ -44,6 +44,38 @@ def get_scaffolds(adjacencies, perm_container):
     return scaffolds
 
 
+def update_scaffolds(scaffolds, new_perm_container):
+    """
+    Updates scaffolds wrt to new permutations
+    """
+    by_chr_name = defaultdict(list)
+    for perm in new_perm_container.target_perms:
+        by_chr_name[perm.chr_name].append(perm)
+
+    new_scaffolds = []
+    for scf in scaffolds:
+        new_contigs = []
+        for contig in scf.contigs:
+            inner_perms = []
+            for new_perm in by_chr_name[contig.perm.chr_name]:
+                if (contig.perm.seq_start <= new_perm.seq_start
+                    < contig.perm.seq_end):
+                    inner_perms.append(new_perm)
+                    assert (contig.perm.seq_start < new_perm.seq_end
+                            <= contig.perm.seq_end)
+
+            if not inner_perms:
+                logger.debug("Lost: {0}".format(contig.perm))
+            inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
+            for new_perm in inner_perms:
+                new_contigs.append(Contig(new_perm.name(), new_perm,
+                                          contig.sign))
+
+        new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
+                                                   None, new_contigs))
+    return new_scaffolds
+
+
 def _extend_scaffolds(adjacencies, contigs, contig_index):
     """
     Assembles contigs into scaffolds
@@ -142,7 +174,7 @@ def _make_contigs(perm_container):
     for perm in perm_container.target_perms:
         assert len(perm.blocks)
 
-        contigs.append(Contig(perm.chr_name, perm))
+        contigs.append(Contig(perm.name(), perm))
         for block in perm.blocks:
             assert block.block_id not in index
             index[block.block_id] = contigs[-1]

@@ -35,22 +35,36 @@ class Permutation:
     """
     Represents signed permutation
     """
-    def __init__(self, genome_name, chr_name, chr_len, blocks):
+    def __init__(self, genome_name, chr_name, seq_len, blocks):
         self.genome_name = genome_name
         self.chr_name = chr_name
-        self.chr_len = chr_len
+        self.seq_start = 0
+        self.seq_end = seq_len
+        self.seq_len = seq_len
         self.blocks = blocks
         self.circular = False
         self.draft = False
+
+    def length(self):
+        assert self.seq_end > self.seq_start
+        return self.seq_end - self.seq_start
+
+    def name(self):
+        if self.seq_start == 0 and self.seq_end == self.seq_len:
+            return self.chr_name
+        else:
+            return "{0}[{1}:{2}]".format(self.chr_name, self.seq_start,
+                                         self.seq_end)
 
     def iter_pairs(self):
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
             yield pb, nb
 
     def __str__(self):
-        return "[{0}, {1}, {2}]".format(self.genome_name, self.chr_name,
-                                        list(map(lambda b: b.signed_id(),
-                                                 self.blocks)))
+        return ("[{0}, {1}, {2}, b:{3}, e:{4}]"
+                    .format(self.genome_name, self.chr_name,
+                            list(map(lambda b: b.signed_id(), self.blocks)),
+                            self.seq_start, self.seq_end))
 
 
 class Contig:
@@ -73,10 +87,10 @@ class Contig:
 
     def left_gap(self):
         return (self.perm.blocks[0].start if self.sign > 0
-                else self.perm.chr_len - self.perm.blocks[-1].end)
+                else self.perm.length() - self.perm.blocks[-1].end)
 
     def right_gap(self):
-        return (self.perm.chr_len - self.perm.blocks[-1].end
+        return (self.perm.length() - self.perm.blocks[-1].end
                 if self.sign > 0 else self.perm.blocks[0].start)
 
     def reverse_copy(self):
