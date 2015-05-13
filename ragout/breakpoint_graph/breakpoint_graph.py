@@ -152,7 +152,7 @@ class BreakpointGraph(object):
                     continue
 
                 cycle = subgr.alternating_cycle(node_1, node_2)
-                if (abs(node_1) != abs(node_2) and cycle is not None):
+                if (abs(node_1) != abs(node_2) and cycle in [2, 3]):
                     candidate_nodes.add(node_1)
                     candidate_nodes.add(node_2)
 

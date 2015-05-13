@@ -97,7 +97,7 @@ class AdjacencyInferer(object):
         if len(unused_nodes) == 2:
             node_1, node_2 = tuple(unused_nodes)
             cycle = subgraph.alternating_cycle(node_1, node_2)
-            if (abs(node_1) != abs(node_2) and cycle is not None):
+            if (abs(node_1) != abs(node_2) and cycle in [2, 3]):
                 self.guessed_count += 1
                 chosen_edges.append((node_1, node_2))
                 unused_nodes.clear()

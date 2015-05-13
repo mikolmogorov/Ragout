@@ -9,21 +9,22 @@ in input sequences and breaks them if neccesary
 
 from __future__ import print_function
 import logging
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
 
 from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 
 logger = logging.getLogger()
+ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
 
 class ChimeraDetector(object):
     def __init__(self, breakpoint_graphs, target_seqs):
         logger.debug("Detecting chimeric adjacencies")
         self.bp_graphs = breakpoint_graphs
         self.target_seqs = target_seqs
-        self._make_hierarchical_cuts()
+        self._make_hierarchical_breaks()
 
-    def _make_hierarchical_cuts(self):
+    def _make_hierarchical_breaks(self):
         """
         Determines where and at what synteny blocks scale to break each contig
         """
@@ -32,9 +33,9 @@ class ChimeraDetector(object):
 
         #extracting and grouping by sequence
         for block in ordered_blocks:
-            chimeric_adj, cuts = self._get_chimeric_adj(self.bp_graphs[block])
-            for seq_name in cuts:
-                seq_cuts[seq_name][block] = cuts[seq_name]
+            breaks = self._get_contig_breaks(self.bp_graphs[block])
+            for br in breaks:
+                seq_cuts[br.seq_name][block].append(br)
 
         #magic!
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
@@ -45,37 +46,50 @@ class ChimeraDetector(object):
                 top_block = ordered_blocks[i]
                 logger.debug(top_block)
 
-                for cur_cut in seq_cuts[seq_name][top_block]:
+                for top_break in seq_cuts[seq_name][top_block]:
+                    if top_break.good:
+                        continue
+
+                    cancel_break = False
+                    adjusted_break = (top_break.begin, top_break.end)
                     for j in xrange(i + 1, len(ordered_blocks)):
                         lower_block = ordered_blocks[j]
                         #check if there is overlapping cut
-                        chosen_cut = None
-                        for lower_cut in seq_cuts[seq_name][lower_block]:
-                            ovlp_left = max(cur_cut[0], lower_cut[0])
-                            ovlp_right = min(cur_cut[1], lower_cut[1])
+                        chosen_break = None
+                        for lower_break in seq_cuts[seq_name][lower_block]:
+                            ovlp_left = max(adjusted_break[0], lower_break.begin)
+                            ovlp_right = min(adjusted_break[1], lower_break.end)
                             #if so, update current and go down
                             if ovlp_right >= ovlp_left:
-                                cur_cut = (ovlp_left, ovlp_right)
-                                chosen_cut = cur_cut
+                                adjusted_break = (ovlp_left, ovlp_right)
+                                chosen_break = lower_break
                                 break
-                        if chosen_cut:
-                            seq_cuts[seq_name][lower_block].remove(chosen_cut)
 
-                    logger.debug(cur_cut)
+                        if chosen_break:
+                            if chosen_break.good and j == i + 1:
+                                cancel_break = True
+                                continue
+                            else:
+                                seq_cuts[seq_name][lower_block].remove(chosen_break)
+
+                    if cancel_break:
+                        logger.debug("Cancelled")
+                        continue
+
+                    logger.debug(adjusted_break)
                     for k in xrange(i, len(ordered_blocks)):
                         affected_block = ordered_blocks[k]
-                        cut_region = (cur_cut[1] + cur_cut[0]) / 2
+                        break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
                         hierarchical_cuts[seq_name][affected_block] \
-                                                            .append(cut_region)
+                                                            .append(break_pos)
             logger.debug(hierarchical_cuts[seq_name])
         self.hierarchical_cuts = hierarchical_cuts
 
-    def _get_chimeric_adj(self, bp_graph):
+    def _get_contig_breaks(self, bp_graph):
         """
         Detects chimeric adjacencies
         """
-        chimeric_adj = set()
-        seq_cuts = defaultdict(list)
+        seq_cuts = []
 
         subgraphs = bp_graph.connected_components()
         for subgr in subgraphs:
@@ -87,11 +101,13 @@ class ChimeraDetector(object):
                 genomes = subgr.supporting_genomes(u, v)
                 if set(genomes) != set([bp_graph.target]):
                     continue
-                if subgr.alternating_cycle(u, v):
+
+                seq_name, start, end = data["chr_name"], data["start"], data["end"]
+                if subgr.alternating_cycle(u, v) in [2, 3]:
+                    seq_cuts.append(ContigBreak(seq_name, start, end, True))
                     continue
 
-                gap_seq = (self.target_seqs[data["chr_name"]]
-                                           [data["start"]:data["end"]])
+                gap_seq = self.target_seqs[seq_name][start:end]
                 ns_rate = (float(gap_seq.upper().count("N")) / len(gap_seq)
                            if len(gap_seq) else 0)
                 if ns_rate < 0.1 and len(subgr.bp_graph) == 4:
@@ -99,14 +115,14 @@ class ChimeraDetector(object):
                         logger.debug(ns_rate)
                         for node in subgr.bp_graph.nodes():
                             bp_graph.add_debug_node(node)
+                        seq_cuts.append(ContigBreak(seq_name, start, end, True))
                         continue
 
-                chimeric_adj.add((u, v))
-                seq_cuts[data["chr_name"]].append((data["start"], data["end"]))
+                seq_cuts.append(ContigBreak(seq_name, start, end, False))
 
         bp_graph.debug_output()
 
-        return chimeric_adj, seq_cuts
+        return seq_cuts
 
     def _valid_2break(self, bp_graph, red_edge):
         """
