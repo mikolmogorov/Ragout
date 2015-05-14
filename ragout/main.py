@@ -11,6 +11,7 @@ import sys
 import shutil
 import logging
 import argparse
+from copy import deepcopy
 
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.assembly_graph.assembly_graph as asgraph
@@ -170,7 +171,7 @@ def run_unsafe(args):
     ##
 
     #####
-    last_scaffolds = None
+    scaffolds = None
     for block_size in synteny_blocks:
         logger.info("Inferring adjacencies at {0}".format(block_size))
         debug_dir = os.path.join(debug_root, str(block_size))
@@ -190,14 +191,16 @@ def run_unsafe(args):
             adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
             adjacencies = adj_inferer.infer_adjacencies()
         else:
-            last_scaffolds = scfldr.update_scaffolds(last_scaffolds,
-                                                     perm_container)
+            scaffolds = scfldr.update_scaffolds(scaffolds, perm_container)
+            if block_size == 500:
+                scaffolds = project_rearrangements(scaffolds, perm_container,
+                                                   phylogeny)
             adj_refiner = AdjacencyRefiner(breakpoint_graph, phylogeny,
                                            perm_container)
-            adjacencies = adj_refiner.refine_adjacencies(last_scaffolds)
+            adjacencies = adj_refiner.refine_adjacencies(scaffolds)
         scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
-        last_scaffolds = scaffolds
 
+        #last_scaffolds = scaffolds
         #if last_scaffolds is not None:
         #    last_scaffolds = merge.merge(last_scaffolds, scaffolds)
         #else:
@@ -207,12 +210,12 @@ def run_unsafe(args):
     if args.debug:
         debugger.set_debug_dir(debug_root)
 
-    out_gen.output_links(last_scaffolds, out_links)
-    out_gen.output_fasta(target_fasta_dict, last_scaffolds, out_scaffolds)
+    out_gen.output_links(scaffolds, out_links)
+    out_gen.output_fasta(target_fasta_dict, scaffolds, out_scaffolds)
 
     if not args.no_refine:
         overlap.make_overlap_graph(target_fasta_file, out_overlap)
-        refined_scaffolds = asref.refine_scaffolds(out_overlap, last_scaffolds,
+        refined_scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
                                                    target_fasta_dict)
         out_gen.output_links(refined_scaffolds, out_refined_links)
         out_gen.output_fasta(target_fasta_dict, refined_scaffolds,
@@ -221,12 +224,41 @@ def run_unsafe(args):
             shutil.copy(out_overlap, debugger.debug_dir)
             out_colored_overlap = os.path.join(debugger.debug_dir,
                                                "colored_overlap.dot")
-            asgraph.save_colored_insert_overlap_graph(out_overlap, last_scaffolds,
+            asgraph.save_colored_insert_overlap_graph(out_overlap, scaffolds,
                                                       refined_scaffolds,
                                                       out_colored_overlap)
         os.remove(out_overlap)
 
     logger.info("Your Ragout is ready!")
+
+
+def project_rearrangements(scaffolds, perm_container, phylogeny):
+    """
+    Construct scaffolds from the blocks from finer scale and
+    try to project back rearrangements
+    """
+    logger.debug("Projecting rearragements")
+
+    #scaffolds_perms = set()
+    new_perms = []
+    for scf in scaffolds:
+        for cnt in scf.contigs:
+            new_perms.append(cnt.perm)
+            #scaffolds_perms.add(cnt.perm)
+    #new_perms = list(filter(lambda p: p in scaffolds_perms,
+    #                        perm_container.target_perms))
+    perm_container = deepcopy(perm_container)
+    perm_cont_2 = deepcopy(perm_container)
+    perm_container.target_perms = new_perms
+    perm_container.filter_indels(False)
+
+    bg = BreakpointGraph(perm_container)
+    adj_inferer = AdjacencyInferer(bg, phylogeny)
+    adjacencies = adj_inferer.infer_adjacencies()
+    new_scaffolds = scfldr.get_scaffolds(adjacencies, perm_container)
+
+    new_adj = scfldr.project_rearrangements(scaffolds, new_scaffolds)
+    return scfldr.get_scaffolds(new_adj, perm_cont_2)
 
 
 def main():

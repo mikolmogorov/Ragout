@@ -8,11 +8,13 @@ to given adjacencies. Also, it outputs scaffolds in different
 formats
 """
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from itertools import repeat
 import os
 import copy
 import logging
+
+import networkx as nx
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared.datatypes import Contig, Scaffold, Link
@@ -21,6 +23,7 @@ from .output_generator import output_links
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
+Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 def get_scaffolds(adjacencies, perm_container):
     """
@@ -74,6 +77,51 @@ def update_scaffolds(scaffolds, new_perm_container):
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
                                                    None, new_contigs))
     return new_scaffolds
+
+
+def project_rearrangements(old_scaffolds, new_scaffolds):
+    bp_graph = nx.MultiGraph()
+    for scf in old_scaffolds:
+        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
+                              scf_set="old", scf_name=scf.name)
+    for scf in new_scaffolds:
+        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
+                              scf_set="new", scf_name=scf.name)
+
+    #now look for valid 2-breaks
+    subgraphs = list(nx.connected_component_subgraphs(bp_graph))
+    for subgr in subgraphs:
+        if len(subgr) != 4:
+            continue
+
+        #this is a cycle
+        if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
+            continue
+
+        red_edges = []
+        black_edges = []
+        for (u, v, data) in subgr.edges_iter(data=True):
+            if data["scf_set"] == "old":
+                red_edges.append((u, v))
+            else:
+                black_edges.append((u, v))
+        assert len(red_edges) == 2 and len(black_edges) == 2
+        logger.debug("2-break!")
+
+        for u, v in red_edges:
+            bp_graph.remove_edge(u, v)
+        for u, v in black_edges:
+            bp_graph.add_edge(u, v, scf_set="old")
+
+    adjacencies = {}
+    for (u, v, data) in bp_graph.edges_iter(data=True):
+        if data["scf_set"] == "old":
+            adjacencies[u] = Adjacency(v, 0, [])
+            adjacencies[v] = Adjacency(u, 0, [])
+
+    return adjacencies
 
 
 def _extend_scaffolds(adjacencies, contigs, contig_index):

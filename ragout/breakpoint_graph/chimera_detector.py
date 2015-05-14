@@ -40,17 +40,16 @@ class ChimeraDetector(object):
         #magic!
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
         for seq_name in seq_cuts:
-            logger.debug(seq_name)
-            logger.debug(dict(seq_cuts[seq_name]))
+            #logger.debug(seq_name)
+            #logger.debug(dict(seq_cuts[seq_name]))
             for i in xrange(len(ordered_blocks)):
                 top_block = ordered_blocks[i]
-                logger.debug(top_block)
+                #logger.debug(top_block)
 
                 for top_break in seq_cuts[seq_name][top_block]:
                     if top_break.good:
                         continue
 
-                    cancel_break = False
                     adjusted_break = (top_break.begin, top_break.end)
                     for j in xrange(i + 1, len(ordered_blocks)):
                         lower_block = ordered_blocks[j]
@@ -66,23 +65,15 @@ class ChimeraDetector(object):
                                 break
 
                         if chosen_break:
-                            if chosen_break.good and j == i + 1:
-                                cancel_break = True
-                                continue
-                            else:
-                                seq_cuts[seq_name][lower_block].remove(chosen_break)
+                            seq_cuts[seq_name][lower_block].remove(chosen_break)
 
-                    if cancel_break:
-                        logger.debug("Cancelled")
-                        continue
-
-                    logger.debug(adjusted_break)
+                    #logger.debug(adjusted_break)
                     for k in xrange(i, len(ordered_blocks)):
                         affected_block = ordered_blocks[k]
                         break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
                         hierarchical_cuts[seq_name][affected_block] \
                                                             .append(break_pos)
-            logger.debug(hierarchical_cuts[seq_name])
+            #logger.debug(hierarchical_cuts[seq_name])
         self.hierarchical_cuts = hierarchical_cuts
 
     def _get_contig_breaks(self, bp_graph):

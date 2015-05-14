@@ -53,8 +53,6 @@ class BreakpointGraph(object):
                 self.bp_graph.add_node(-prev_block.signed_id())
                 self.bp_graph.add_node(next_block.signed_id())
 
-                #distance = next_block.start - prev_block.end
-                #assert distance >= 0
                 self.bp_graph.add_edge(-prev_block.signed_id(),
                                        next_block.signed_id(),
                                        genome_id=perm.genome_name,
@@ -64,10 +62,6 @@ class BreakpointGraph(object):
                                        infinity=False)
 
             if perm.genome_name in self.references and not perm.draft:
-                #distance = (perm.chr_len - perm.blocks[-1].end +
-                #            perm.blocks[0].start)
-                #assert distance >= 0
-                #infinity = not perm.circular
                 self.bp_graph.add_edge(-perm.blocks[-1].signed_id(),
                                        perm.blocks[0].signed_id(),
                                        genome_id=perm.genome_name,
