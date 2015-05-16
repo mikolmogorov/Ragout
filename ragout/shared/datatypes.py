@@ -7,7 +7,7 @@ This module provides some common data structures
 """
 
 from collections import namedtuple
-from copy import deepcopy
+from copy import copy, deepcopy
 
 
 class Block:
@@ -94,7 +94,7 @@ class Contig:
                 if self.sign > 0 else self.perm.blocks[0].start)
 
     def reverse_copy(self):
-        contig = deepcopy(self)
+        contig = copy(self)
         contig.sign = -contig.sign
         return contig
 

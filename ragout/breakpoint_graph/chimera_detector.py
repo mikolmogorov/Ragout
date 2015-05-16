@@ -37,7 +37,6 @@ class ChimeraDetector(object):
             for br in breaks:
                 seq_cuts[br.seq_name][block].append(br)
 
-        #magic!
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
         for seq_name in seq_cuts:
             #logger.debug(seq_name)
@@ -54,26 +53,17 @@ class ChimeraDetector(object):
                     for j in xrange(i + 1, len(ordered_blocks)):
                         lower_block = ordered_blocks[j]
                         #check if there is overlapping cut
-                        chosen_break = None
                         for lower_break in seq_cuts[seq_name][lower_block]:
                             ovlp_left = max(adjusted_break[0], lower_break.begin)
                             ovlp_right = min(adjusted_break[1], lower_break.end)
                             #if so, update current and go down
                             if ovlp_right >= ovlp_left:
                                 adjusted_break = (ovlp_left, ovlp_right)
-                                chosen_break = lower_break
                                 break
 
-                        if chosen_break:
-                            seq_cuts[seq_name][lower_block].remove(chosen_break)
-
+                    break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
+                    hierarchical_cuts[seq_name][top_block].append(break_pos)
                     #logger.debug(adjusted_break)
-                    for k in xrange(i, len(ordered_blocks)):
-                        affected_block = ordered_blocks[k]
-                        break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
-                        hierarchical_cuts[seq_name][affected_block] \
-                                                            .append(break_pos)
-            #logger.debug(hierarchical_cuts[seq_name])
         self.hierarchical_cuts = hierarchical_cuts
 
     def _get_contig_breaks(self, bp_graph):
@@ -98,6 +88,7 @@ class ChimeraDetector(object):
                     seq_cuts.append(ContigBreak(seq_name, start, end, True))
                     continue
 
+                """
                 gap_seq = self.target_seqs[seq_name][start:end]
                 ns_rate = (float(gap_seq.upper().count("N")) / len(gap_seq)
                            if len(gap_seq) else 0)
@@ -108,6 +99,7 @@ class ChimeraDetector(object):
                             bp_graph.add_debug_node(node)
                         seq_cuts.append(ContigBreak(seq_name, start, end, True))
                         continue
+                """
 
                 seq_cuts.append(ContigBreak(seq_name, start, end, False))
 
@@ -151,16 +143,16 @@ class ChimeraDetector(object):
 
         return True
 
-    def break_contigs(self, perm_container, block_size):
+    def break_contigs(self, perm_container, block_sizes):
         """
         Breaks contigs in inferred cut positions
         """
-        perm_container.target_perms = self._cut_permutations(block_size,
-                                                perm_container.target_perms)
+        perm_container.target_perms = \
+                self._cut_permutations(perm_container.target_perms, block_sizes)
         perm_container.filter_indels(True)
 
     #TODO: refactoring
-    def _cut_permutations(self, block_size, permutations):
+    def _cut_permutations(self, permutations, block_sizes):
         """
         Actually breaks these contigs
         """
@@ -169,7 +161,10 @@ class ChimeraDetector(object):
         num_cuts = 0
         num_lost = 0
         for perm in permutations:
-            cuts = self.hierarchical_cuts[perm.chr_name][block_size]
+            cuts = []
+            for size in block_sizes:
+                cuts.extend(self.hierarchical_cuts[perm.chr_name][size])
+            cuts = list(set(cuts))
             if not cuts:
                 new_perms.append(perm)
                 continue

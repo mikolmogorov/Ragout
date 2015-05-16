@@ -14,8 +14,6 @@ import os
 import copy
 import logging
 
-import networkx as nx
-
 from ragout.shared.debug import DebugConfig
 from ragout.shared.datatypes import Contig, Scaffold, Link
 from .output_generator import output_links
@@ -23,9 +21,7 @@ from .output_generator import output_links
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
-
-def get_scaffolds(adjacencies, perm_container):
+def build_scaffolds(adjacencies, perm_container):
     """
     Assembles scaffolds
     """
@@ -45,83 +41,6 @@ def get_scaffolds(adjacencies, perm_container):
         _output_scaffold_premutations(scaffolds, perms_out)
 
     return scaffolds
-
-
-def update_scaffolds(scaffolds, new_perm_container):
-    """
-    Updates scaffolds wrt to new permutations
-    """
-    by_chr_name = defaultdict(list)
-    for perm in new_perm_container.target_perms:
-        by_chr_name[perm.chr_name].append(perm)
-
-    new_scaffolds = []
-    for scf in scaffolds:
-        new_contigs = []
-        for contig in scf.contigs:
-            inner_perms = []
-            for new_perm in by_chr_name[contig.perm.chr_name]:
-                if (contig.perm.seq_start <= new_perm.seq_start
-                    < contig.perm.seq_end):
-                    inner_perms.append(new_perm)
-                    assert (contig.perm.seq_start < new_perm.seq_end
-                            <= contig.perm.seq_end)
-
-            if not inner_perms:
-                logger.debug("Lost: {0}".format(contig.perm))
-            inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
-            for new_perm in inner_perms:
-                new_contigs.append(Contig(new_perm.name(), new_perm,
-                                          contig.sign))
-
-        new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
-                                                   None, new_contigs))
-    return new_scaffolds
-
-
-def project_rearrangements(old_scaffolds, new_scaffolds):
-    bp_graph = nx.MultiGraph()
-    for scf in old_scaffolds:
-        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="old", scf_name=scf.name)
-    for scf in new_scaffolds:
-        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="new", scf_name=scf.name)
-
-    #now look for valid 2-breaks
-    subgraphs = list(nx.connected_component_subgraphs(bp_graph))
-    for subgr in subgraphs:
-        if len(subgr) != 4:
-            continue
-
-        #this is a cycle
-        if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
-            continue
-
-        red_edges = []
-        black_edges = []
-        for (u, v, data) in subgr.edges_iter(data=True):
-            if data["scf_set"] == "old":
-                red_edges.append((u, v))
-            else:
-                black_edges.append((u, v))
-        assert len(red_edges) == 2 and len(black_edges) == 2
-        logger.debug("2-break!")
-
-        for u, v in red_edges:
-            bp_graph.remove_edge(u, v)
-        for u, v in black_edges:
-            bp_graph.add_edge(u, v, scf_set="old")
-
-    adjacencies = {}
-    for (u, v, data) in bp_graph.edges_iter(data=True):
-        if data["scf_set"] == "old":
-            adjacencies[u] = Adjacency(v, 0, [])
-            adjacencies[v] = Adjacency(u, 0, [])
-
-    return adjacencies
 
 
 def _extend_scaffolds(adjacencies, contigs, contig_index):
@@ -221,7 +140,6 @@ def _make_contigs(perm_container):
     index = {}
     for perm in perm_container.target_perms:
         assert len(perm.blocks)
-
         contigs.append(Contig(perm.name(), perm))
         for block in perm.blocks:
             assert block.block_id not in index
