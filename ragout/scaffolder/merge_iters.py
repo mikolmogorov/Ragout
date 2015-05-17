@@ -109,7 +109,11 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
     """
     No repeats assumed!
     """
-    #TODO: handle repeats and indels :)
+    old_contigs = set()
+    for scf in old_scaffolds:
+        for cnt in scf.contigs:
+            old_contigs.add(cnt.name())
+
     bp_graph = nx.MultiGraph()
     for scf in old_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
@@ -118,8 +122,9 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                               link=cnt_1.link)
     for scf in new_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="new", scf_name=scf.name)
+            if cnt_1.name() in old_contigs and cnt_2.name() in old_contigs:
+                bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
+                                  scf_set="new", scf_name=scf.name)
 
     #now look for valid 2-breaks
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
