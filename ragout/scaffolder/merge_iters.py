@@ -11,10 +11,11 @@ from collections import namedtuple, defaultdict
 from itertools import product, chain
 import sys
 import logging
+from copy import deepcopy
 
 import networkx as nx
 
-from ragout.shared.datatypes import Contig, Scaffold
+from ragout.shared.datatypes import ContigWithPerm, Scaffold, Permutation, Link
 from ragout.scaffolder.scaffolder import build_scaffolds
 
 logger = logging.getLogger()
@@ -23,17 +24,52 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
     logger.info("Merging two iterations")
+    #synchronizing scaffolds
     big_updated = _update_scaffolds(big_scaffolds, perm_container)
     small_updated = _update_scaffolds(small_scaffolds, perm_container)
 
     if rearrange:
-        #TODO: keep only common permutations
         new_adj = _project_rearrangements(big_updated, small_updated)
-        big_rearranged = build_scaffolds(new_adj, perm_container)
+        big_rearranged = build_scaffolds(new_adj, perm_container, False)
     else:
         big_rearranged = big_updated
 
-    return _merge(big_rearranged, small_updated)
+    merged_scf = _merge_scaffolds(big_rearranged, small_updated)
+    merged_scf = _merge_consecutive_contigs(merged_scf)
+    return merged_scf
+
+
+def _merge_consecutive_contigs(scaffolds):
+    new_scaffolds = []
+    for scf in scaffolds:
+        new_contigs = []
+
+        cur_sign, cur_perm, cur_link = None, None, None
+        for cnt in scf.contigs:
+            consistent = False
+            if cur_sign == cnt.sign and cnt.perm.chr_name == cur_perm.chr_name:
+                if cur_sign > 0 and cur_perm.seq_end == cnt.perm.seq_start:
+                    cur_perm.seq_end = cnt.perm.seq_end
+                    cur_perm.blocks.extend(cnt.perm.blocks)
+                    consistent = True
+                if cur_sign < 0 and cur_perm.seq_start == cnt.perm.seq_end:
+                    cur_perm.seq_start = cnt.perm.seq_start
+                    cur_perm.blocks = cnt.perm.blocks + cur_perm.blocks
+                    consistent = True
+
+            if not consistent:
+                if cur_perm:
+                    new_contigs.append(ContigWithPerm(cur_perm, cur_sign, cur_link))
+                cur_perm = deepcopy(cnt.perm)
+
+            cur_sign = cnt.sign
+            cur_link = cnt.link
+
+        if cur_perm:
+            new_contigs.append(ContigWithPerm(cur_perm, cur_sign, cur_link))
+        new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
+                                                   None, new_contigs))
+    return new_scaffolds
 
 
 def _update_scaffolds(scaffolds, perm_container):
@@ -60,8 +96,9 @@ def _update_scaffolds(scaffolds, perm_container):
                 logger.debug("Lost: {0}".format(contig.perm))
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
             for new_perm in inner_perms:
-                new_contigs.append(Contig(new_perm.name(), new_perm,
-                                          contig.sign))
+                new_contigs.append(ContigWithPerm(new_perm, contig.sign,
+                                                  Link(0, ["^_^"])))
+            new_contigs[-1].link = contig.link
 
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
                                                    None, new_contigs))
@@ -69,11 +106,16 @@ def _update_scaffolds(scaffolds, perm_container):
 
 
 def _project_rearrangements(old_scaffolds, new_scaffolds):
+    """
+    No repeats assumed!
+    """
+    #TODO: handle repeats and indels :)
     bp_graph = nx.MultiGraph()
     for scf in old_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="old", scf_name=scf.name)
+                              scf_set="old", scf_name=scf.name,
+                              link=cnt_1.link)
     for scf in new_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
@@ -102,18 +144,20 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         for u, v in red_edges:
             bp_graph.remove_edge(u, v)
         for u, v in black_edges:
-            bp_graph.add_edge(u, v, scf_set="old")
+            bp_graph.add_edge(u, v, scf_set="old", link=Link(0, [":("]))
 
     adjacencies = {}
     for (u, v, data) in bp_graph.edges_iter(data=True):
         if data["scf_set"] == "old":
-            adjacencies[u] = Adjacency(v, 0, [])
-            adjacencies[v] = Adjacency(u, 0, [])
+            adjacencies[u] = Adjacency(v, data["link"].gap,
+                                       data["link"].supporting_genomes)
+            adjacencies[v] = Adjacency(u, data["link"].gap,
+                                       data["link"].supporting_genomes)
 
     return adjacencies
 
 
-def _merge(big_scaffolds, small_scaffolds):
+def _merge_scaffolds(big_scaffolds, small_scaffolds):
     """
     Merges two assemblies assuming that big one is correct
     """

@@ -68,14 +68,26 @@ class Permutation:
 
 
 class Contig:
-    """
-    Contig data structure for more convenient use
-    """
-    def __init__(self, seq_name, permutation, sign=1):
-        self.perm = permutation
+    def __init__(self, seq_name, sign=1, link=None):
         self.seq_name = seq_name
         self.sign = sign
-        self.link = Link(0, [])
+        if not link:
+            self.link = Link(0, [])
+        else:
+            self.link = link
+
+    def name(self):
+        return self.seq_name
+
+    def signed_name(self):
+        sign = "+" if self.sign > 0 else "-"
+        return sign + self.name()
+
+
+class ContigWithPerm(Contig):
+    def __init__(self, permutation, sign=1, link=None):
+        self.perm = permutation
+        Contig.__init__(self, None, sign, link)
 
     def left_end(self):
         return (self.perm.blocks[0].signed_id() if self.sign > 0
@@ -104,9 +116,8 @@ class Contig:
         else:
             return list(map(lambda b: -b.signed_id(), self.perm.blocks[::-1]))
 
-    def __str__(self):
-        sign = "+" if self.sign > 0 else "-"
-        return sign + self.seq_name
+    def name(self):
+        return self.perm.name()
 
 
 class Link:

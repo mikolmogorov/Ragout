@@ -70,7 +70,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
     new_scaffolds = []
     ordered_contigs = set()
     for scf in scaffolds_in:
-        ordered_contigs |= set(map(lambda c: c.seq_name, scf.contigs))
+        ordered_contigs |= set(map(lambda c: c.name(), scf.contigs))
     reverse_graph = graph.reverse()
 
     for scf in scaffolds_in:
@@ -93,7 +93,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
 
-                new_scaffolds[-1].contigs.append(Contig(name, None, sign))
+                new_scaffolds[-1].contigs.append(Contig(name, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_genomes = \
@@ -110,7 +110,7 @@ def _get_cut_vertices(graph, reverse_graph, prev_cont, next_cont,
     node to another. Corresponding contigs will be inserted into scaffolds
     between src and dst. This is a generalized version of what we have in paper
     """
-    src, dst = str(prev_cont), str(next_cont)
+    src, dst = prev_cont.signed_name(), next_cont.signed_name()
 
     if not (graph.has_node(src) and graph.has_node(dst)):
         #logger.debug("contigs {0} / {1} are not in the graph"
@@ -195,12 +195,12 @@ def _reestimate_distances(graph, scaffolds, max_path_len, contigs_fasta):
     restricted_nodes = set()
     for scf in scaffolds:
         for contig in scf.contigs:
-            restricted_nodes.add("+" + contig.seq_name)
-            restricted_nodes.add("-" + contig.seq_name)
+            restricted_nodes.add("+" + contig.name())
+            restricted_nodes.add("-" + contig.name())
 
     for scf in scaffolds:
         for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-            src, dst =  str(prev_cont), str(next_cont)
+            src, dst =  prev_cont.signed_name(), next_cont.signed_name()
             if graph.has_edge(src, dst):
                 overlap = graph[src][dst]["label"]
                 prev_cont.link.gap = -int(overlap)

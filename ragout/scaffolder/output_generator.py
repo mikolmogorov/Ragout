@@ -24,8 +24,8 @@ def output_links(scaffolds, out_links):
             for left, right in zip(scf.contigs[:-1], scf.contigs[1:]):
                 supp_genomes = ",".join(sorted(left.link.supporting_genomes))
                 supp_assembly = "*" if left.link.supporting_assembly else " "
-                rows.append([str(left), str(right), str(left.link.gap),
-                            supp_genomes, supp_assembly])
+                rows.append([left.signed_name(), right.signed_name(),
+                            str(left.link.gap), supp_genomes, supp_assembly])
 
             col_widths = repeat(0)
             for row in [HEADER] + rows:
@@ -65,14 +65,15 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
         scf_seqs = []
         for contig in scf.contigs:
             ###
-            sep = contig.seq_name.find("[")
+            cnt_name = contig.name()
+            sep = cnt_name.find("[")
             if sep == -1:
-                seq_name = contig.seq_name
-                cont_seq = contigs_fasta[contig.seq_name]
+                seq_name = cnt_name
+                cont_seq = contigs_fasta[cnt_name]
             else:
-                seq_name = contig.seq_name[:sep]
+                seq_name = cnt_name[:sep]
                 seg_start, seg_end = \
-                        map(int, contig.seq_name[sep + 1 : -1].split(":"))
+                        map(int, cnt_name[sep + 1 : -1].split(":"))
                 cont_seq = contigs_fasta[seq_name][seg_start:seg_end]
             ###
 

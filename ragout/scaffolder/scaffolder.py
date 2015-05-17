@@ -15,13 +15,13 @@ import copy
 import logging
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import Contig, Scaffold, Link
+from ragout.shared.datatypes import ContigWithPerm, Scaffold, Link
 from .output_generator import output_links
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-def build_scaffolds(adjacencies, perm_container):
+def build_scaffolds(adjacencies, perm_container, debug_output=True):
     """
     Assembles scaffolds
     """
@@ -34,7 +34,7 @@ def build_scaffolds(adjacencies, perm_container):
     logger.debug("{0} contigs were joined into {1} scaffolds"
                         .format(num_contigs, len(scaffolds)))
 
-    if debugger.debugging:
+    if debugger.debugging and debug_output:
         links_out = os.path.join(debugger.debug_dir, "scaffolds.links")
         output_links(scaffolds, links_out)
         perms_out = os.path.join(debugger.debug_dir, "scaffolds_perms.txt")
@@ -140,7 +140,7 @@ def _make_contigs(perm_container):
     index = {}
     for perm in perm_container.target_perms:
         assert len(perm.blocks)
-        contigs.append(Contig(perm.name(), perm))
+        contigs.append(ContigWithPerm(perm))
         for block in perm.blocks:
             assert block.block_id not in index
             index[block.block_id] = contigs[-1]

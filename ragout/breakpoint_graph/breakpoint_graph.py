@@ -168,10 +168,10 @@ class BreakpointGraph(object):
 
             edges = list(zip(path[:-1], path[1:]))
             even_colors = list(map(get_genome_ids, edges[1::2]))
-            #even_good = all(map(lambda e: set(e) == set([self.target]),
-            #            even_colors))
-            #if require_red and not even_good:
-            #    continue
+            even_good = all(map(lambda e: set(e) == set([self.target]),
+                        even_colors))
+            if not even_good:
+                continue
 
             odd_colors = list(map(get_genome_ids, edges[0::2]))
             common_genomes = set(odd_colors[0])

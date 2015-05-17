@@ -159,14 +159,18 @@ def run_unsafe(args):
     ##Building chimera detector
     ##
     raw_bp_graphs = {}
-    raw_perms = {}
+    perms = {}
     for block_size in synteny_blocks:
         debug_dir = os.path.join(debug_root, str(block_size))
         debugger.set_debug_dir(debug_dir)
 
-        raw_perms[block_size] = PermutationContainer(perm_files[block_size],
-                                                     recipe, False, True, None)
-        raw_bp_graphs[block_size] = BreakpointGraph(raw_perms[block_size])
+        conservative = block_size == synteny_blocks[0]
+        resolve_repeats = (args.resolve_repeats and
+                           block_size == synteny_blocks[-1])
+        perms[block_size] = PermutationContainer(perm_files[block_size],
+                                                 recipe, resolve_repeats,
+                                                 conservative, phylogeny)
+        raw_bp_graphs[block_size] = BreakpointGraph(perms[block_size])
     chim_detect = ChimeraDetector(raw_bp_graphs, target_fasta_dict)
     ##
 
@@ -181,22 +185,21 @@ def run_unsafe(args):
                            block_size == synteny_blocks[-1])
         conservative = block_size == synteny_blocks[0]
 
-        perm_container = PermutationContainer(perm_files[block_size],
-                                              recipe, resolve_repeats,
-                                              conservative, phylogeny)
-        raw_container = deepcopy(perm_container)
-        chim_detect.break_contigs(perm_container, [block_size])
-        breakpoint_graph = BreakpointGraph(perm_container)
+        #perm_container = PermutationContainer(perm_files[block_size],
+        #                                      recipe, resolve_repeats,
+        #                                      conservative, phylogeny)
+        raw_container = deepcopy(perms[block_size])
+        chim_detect.break_contigs(perms[block_size], [block_size])
+        breakpoint_graph = BreakpointGraph(perms[block_size])
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()
-        cur_scaffolds = scfldr.build_scaffolds(adjacencies, perm_container)
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, perms[block_size])
 
         if scaffolds is not None:
             chim_detect.break_contigs(raw_container, synteny_blocks[:block_id+1])
             scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                              raw_container,
-                                              block_size != synteny_blocks[-1])
+                                              raw_container, True)
         else:
             scaffolds = cur_scaffolds
     ###
