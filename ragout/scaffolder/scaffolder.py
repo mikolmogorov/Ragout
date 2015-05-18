@@ -21,13 +21,15 @@ from .output_generator import output_links
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
-def build_scaffolds(adjacencies, perm_container, debug_output=True):
+def build_scaffolds(adjacencies, perm_container, debug_output=True,
+                    correct_distances=True):
     """
     Assembles scaffolds
     """
     logger.info("Building scaffolds")
     contigs, contig_index = _make_contigs(perm_container)
-    scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index)
+    scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index,
+                                  correct_distances)
     scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
 
     num_contigs = sum(map(lambda s: len(s.contigs), scaffolds))
@@ -43,7 +45,7 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True):
     return scaffolds
 
 
-def _extend_scaffolds(adjacencies, contigs, contig_index):
+def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
     """
     Assembles contigs into scaffolds
     """
@@ -76,7 +78,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                     scf.contigs.append(contig.reverse_copy())
 
                 flank = scf.contigs[-2].right_gap() + scf.contigs[-1].left_gap()
-                gap = max(0, adj_distance - flank)
+                gap = adj_distance - flank if correct_distances else adj_distance
                 scf.contigs[-2].link = Link(gap, adj_supporting_genomes)
 
                 scf.right = scf.contigs[-1].right_end()
@@ -102,7 +104,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index):
                     scf.contigs.insert(0, contig.reverse_copy())
 
                 flank = scf.contigs[0].right_gap() + scf.contigs[1].left_gap()
-                gap = max(0, adj_distance - flank)
+                gap = adj_distance - flank if correct_distances else adj_distance
                 scf.contigs[0].link = Link(gap, adj_supporting_genomes)
 
                 scf.left = scf.contigs[0].left_end()

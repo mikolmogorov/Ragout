@@ -62,14 +62,12 @@ def test_environment():
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
     cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--debug"]
+           "--outdir", outdir, "--debug", "--no-refine"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
     links_simple = os.path.join(outdir, "scaffolds.links")
     links_simple_out = os.path.join(outdir, "scaffolds.links_verify")
-    links_refined = os.path.join(outdir, "scaffolds_refined.links")
-    links_refined_out = os.path.join(outdir, "scaffolds_refined.links_verify")
 
     #checking before refinement
     cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
@@ -97,11 +95,16 @@ def run_test(parameters):
                     raise RuntimeError("Too many scaffolds")
 
     #checking after refinement
-    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_refined]
+    cmd = ["python2.7", "ragout.py", parameters["recipe"],
+           "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
-    subprocess.check_call(cmd, stdout=open(links_refined_out, "w"))
+    subprocess.check_call(cmd)
 
-    with open(links_refined_out, "r") as f:
+    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
+    print("Running:", " ".join(cmd), "\n")
+    subprocess.check_call(cmd, stdout=open(links_simple_out, "w"))
+
+    with open(links_simple_out, "r") as f:
         for line in f:
             if line.startswith("Total miss-ordered: "):
                 value = int(line.strip()[20:])

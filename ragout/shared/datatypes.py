@@ -83,6 +83,9 @@ class Contig:
         sign = "+" if self.sign > 0 else "-"
         return sign + self.name()
 
+    def name_with_coords(self):
+        return self.seq_name, None, None
+
 
 class ContigWithPerm(Contig):
     def __init__(self, permutation, sign=1, link=None):
@@ -118,6 +121,9 @@ class ContigWithPerm(Contig):
 
     def name(self):
         return self.perm.name()
+
+    def name_with_coords(self):
+        return self.perm.chr_name, self.perm.seq_start, self.perm.seq_end
 
 
 class Link:

@@ -103,12 +103,7 @@ def run_unsafe(args):
     Top-level logic of the program
     """
     out_log = os.path.join(args.out_dir, "ragout.log")
-    out_links = os.path.join(args.out_dir, "scaffolds.links")
-    out_scaffolds = os.path.join(args.out_dir, "scaffolds.fasta")
     out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
-    out_refined_links = os.path.join(args.out_dir, "scaffolds_refined.links")
-    out_refined_scaffolds = os.path.join(args.out_dir,
-                                         "scaffolds_refined.fasta")
     debug_root = os.path.join(args.out_dir, "debug")
 
     if not os.path.isdir(args.out_dir):
@@ -145,33 +140,24 @@ def run_unsafe(args):
         phylogeny = Phylogeny.from_newick(recipe["tree"])
     else:
         logger.info("Inferring phylogeny from synteny blocks data")
-        small_blocks = min(synteny_blocks)
+        small_blocks = synteny_blocks[-1]
         simple_perm = PermutationContainer(perm_files[small_blocks],
                                            recipe, False, False, None)
         phylogeny = Phylogeny.from_permutations(simple_perm)
         logger.info(phylogeny.tree_string)
     ####
 
-    logger.info("Reading contigs file")
-    target_fasta_file = backend.get_target_fasta()
-    target_fasta_dict = read_fasta_dict(target_fasta_file)
-
     ##Building chimera detector
-    ##
     raw_bp_graphs = {}
     perms = {}
     for block_size in synteny_blocks:
         debug_dir = os.path.join(debug_root, str(block_size))
         debugger.set_debug_dir(debug_dir)
 
-        conservative = block_size == synteny_blocks[0]
-        resolve_repeats = (args.resolve_repeats and
-                           block_size == synteny_blocks[-1])
         perms[block_size] = PermutationContainer(perm_files[block_size],
-                                                 recipe, resolve_repeats,
-                                                 conservative, phylogeny)
+                                                 recipe, False, True, None)
         raw_bp_graphs[block_size] = BreakpointGraph(perms[block_size])
-    chim_detect = ChimeraDetector(raw_bp_graphs, target_fasta_dict)
+    chim_detect = ChimeraDetector(raw_bp_graphs)
     ##
 
     #####
@@ -181,13 +167,6 @@ def run_unsafe(args):
         debug_dir = os.path.join(debug_root, str(block_size))
         debugger.set_debug_dir(debug_dir)
 
-        resolve_repeats = (args.resolve_repeats and
-                           block_size == synteny_blocks[-1])
-        conservative = block_size == synteny_blocks[0]
-
-        #perm_container = PermutationContainer(perm_files[block_size],
-        #                                      recipe, resolve_repeats,
-        #                                      conservative, phylogeny)
         raw_container = deepcopy(perms[block_size])
         chim_detect.break_contigs(perms[block_size], [block_size])
         breakpoint_graph = BreakpointGraph(perms[block_size])
@@ -203,20 +182,30 @@ def run_unsafe(args):
         else:
             scaffolds = cur_scaffolds
     ###
+    logger.info("Refining adjacencies")
+    refine_block = synteny_blocks[-1]
+    refine_perm = PermutationContainer(perm_files[refine_block],
+                                recipe, args.resolve_repeats, False, phylogeny)
+    chim_detect.break_contigs(refine_perm, synteny_blocks)
+    refine_bg = BreakpointGraph(refine_perm)
+    adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, refine_perm)
+    scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner, refine_perm)
+    ###
 
     if args.debug:
         debugger.set_debug_dir(debug_root)
 
-    out_gen.output_links(scaffolds, out_links)
-    out_gen.output_fasta(target_fasta_dict, scaffolds, out_scaffolds)
+    logger.info("Reading contigs file")
+    target_fasta_file = backend.get_target_fasta()
+    target_fasta_dict = read_fasta_dict(target_fasta_file)
 
-    if not args.no_refine:
+    if args.no_refine:
+        out_gen.make_output(target_fasta_dict, scaffolds, args.out_dir)
+    else:
         overlap.make_overlap_graph(target_fasta_file, out_overlap)
         refined_scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
                                                    target_fasta_dict)
-        out_gen.output_links(refined_scaffolds, out_refined_links)
-        out_gen.output_fasta(target_fasta_dict, refined_scaffolds,
-                             out_refined_scaffolds)
+        out_gen.make_output(target_fasta_dict, refined_scaffolds, args.out_dir)
         if args.debug:
             shutil.copy(out_overlap, debugger.debug_dir)
             out_colored_overlap = os.path.join(debugger.debug_dir,

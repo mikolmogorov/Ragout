@@ -18,10 +18,9 @@ logger = logging.getLogger()
 ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
 
 class ChimeraDetector(object):
-    def __init__(self, breakpoint_graphs, target_seqs):
+    def __init__(self, breakpoint_graphs):
         logger.debug("Detecting chimeric adjacencies")
         self.bp_graphs = breakpoint_graphs
-        self.target_seqs = target_seqs
         self._make_hierarchical_breaks()
 
     def _make_hierarchical_breaks(self):

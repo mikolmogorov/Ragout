@@ -30,13 +30,20 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
 
     if rearrange:
         new_adj = _project_rearrangements(big_updated, small_updated)
-        big_rearranged = build_scaffolds(new_adj, perm_container, False)
+        big_rearranged = build_scaffolds(new_adj, perm_container, False, False)
     else:
         big_rearranged = big_updated
 
     merged_scf = _merge_scaffolds(big_rearranged, small_updated)
     merged_scf = _merge_consecutive_contigs(merged_scf)
     return merged_scf
+
+
+def refine_scaffolds(scaffolds, adj_refiner, perm_container):
+    updated_scf = _update_scaffolds(scaffolds, perm_container)
+    adj = adj_refiner.refine_adjacencies(updated_scf)
+    new_scf = build_scaffolds(adj, perm_container)
+    return _merge_consecutive_contigs(new_scf)
 
 
 def _merge_consecutive_contigs(scaffolds):
@@ -118,13 +125,12 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
     for scf in old_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="old", scf_name=scf.name,
-                              link=cnt_1.link)
+                              scf_set="old", link=cnt_1.link)
     for scf in new_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             if cnt_1.name() in old_contigs and cnt_2.name() in old_contigs:
                 bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                                  scf_set="new", scf_name=scf.name)
+                                  scf_set="new", link=cnt_1.link)
 
     #now look for valid 2-breaks
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
@@ -149,7 +155,8 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         for u, v in red_edges:
             bp_graph.remove_edge(u, v)
         for u, v in black_edges:
-            bp_graph.add_edge(u, v, scf_set="old", link=Link(0, [":("]))
+            link = bp_graph[u][v][0]["link"]
+            bp_graph.add_edge(u, v, scf_set="old", link=link)
 
     adjacencies = {}
     for (u, v, data) in bp_graph.edges_iter(data=True):

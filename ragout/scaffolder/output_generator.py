@@ -4,12 +4,59 @@
 
 from itertools import repeat
 import logging
+import os
 
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 
 logger = logging.getLogger()
 
 MIN_GAP = 11
+
+
+def make_output(contigs, scaffolds, out_dir):
+    out_links = os.path.join(out_dir, "scaffolds.links")
+    out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
+    _fix_gaps(contigs, scaffolds)
+    output_links(scaffolds, out_links)
+    _output_fasta(contigs, scaffolds, out_scaffolds)
+
+
+def _fix_gaps(contigs, scaffolds):
+    def get_seq(contig):
+        seq_name, seg_start, seg_end = contig.name_with_coords()
+        if seg_start is None:
+            cont_seq = contigs[seq_name]
+        else:
+            cont_seq = contigs[seq_name][seg_start:seg_end]
+
+        if contig.sign < 0:
+            cont_seq = reverse_complement(cont_seq)
+        return cont_seq
+
+    for scf in scaffolds:
+        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+            if cnt_1.link.gap >= MIN_GAP or cnt_1.link.supporting_assembly:
+                continue
+
+            cnt_1.link.gap = MIN_GAP
+            #TODO: trim contig ends
+            """
+            seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
+            num_ns = 0
+            i = len(seq_1) - 1
+            while seq_1[i].toupper() == "N":
+                num_ns += 1
+                i -= 1
+            i = 0
+            while seq_2[i].toupper() == "N":
+                num_ns += 1
+                i += 1
+
+            logger.debug(num_ns)
+            if num_ns - MIN_GAP < cnt_1.link.gap:
+                cnt_1.link.gap = 123
+            """
+
 
 def output_links(scaffolds, out_links):
     """
@@ -49,7 +96,7 @@ def output_links(scaffolds, out_links):
             f.write("-" * line_len + "\n\n")
 
 
-def output_fasta(contigs_fasta, scaffolds, out_file):
+def _output_fasta(contigs_fasta, scaffolds, out_file):
     """
     Outputs scaffodls to file in "fasta" format
     """
@@ -60,22 +107,14 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
     scf_length = []
     total_contigs = 0
     total_len = 0
-    #overlap = 0
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
-            ###
-            cnt_name = contig.name()
-            sep = cnt_name.find("[")
-            if sep == -1:
-                seq_name = cnt_name
-                cont_seq = contigs_fasta[cnt_name]
+            seq_name, seg_start, seg_end = contig.name_with_coords()
+            if seg_start is None:
+                cont_seq = contigs_fasta[seq_name]
             else:
-                seq_name = cnt_name[:sep]
-                seg_start, seg_end = \
-                        map(int, cnt_name[sep + 1 : -1].split(":"))
                 cont_seq = contigs_fasta[seq_name][seg_start:seg_end]
-            ###
 
             used_contigs.add(seq_name)
             total_contigs += 1
@@ -86,7 +125,7 @@ def output_fasta(contigs_fasta, scaffolds, out_file):
 
             if contig.link.gap >= 0:
                 scf_seqs.append(cont_seq)
-                scf_seqs.append("N" * (max(MIN_GAP, contig.link.gap)))
+                scf_seqs.append("N" * contig.link.gap)
             else:
                 scf_seqs.append(cont_seq[:contig.link.gap])
 
