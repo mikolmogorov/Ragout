@@ -62,17 +62,24 @@ def output_links(scaffolds, out_links):
     """
     Outputs pretty table with information about adjacencies
     """
-    HEADER = ["contig_1", "contig_2", "gap", "ref_support", "~>"]
+    HEADER = ["contig_1", "contig_2", "lbr", "rbr", "ref_support", "~>"]
     COL_GAP = 4
 
     with open(out_links, "w") as f:
         for scf in scaffolds:
             rows = []
+            cur_pos = 0
             for left, right in zip(scf.contigs[:-1], scf.contigs[1:]):
+                gap = max(left.link.gap, MIN_GAP)
+                left_br = cur_pos + left.perm.length()
+                right_br = left_br + gap
+                cur_pos = right_br
+
                 supp_genomes = ",".join(sorted(left.link.supporting_genomes))
                 supp_assembly = "*" if left.link.supporting_assembly else " "
                 rows.append([left.signed_name(), right.signed_name(),
-                            str(left.link.gap), supp_genomes, supp_assembly])
+                            str(left_br), str(right_br), supp_genomes,
+                            supp_assembly])
 
             col_widths = repeat(0)
             for row in [HEADER] + rows:

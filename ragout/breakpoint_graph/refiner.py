@@ -28,70 +28,62 @@ class AdjacencyRefiner(object):
         """
         Finding adjacencies consisten with previous iteration
         """
-        orphaned_nodes = self.bp_graph.get_orphaned_nodes()
+        #orphaned_nodes = self.bp_graph.get_orphaned_nodes()
         adj_graph = AdjacencyGraph(self.bp_graph, self.phylogeny)
         trusted_adj = self._get_trusted_adjacencies(scaffolds)
-        chosen_edges = _get_path_cover(adj_graph, trusted_adj, orphaned_nodes)
-
-        adjacencies = {}
-        for node_1, node_2 in chosen_edges:
-            #infinity edges correspond to joined chromosome ends -- ignore them
-            if self.bp_graph.is_infinity(node_1, node_2):
-                continue
-            #TODO: fix this
-            if abs(node_1) == abs(node_2):
-                continue
-
-            distance = self.bp_graph.get_distance(node_1, node_2)
-            supporting_genomes = self.bp_graph \
-                                        .supporting_genomes(node_1, node_2)
-            adjacencies[node_1] = Adjacency(node_2, distance,
-                                            supporting_genomes)
-            adjacencies[node_2] = Adjacency(node_1, distance,
-                                            supporting_genomes)
-        return adjacencies
+        return self._path_cover(adj_graph, trusted_adj, set())
 
     def _get_trusted_adjacencies(self, prev_scaffolds):
         """
         Get trusted adjaencies from previous iteration
         """
         trusted_adj = []
-
         for scf in prev_scaffolds:
             for prev_cont, next_cont in zip(scf.contigs[:-1], scf.contigs[1:]):
-                left_blocks = prev_cont.perm.blocks
-                left = (left_blocks[-1].signed_id() if prev_cont.sign > 0
-                        else -left_blocks[0].signed_id())
+                left, right = prev_cont.right_end(), next_cont.left_end()
+                flank = prev_cont.right_gap() + next_cont.left_gap()
+                distance = prev_cont.link.gap + flank
+                genomes = prev_cont.link.supporting_genomes
 
-                right_blocks = next_cont.perm.blocks
-                right = (right_blocks[0].signed_id() if next_cont.sign > 0
-                         else -right_blocks[-1].signed_id())
-
-                trusted_adj.append((-left, right))
+                trusted_adj.append((left, right, distance, genomes))
 
         return trusted_adj
 
+    def _path_cover(self, adj_graph, trusted_adj, orphaned_nodes):
+        logger.debug("Computing path cover")
+        adjacencies = {}
+        prohibited_nodes = set()
+        for adj in trusted_adj:
+            prohibited_nodes.add(adj[0])
+            prohibited_nodes.add(adj[1])
 
-def _get_path_cover(adj_graph, trusted_adj, orphaned_nodes):
-    logger.debug("Computing path cover")
-    adjacencies = []
-    prohibited_nodes = set()
-    for adj in trusted_adj:
-        prohibited_nodes.add(adj[0])
-        prohibited_nodes.add(adj[1])
+        def add_adj(left, right, dist, genomes):
+            prohibited_nodes.add(left)
+            prohibited_nodes.add(right)
 
-    for (adj_left, adj_right) in trusted_adj:
-        p = adj_graph.shortest_path(adj_left, adj_right, prohibited_nodes,
-                                    orphaned_nodes)
-        #logger.debug(p)
-        #TODO: fix %2
-        if not p or len(p) % 2 == 1:
-            p = [adj_left, adj_right]
+            adjacencies[left] = Adjacency(adj_right, dist, genomes)
+            adjacencies[right] = Adjacency(adj_left, dist, genomes)
 
-        for i in xrange(len(p) / 2):
-            adj_left, adj_right = p[i * 2], p[i * 2 + 1]
-            adjacencies.append((adj_left, adj_right))
-            prohibited_nodes.add(adj_left)
-            prohibited_nodes.add(adj_right)
+        generated_adj = {}
+        for (adj_left, adj_right, dist, genomes) in trusted_adj:
+            p = adj_graph.shortest_path(adj_left, adj_right, prohibited_nodes,
+                                        orphaned_nodes)
+            logger.debug(p)
+            if not p or len(p) % 2 == 1:
+                #assert len(p) % 2 == 0
+                add_adj(adj_left, adj_right, dist, genomes)
+            else:
+                for i in xrange(len(p) / 2):
+                    adj_left, adj_right = p[i * 2], p[i * 2 + 1]
+                    #assert abs(adj_left) != abs(adj_right)
+                    if self.bp_graph.is_infinity(adj_left, adj_right):
+                        continue
+                    if abs(adj_left) == abs(adj_right):
+                        continue
 
-    return adjacencies
+                    dist = self.bp_graph.get_distance(adj_left, adj_right)
+                    genomes = self.bp_graph.supporting_genomes(adj_left,
+                                                               adj_right)
+                    add_adj(adj_left, adj_right, dist, genomes)
+
+        return adjacencies
