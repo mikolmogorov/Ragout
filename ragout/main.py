@@ -151,8 +151,7 @@ def run_unsafe(args):
     raw_bp_graphs = {}
     perms = {}
     for block_size in synteny_blocks:
-        debug_dir = os.path.join(debug_root, str(block_size))
-        debugger.set_debug_dir(debug_dir)
+        debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
 
         perms[block_size] = PermutationContainer(perm_files[block_size],
                                                  recipe, False, True, None)
@@ -164,8 +163,7 @@ def run_unsafe(args):
     scaffolds = None
     for block_id, block_size in enumerate(synteny_blocks):
         logger.info("Inferring adjacencies at {0}".format(block_size))
-        debug_dir = os.path.join(debug_root, str(block_size))
-        debugger.set_debug_dir(debug_dir)
+        debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
 
         raw_container = deepcopy(perms[block_size])
         chim_detect.break_contigs(perms[block_size], [block_size])
@@ -183,6 +181,7 @@ def run_unsafe(args):
             scaffolds = cur_scaffolds
     ###
     logger.info("Refining adjacencies")
+    debugger.set_debug_dir(os.path.join(debug_root, "refinement"))
     refine_block = synteny_blocks[-1]
     refine_perm = PermutationContainer(perm_files[refine_block],
                                 recipe, args.resolve_repeats, False, phylogeny)
