@@ -36,7 +36,7 @@ def parse_links_file(filename):
     with open(filename, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith("--") or line.startswith("contig_1"):
+            if not line or line.startswith("--") or line.startswith("sequence"):
                 continue
 
             if line[0] not in ["+", "-"]:

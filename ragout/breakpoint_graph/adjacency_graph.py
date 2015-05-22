@@ -27,7 +27,10 @@ class AdjacencyGraph(object):
         """
         weighted_graph = bp_graph.to_weighted_graph(phylogeny)
         adj_graph = nx.MultiGraph()
-        adj_graph.add_edges_from(weighted_graph.edges(data=True))
+        for u, v, data in weighted_graph.edges_iter(data=True):
+            if not bp_graph.is_infinity(u, v):
+                adj_graph.add_edge(u, v, attr_dict=data)
+
         black_nodes = set()
         for node_1, node_2 in bp_graph.contig_ends:
             adj_graph.add_edge(node_1, node_2, black=True)
@@ -82,9 +85,9 @@ class AdjacencyGraph(object):
                 continue
 
             neighbors = self._neighbors(cur_node, colored)
-            if colored and cur_node in orphaned_nodes:
-                extra_neighbors = orphaned_nodes - set([cur_node])
-                neighbors.extend(list(extra_neighbors))
+            #if colored and cur_node in orphaned_nodes:
+            #    extra_neighbors = orphaned_nodes - set([cur_node])
+            #    neighbors.extend(list(extra_neighbors))
 
             for other_node in neighbors:
                 weight = self._edge_weight(cur_node, other_node, colored)

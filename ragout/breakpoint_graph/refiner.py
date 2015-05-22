@@ -53,6 +53,7 @@ class AdjacencyRefiner(object):
         logger.debug("Computing path cover")
         adjacencies = {}
         prohibited_nodes = set()
+
         for adj in trusted_adj:
             prohibited_nodes.add(adj[0])
             prohibited_nodes.add(adj[1])
@@ -74,14 +75,13 @@ class AdjacencyRefiner(object):
                 assert p is None
                 add_adj(adj_left, adj_right, dist, genomes)
             else:
+                for x in p[1:-1]:
+                    assert x not in prohibited_nodes
+
                 added_contigs += len(p) / 2 - 1
                 for i in xrange(len(p) / 2):
                     adj_left, adj_right = p[i * 2], p[i * 2 + 1]
                     assert abs(adj_left) != abs(adj_right)
-                    if self.bp_graph.is_infinity(adj_left, adj_right):
-                        continue
-                    if abs(adj_left) == abs(adj_right):
-                        continue
 
                     dist = self.bp_graph.get_distance(adj_left, adj_right)
                     genomes = self.bp_graph.supporting_genomes(adj_left,
