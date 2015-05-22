@@ -68,9 +68,10 @@ class Permutation:
 
 
 class Contig:
-    def __init__(self, seq_name, sign=1, link=None):
+    def __init__(self, seq_name, seq_len, sign=1, link=None):
         self.seq_name = seq_name
         self.sign = sign
+        self.seq_len = seq_len
         if not link:
             self.link = Link(0, [])
         else:
@@ -78,6 +79,9 @@ class Contig:
 
     def name(self):
         return self.seq_name
+
+    def length(self):
+        return self.seq_len
 
     def signed_name(self):
         sign = "+" if self.sign > 0 else "-"
@@ -90,7 +94,7 @@ class Contig:
 class ContigWithPerm(Contig):
     def __init__(self, permutation, sign=1, link=None):
         self.perm = permutation
-        Contig.__init__(self, None, sign, link)
+        Contig.__init__(self, None, permutation.length(), sign, link)
 
     def left_end(self):
         return (self.perm.blocks[0].signed_id() if self.sign > 0
@@ -132,6 +136,8 @@ class Link:
     """
     def __init__(self, gap, supporting_genomes):
         self.gap = gap
+        self.trim_left = 0
+        self.trim_right = 0
         self.supporting_genomes = supporting_genomes
         self.supporting_assembly = False
 

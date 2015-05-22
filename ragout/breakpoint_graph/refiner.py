@@ -65,17 +65,19 @@ class AdjacencyRefiner(object):
             adjacencies[right] = Adjacency(adj_left, dist, genomes)
 
         generated_adj = {}
+        added_contigs = 0
         for (adj_left, adj_right, dist, genomes) in trusted_adj:
             p = adj_graph.shortest_path(adj_left, adj_right, prohibited_nodes,
                                         orphaned_nodes)
-            logger.debug(p)
-            if not p or len(p) % 2 == 1:
-                #assert len(p) % 2 == 0
+            #logger.debug(p)
+            if p is None or len(p) % 2 == 1:
+                assert p is None
                 add_adj(adj_left, adj_right, dist, genomes)
             else:
+                added_contigs += len(p) / 2 - 1
                 for i in xrange(len(p) / 2):
                     adj_left, adj_right = p[i * 2], p[i * 2 + 1]
-                    #assert abs(adj_left) != abs(adj_right)
+                    assert abs(adj_left) != abs(adj_right)
                     if self.bp_graph.is_infinity(adj_left, adj_right):
                         continue
                     if abs(adj_left) == abs(adj_right):
@@ -86,4 +88,5 @@ class AdjacencyRefiner(object):
                                                                adj_right)
                     add_adj(adj_left, adj_right, dist, genomes)
 
+        logger.debug("Inserted {0} contigs".format(added_contigs))
         return adjacencies

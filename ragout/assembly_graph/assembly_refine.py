@@ -29,7 +29,8 @@ def refine_scaffolds(graph_file, scaffolds, contigs_fasta):
     logger.debug("Max path len = {0}".format(max_path_len))
     graph = _load_dot(graph_file)
     _check_overaps_number(graph, contigs_fasta)
-    new_scaffolds = _insert_from_graph(graph, scaffolds, max_path_len)
+    new_scaffolds = _insert_from_graph(graph, scaffolds,
+                                       max_path_len, contigs_fasta)
     _reestimate_distances(graph, new_scaffolds, max_path_len, contigs_fasta)
     return new_scaffolds
 
@@ -63,7 +64,7 @@ def _check_overaps_number(graph, contigs_fasta):
                        .format(len(graph.edges())))
 
 
-def _insert_from_graph(graph, scaffolds_in, max_path_len):
+def _insert_from_graph(graph, scaffolds_in, max_path_len, contigs_fasta):
     """
     Inserts contigs from the assembly graph into scaffolds
     """
@@ -93,7 +94,8 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len):
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
 
-                new_scaffolds[-1].contigs.append(Contig(name, sign))
+                seq_len = len(contigs_fasta[name])
+                new_scaffolds[-1].contigs.append(Contig(name, seq_len, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_genomes = \

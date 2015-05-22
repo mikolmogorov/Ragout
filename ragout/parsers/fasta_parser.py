@@ -6,6 +6,8 @@
 This module provides some basic FASTA I/O
 """
 
+from string import maketrans
+
 class FastaError(Exception):
     pass
 
@@ -14,7 +16,7 @@ def read_fasta_dict(filename):
     Reads fasta file into dictionary. Also preforms some validation
     """
     header = None
-    seq = ""
+    seq = []
     fasta_dict = {}
 
     try:
@@ -23,18 +25,18 @@ def read_fasta_dict(filename):
                 line = line.strip()
                 if line.startswith(">"):
                     if header:
-                        fasta_dict[header] = seq
-                        seq = ""
+                        fasta_dict[header] = "".join(seq)
+                        seq = []
                     header = line[1:].split(" ")[0]
                 else:
                     line = line.upper()
                     if not _validate_seq(line):
                         raise FastaError("Invalid char in \"{0}\" at line {1}"
                                          .format(filename, lineno))
-                    seq += line
+                    seq.append(line)
 
             if header and len(seq):
-                fasta_dict[header] = seq
+                fasta_dict[header] = "".join(seq)
 
     except IOError as e:
         raise FastaError(e)
@@ -54,15 +56,15 @@ def write_fasta_dict(fasta_dict, filename):
                 f.write(seq[i:i + 60] + "\n")
 
 
+COMPL = maketrans("ATGCURYKMSWBVDHNX-", "TACGAYRMKSWVBHDNX-")
 def reverse_complement(string):
-    res = "".join(map(_comp_sym, string[::-1]))
-    return res
+    return string[::-1].translate(COMPL)
 
 
 def _validate_seq(sequence):
-    for c in sequence:
-        if c not in "ACGTURYKMSWBDHVNX-":
-            return False
+    VALID_CHARS = "ACGTURYKMSWBDHVNX-"
+    if len(sequence.translate(None, VALID_CHARS)):
+        return False
     return True
 
 
@@ -76,13 +78,3 @@ def _iter_dict(d):
     except AttributeError:
         iter_d = d.items()
     return iter_d
-
-
-COMPL = {"A" : "T", "T" : "A", "G" : "C", "C" : "G",
-         "U" : "A", "R" : "Y", "Y" : "R", "K" : "M",
-         "M" : "K", "S" : "S", "W" : "W", "B" : "V",
-         "V" : "B", "D" : "H", "H" : "D", "N" : "N",
-         "X" : "X", "-" : "-"}
-
-def _comp_sym(char):
-    return COMPL[char]

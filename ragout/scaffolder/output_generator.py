@@ -33,53 +33,68 @@ def _fix_gaps(contigs, scaffolds):
             cont_seq = reverse_complement(cont_seq)
         return cont_seq
 
+    def count_ns(cnt_1, cnt_2):
+        seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
+        left_ns, right_ns = 0, 0
+        i = len(seq_1) - 1
+        while seq_1[i].upper() == "N":
+            left_ns += 1
+            i -= 1
+        i = 0
+        while seq_2[i].upper() == "N":
+            right_ns += 1
+            i += 1
+        return left_ns, right_ns
+
     for scf in scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             if cnt_1.link.gap >= MIN_GAP or cnt_1.link.supporting_assembly:
+                cnt_1.link.trim_left = max(0, -cnt_1.link.gap)
                 continue
 
-            cnt_1.link.gap = MIN_GAP
-            #TODO: trim contig ends
-            """
-            seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
-            num_ns = 0
-            i = len(seq_1) - 1
-            while seq_1[i].toupper() == "N":
-                num_ns += 1
-                i -= 1
-            i = 0
-            while seq_2[i].toupper() == "N":
-                num_ns += 1
-                i += 1
+            left_ns, right_ns = count_ns(cnt_1, cnt_2)
+            num_ns = left_ns + right_ns
 
-            logger.debug(num_ns)
-            if num_ns - MIN_GAP < cnt_1.link.gap:
-                cnt_1.link.gap = 123
-            """
+            if num_ns - MIN_GAP < abs(cnt_1.link.gap):
+                if num_ns > MIN_GAP:
+                    #negative gap
+                    gap = num_ns - MIN_GAP
+                    cnt_1.link.trim_left = min(gap, left_ns)
+                    cnt_1.link.trim_right = gap - cnt_1.link.trim_left
+                    cnt_1.link.gap = -gap
+                else:
+                    #positive gap
+                    cnt_1.link.gap = MIN_GAP - num_ns
+            else:
+                #negative gap
+                cnt_1.link.trim_left = min(cnt_1.link.gap, left_ns)
+                cnt_1.link.trim_right = cnt_1.link.gap - cnt_1.link.trim_left
 
 
 def output_links(scaffolds, out_links):
     """
     Outputs pretty table with information about adjacencies
     """
-    HEADER = ["contig_1", "contig_2", "lbr", "rbr", "ref_support", "~>"]
+    HEADER = ["sequence", "start", "length", "gap", "support"]
     COL_GAP = 4
 
     with open(out_links, "w") as f:
         for scf in scaffolds:
             rows = []
             cur_pos = 0
-            for left, right in zip(scf.contigs[:-1], scf.contigs[1:]):
-                gap = max(left.link.gap, MIN_GAP)
-                left_br = cur_pos + left.perm.length()
-                right_br = left_br + gap
-                cur_pos = right_br
 
-                supp_genomes = ",".join(sorted(left.link.supporting_genomes))
-                supp_assembly = "*" if left.link.supporting_assembly else " "
-                rows.append([left.signed_name(), right.signed_name(),
-                            str(left_br), str(right_br), supp_genomes,
-                            supp_assembly])
+            for contig in scf.contigs:
+                start = cur_pos
+                cur_pos = start + contig.length() + contig.link.gap
+
+                supp_genomes = sorted(contig.link.supporting_genomes)
+                if contig.link.supporting_assembly:
+                    supp_genomes.append("~>")
+                support = ",".join(supp_genomes)
+
+                rows.append([contig.signed_name(), str(start),
+                            str(contig.length()), str(contig.link.gap),
+                            support])
 
             col_widths = repeat(0)
             for row in [HEADER] + rows:
@@ -114,6 +129,7 @@ def _output_fasta(contigs_fasta, scaffolds, out_file):
     scf_length = []
     total_contigs = 0
     total_len = 0
+    trim_left = 0
     for scf in scaffolds:
         scf_seqs = []
         for contig in scf.contigs:
@@ -122,24 +138,25 @@ def _output_fasta(contigs_fasta, scaffolds, out_file):
                 cont_seq = contigs_fasta[seq_name]
             else:
                 cont_seq = contigs_fasta[seq_name][seg_start:seg_end]
-
-            used_contigs.add(seq_name)
-            total_contigs += 1
-            total_len += len(cont_seq)
-
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
 
-            if contig.link.gap >= 0:
-                scf_seqs.append(cont_seq)
-                scf_seqs.append("N" * contig.link.gap)
+            if contig.link.trim_left > 0:
+                scf_seqs.append(cont_seq[trim_left : -contig.link.trim_left])
             else:
-                scf_seqs.append(cont_seq[:contig.link.gap])
+                scf_seqs.append(cont_seq[trim_left:])
+            if contig.link.gap >= 0:
+                scf_seqs.append("N" * contig.link.gap)
+            trim_left = contig.link.trim_right
 
+            used_contigs.add(seq_name)
+            total_len += len(cont_seq)
 
+        total_contigs += len(scf.contigs)
         scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
         out_fasta_dict[scf.name] = scf_seq
+
     write_fasta_dict(out_fasta_dict, out_file)
 
     #add some statistics

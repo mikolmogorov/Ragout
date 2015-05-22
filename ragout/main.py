@@ -218,8 +218,8 @@ def run_unsafe(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for assisted assembly"
-                                                 " using multiple references",
+    parser = argparse.ArgumentParser(description="Comparative assembly"
+                                                 " with multiple references",
                                      formatter_class= \
                                         argparse.ArgumentDefaultsHelpFormatter)
 
