@@ -42,7 +42,7 @@ class Permutation:
         self.seq_end = seq_len
         self.seq_len = seq_len
         self.blocks = blocks
-        self.circular = False
+        self.repeat_id = 0
         self.draft = False
 
     def length(self):

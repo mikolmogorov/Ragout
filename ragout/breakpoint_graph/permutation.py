@@ -51,7 +51,6 @@ class PermutationContainer:
             p.draft = recipe["genomes"][p.genome_name]["draft"]
             if p.draft:
                 draft_names.add(p.genome_name)
-            p.circular = recipe["genomes"][p.genome_name]["circular"]
 
             has_sequences.add(p.genome_name)
             if p.genome_name == recipe["target"]:

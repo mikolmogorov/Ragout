@@ -121,7 +121,7 @@ def resolve_repeats(ref_perms, target_perms, repeats,
     for perm, matches in by_target_perm.items():
         groups = _split_by_instance(matches)
 
-        for group in groups:
+        for rep_id, group in enumerate(groups):
             new_perm = deepcopy(perm)
             for trg_ctx, profile in group:
                 for ref_ctx in profile:
@@ -129,6 +129,7 @@ def resolve_repeats(ref_perms, target_perms, repeats,
                             ref_ctx.perm.blocks[ref_ctx.pos].block_id)
                     ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
                 new_perm.blocks[trg_ctx.pos].block_id = next_block_id
+                new_perm.repeat_id = perm.repeat_id + rep_id + 1
                 next_block_id += 1
             target_perms.append(new_perm)
             new_contigs += 1
@@ -266,20 +267,6 @@ def _match_target_contexts(profiles, target_contexts, repeats):
         else:
             repetitive_matches.append(MatchPair(trg_ctx, profile))
             target_matched.add(trg_ctx)
-
-    """
-    if different:
-        g_unmatched += len(t_repetitive) - len(target_matched)
-        for cxt in t_repetitive:
-            if cxt not in target_matched:
-                logger.debug("{0}".format(str(cxt)))
-        if len(t_repetitive) - len(target_matched) > 0:
-            logger.debug("trg: {0}, prof: {1}".format(len(target_contexts),
-                                                      len(profiles)))
-            logger.debug(map(str, target_contexts))
-    else:
-        g_discarded += len(t_repetitive)
-    """
 
     return unique_matches, repetitive_matches
 

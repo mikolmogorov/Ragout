@@ -169,28 +169,27 @@ def run_unsafe(args):
         debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
 
         conservative = block_size != synteny_blocks[-1]
-        repeats = args.resolve_repeats and not conservative
+        #repeats = args.resolve_repeats and not conservative
 
-        if conservative:
-            raw_container = deepcopy(perms[block_size])
-            chim_detect.break_contigs(perms[block_size], [block_size])
-            breakpoint_graph = BreakpointGraph(perms[block_size])
+        raw_container = deepcopy(perms[block_size])
+        chim_detect.break_contigs(perms[block_size], [block_size])
+        breakpoint_graph = BreakpointGraph(perms[block_size])
 
-            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
-            adjacencies = adj_inferer.infer_adjacencies()
-            cur_scaffolds = scfldr.build_scaffolds(adjacencies, perms[block_size])
-            if scaffolds is not None:
-                chim_detect.break_contigs(raw_container, synteny_blocks[:block_id+1])
-                scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                                  raw_container, True)
-            else:
-                scaffolds = cur_scaffolds
+        adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
+        adjacencies = adj_inferer.infer_adjacencies()
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, perms[block_size])
+        if scaffolds is not None:
+            chim_detect.break_contigs(raw_container, synteny_blocks[:block_id+1])
+            scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
+                                              raw_container, conservative)
         else:
-            chim_detect.break_contigs(perms[block_size], synteny_blocks)
-            refine_bg = BreakpointGraph(perms[block_size])
-            adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, perms[block_size])
-            scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
-                                               perms[block_size])
+            scaffolds = cur_scaffolds
+        #else:
+        #    chim_detect.break_contigs(perms[block_size], synteny_blocks)
+        #    refine_bg = BreakpointGraph(perms[block_size])
+        #    adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, perms[block_size])
+        #    scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
+        #                                       perms[block_size])
     ####
 
     if args.debug:

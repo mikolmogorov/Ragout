@@ -83,16 +83,17 @@ def _update_scaffolds(scaffolds, perm_container):
     """
     Updates scaffolds wrt to given permutations
     """
-    by_chr_name = defaultdict(list)
+    perm_index = defaultdict(list)
     for perm in perm_container.target_perms:
-        by_chr_name[perm.chr_name].append(perm)
+        perm_index[(perm.chr_name, perm.repeat_id)].append(perm)
 
     new_scaffolds = []
     for scf in scaffolds:
         new_contigs = []
         for contig in scf.contigs:
             inner_perms = []
-            for new_perm in by_chr_name[contig.perm.chr_name]:
+            for new_perm in perm_index[(contig.perm.chr_name,
+                                        contig.perm.repeat_id)]:
                 if (contig.perm.seq_start <= new_perm.seq_start
                     < contig.perm.seq_end):
                     inner_perms.append(new_perm)
