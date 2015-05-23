@@ -122,16 +122,33 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         for cnt in scf.contigs:
             old_contigs.add(cnt.name())
 
+    ###creating 2-colored breakpoint graph
     bp_graph = nx.MultiGraph()
     for scf in old_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
                               scf_set="old", link=cnt_1.link)
     for scf in new_scaffolds:
-        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            if cnt_1.name() in old_contigs and cnt_2.name() in old_contigs:
-                bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                                  scf_set="new", link=cnt_1.link)
+        prev_cont = None
+        for pos, contig in enumerate(scf.contigs):
+            if contig.name() in old_contigs:
+                prev_cont = contig
+                break
+        if prev_cont is None:
+            continue
+
+        for next_cont in scf.contigs[pos + 1:]:
+            if next_cont.name() not in old_contigs:
+                prev_cont.link.gap += next_cont.length() + next_cont.link.gap
+                common_genomes = (set(prev_cont.link.supporting_genomes) &
+                                  set(next_cont.link.supporting_genomes))
+                prev_cont.link.supporting_genomes = list(common_genomes)
+                continue
+
+            bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
+                              scf_set="new", link=prev_cont.link)
+            prev_cont = next_cont
+    ###
 
     #now look for valid 2-breaks
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
