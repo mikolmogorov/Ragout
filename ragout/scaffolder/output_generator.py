@@ -36,14 +36,14 @@ def _fix_gaps(contigs, scaffolds):
     def count_ns(cnt_1, cnt_2):
         seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
         left_ns, right_ns = 0, 0
-        i = len(seq_1) - 1
-        while seq_1[i].upper() == "N":
+        for i in xrange(len(seq_1) - 1, 0, -1):
+            if seq_1[i].upper() != "N":
+                break
             left_ns += 1
-            i -= 1
-        i = 0
-        while seq_2[i].upper() == "N":
+        for i in xrange(len(seq_2) - 1):
+            if seq_2[i].upper() != "N":
+                break
             right_ns += 1
-            i += 1
         return left_ns, right_ns
 
     for scf in scaffolds:

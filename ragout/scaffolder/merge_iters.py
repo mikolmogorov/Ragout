@@ -153,8 +153,8 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
     #now look for valid 2-breaks
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
     for subgr in subgraphs:
-        if len(subgr) != 4:
-            continue
+        #if len(subgr) not in [4, 6]:
+        #    continue
 
         #this is a cycle
         if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
@@ -167,8 +167,13 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                 red_edges.append((u, v))
             else:
                 black_edges.append((u, v))
-        assert len(red_edges) == 2 and len(black_edges) == 2
-        logger.debug("2-break!")
+        assert len(red_edges) == len(black_edges)
+        #assert len(red_edges) in [2, 3]
+        #if len(subgr) == 4:
+        #    logger.debug("2-break!")
+        #else:
+        #    logger.debug("3-break!")
+        logger.debug("{0}-break".format(len(subgr) / 2))
 
         for u, v in red_edges:
             bp_graph.remove_edge(u, v)

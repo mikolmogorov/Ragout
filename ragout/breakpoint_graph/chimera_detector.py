@@ -60,7 +60,8 @@ class ChimeraDetector(object):
                                 adjusted_break = (ovlp_left, ovlp_right)
                                 break
 
-                    break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
+                    #break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
+                    break_pos = adjusted_break[0]
                     hierarchical_cuts[seq_name][top_block].append(break_pos)
                     #logger.debug(adjusted_break)
         self.hierarchical_cuts = hierarchical_cuts
@@ -83,7 +84,7 @@ class ChimeraDetector(object):
                     continue
 
                 seq_name, start, end = data["chr_name"], data["start"], data["end"]
-                if subgr.alternating_cycle(u, v) in [2, 3]:
+                if subgr.alternating_cycle(u, v) is not None:
                     seq_cuts.append(ContigBreak(seq_name, start, end, True))
                     continue
 
@@ -192,7 +193,8 @@ class ChimeraDetector(object):
                 #we have passed the current cut
                 cur_perm.seq_start = shift
                 cur_perm.seq_end = cuts_stack[0]
-                new_perms.append(cur_perm)
+                if cur_perm.blocks:
+                    new_perms.append(cur_perm)
                 #logger.debug(cur_perm)
 
                 shift = cuts_stack[0]
@@ -205,7 +207,8 @@ class ChimeraDetector(object):
 
             cur_perm.seq_start = shift
             cur_perm.seq_end = cuts_stack[0]
-            new_perms.append(cur_perm)
+            if cur_perm.blocks:
+                new_perms.append(cur_perm)
             #logger.debug(cur_perm)
 
         logger.debug("Chimera Detector: {0} cuts made in {1} sequences"

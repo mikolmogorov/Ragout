@@ -153,7 +153,8 @@ def run_unsafe(args):
     for block_size in synteny_blocks:
         debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
 
-        conservative = block_size != synteny_blocks[-1]
+        #conservative = block_size != synteny_blocks[-1]
+        conservative = True
         repeats = args.resolve_repeats and not conservative
 
         perms[block_size] = PermutationContainer(perm_files[block_size],
@@ -168,7 +169,8 @@ def run_unsafe(args):
         logger.info("Inferring adjacencies at {0}".format(block_size))
         debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
 
-        conservative = block_size != synteny_blocks[-1]
+        #conservative = block_size != synteny_blocks[-1]
+        conservative = True
         #repeats = args.resolve_repeats and not conservative
 
         raw_container = deepcopy(perms[block_size])
