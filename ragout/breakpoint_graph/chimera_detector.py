@@ -38,11 +38,8 @@ class ChimeraDetector(object):
 
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
         for seq_name in seq_cuts:
-            #logger.debug(seq_name)
-            #logger.debug(dict(seq_cuts[seq_name]))
             for i in xrange(len(ordered_blocks)):
                 top_block = ordered_blocks[i]
-                #logger.debug(top_block)
 
                 for top_break in seq_cuts[seq_name][top_block]:
                     if top_break.good:
@@ -60,10 +57,8 @@ class ChimeraDetector(object):
                                 adjusted_break = (ovlp_left, ovlp_right)
                                 break
 
-                    #break_pos = (adjusted_break[0] + adjusted_break[1]) / 2
                     break_pos = adjusted_break[0]
                     hierarchical_cuts[seq_name][top_block].append(break_pos)
-                    #logger.debug(adjusted_break)
         self.hierarchical_cuts = hierarchical_cuts
 
     def _get_contig_breaks(self, bp_graph):
@@ -88,23 +83,9 @@ class ChimeraDetector(object):
                     seq_cuts.append(ContigBreak(seq_name, start, end, True))
                     continue
 
-                """
-                gap_seq = self.target_seqs[seq_name][start:end]
-                ns_rate = (float(gap_seq.upper().count("N")) / len(gap_seq)
-                           if len(gap_seq) else 0)
-                if ns_rate < 0.1 and len(subgr.bp_graph) == 4:
-                    if self._valid_2break(subgr.bp_graph, (u, v)):
-                        logger.debug(ns_rate)
-                        for node in subgr.bp_graph.nodes():
-                            bp_graph.add_debug_node(node)
-                        seq_cuts.append(ContigBreak(seq_name, start, end, True))
-                        continue
-                """
-
                 seq_cuts.append(ContigBreak(seq_name, start, end, False))
 
-        bp_graph.debug_output()
-
+        #bp_graph.debug_output()
         return seq_cuts
 
     def _valid_2break(self, bp_graph, red_edge):

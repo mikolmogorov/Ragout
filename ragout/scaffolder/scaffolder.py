@@ -15,11 +15,14 @@ import copy
 import logging
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import ContigWithPerm, Scaffold, Link
-from .output_generator import output_links
+from ragout.shared.datatypes import (ContigWithPerm, Scaffold, Link,
+                                     output_scaffolds_premutations)
+from ragout.scaffolder.output_generator import output_links
+
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
+
 
 def build_scaffolds(adjacencies, perm_container, debug_output=True,
                     correct_distances=True):
@@ -37,10 +40,12 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
                         .format(num_contigs, len(scaffolds)))
 
     if debugger.debugging and debug_output:
-        links_out = os.path.join(debugger.debug_dir, "scaffolds.links")
+        links_out = os.path.join(debugger.debug_dir, "scaffolder.links")
         output_links(scaffolds, links_out)
-        perms_out = os.path.join(debugger.debug_dir, "scaffolds_perms.txt")
-        _output_scaffold_premutations(scaffolds, perms_out)
+        #contigs_out = os.path.join(debugger.debug_dir, "scaffolder_contigs.txt")
+        #output_permutations(perm_container.target_perms, contigs_out)
+        perms_out = os.path.join(debugger.debug_dir, "scaffolder_scaffolds.txt")
+        output_scaffolds_premutations(scaffolds, perms_out)
 
     return scaffolds
 
@@ -118,20 +123,6 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
             extend_scaffold(contig)
 
     return scaffolds
-
-
-def _output_scaffold_premutations(scaffolds, out_file):
-    with open(out_file, "w") as f:
-        permutations = []
-        for scf in scaffolds:
-            blocks = []
-            for contig in scf.contigs:
-                blocks.extend(contig.signed_perm())
-
-            f.write(">" + scf.name + "\n")
-            for block in blocks:
-                f.write("{0:+} ".format(block))
-            f.write("$\n")
 
 
 def _make_contigs(perm_container):

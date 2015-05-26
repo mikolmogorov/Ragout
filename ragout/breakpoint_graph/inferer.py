@@ -63,7 +63,7 @@ class AdjacencyInferer(object):
             adjacencies[node_2] = Adjacency(node_1, distance,
                                             supporting_genomes)
 
-        self.main_graph.debug_output()
+        #self.main_graph.debug_output()
         self._debug_output(chosen_edges)
 
         return adjacencies
@@ -111,9 +111,6 @@ class AdjacencyInferer(object):
         #        chosen_edges.append((node_1, node_2))
         #        unused_nodes.clear()
         self.orphans_count += len(unused_nodes)
-        #if len(unused_nodes):
-        #    for node in subgraph.bp_graph.nodes():
-        #        self.main_graph.add_debug_node(node)
 
         return chosen_edges
 

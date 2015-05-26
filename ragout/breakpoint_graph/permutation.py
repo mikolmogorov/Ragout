@@ -17,7 +17,7 @@ from itertools import chain
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
-from ragout.shared.datatypes import Block, Permutation
+from ragout.shared.datatypes import Block, Permutation, output_permutations
 import ragout.breakpoint_graph.repeat_resolver as rr
 
 logger = logging.getLogger()
@@ -93,8 +93,8 @@ class PermutationContainer:
                      .format(len(self.target_perms)))
 
         if debugger.debugging:
-            file = os.path.join(debugger.debug_dir, "used_contigs.txt")
-            _write_permutations(self.target_perms, open(file, "w"))
+            file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
+            output_permutations(self.target_perms, file)
 
 
     def filter_indels(self, allow_ref_indels):
@@ -279,14 +279,3 @@ def _check_coverage(permutations):
                            "\n\nTry to change synteny blocks paramsters or "
                            "remove this genome from the comparison"
                            .format(genome_name, 100 * coverage))
-
-
-def _write_permutations(permutations, out_stream):
-    """
-    Outputs permutations
-    """
-    for perm in permutations:
-        out_stream.write(">" + perm.chr_name + "\n")
-        for block in perm.blocks:
-            out_stream.write("{0:+} ".format(block.signed_id()))
-        out_stream.write("$\n")

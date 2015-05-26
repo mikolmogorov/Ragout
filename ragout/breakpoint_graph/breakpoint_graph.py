@@ -121,8 +121,10 @@ class BreakpointGraph(object):
 
         return g
 
+    """
     def add_debug_node(self, node):
         self.debug_nodes.add(node)
+    """
 
     def get_orphaned_nodes(self):
         """
@@ -210,8 +212,7 @@ class BreakpointGraph(object):
             return
 
         graph_out = os.path.join(debugger.debug_dir, "breakpoint_graph.dot")
-        _output_graph(self.bp_graph, graph_out, self.debug_nodes)
-
+        _output_graph(self.bp_graph, graph_out)
 
     def _alternating_paths(self, src, dst):
         """
@@ -265,15 +266,13 @@ def _median(values):
     return sorted_values[(len(values) - 1) / 2]
 
 
-def _output_graph(graph, out_file, dn):
+def _output_graph(graph, out_file):
     """
     Outputs graph in dot format
     """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
         for v1, v2, data in graph.edges_iter(data=True):
-            if v1 not in dn or v2 not in dn:
-                continue
             fout.write("{0} -- {1}".format(v1, v2))
             if len(data):
                 extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),

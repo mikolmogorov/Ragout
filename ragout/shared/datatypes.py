@@ -67,6 +67,15 @@ class Permutation:
                             self.seq_start, self.seq_end))
 
 
+def output_permutations(permutations, out_file):
+    with open(out_file, "w") as f:
+        for perm in permutations:
+            f.write(">" + perm.name() + "\n")
+            for block in perm.blocks:
+                f.write("{0:+} ".format(block.signed_id()))
+            f.write("$\n")
+
+
 class Contig:
     def __init__(self, seq_name, seq_len, sign=1, link=None):
         self.seq_name = seq_name
@@ -156,3 +165,17 @@ class Scaffold:
         scf.right = right
         scf.contigs = contigs
         return scf
+
+
+def output_scaffolds_premutations(scaffolds, out_file):
+    with open(out_file, "w") as f:
+        permutations = []
+        for scf in scaffolds:
+            blocks = []
+            for contig in scf.contigs:
+                blocks.extend(contig.signed_perm())
+
+            f.write(">" + scf.name + "\n")
+            for block in blocks:
+                f.write("{0:+} ".format(block))
+            f.write("$\n")

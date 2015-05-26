@@ -9,16 +9,21 @@ moving between two consecutive iterations
 
 from collections import namedtuple, defaultdict
 from itertools import product, chain
-import sys
+import os
 import logging
 from copy import deepcopy
 
 import networkx as nx
 
-from ragout.shared.datatypes import ContigWithPerm, Scaffold, Permutation, Link
+from ragout.shared.debug import DebugConfig
+from ragout.shared.datatypes import (ContigWithPerm, Scaffold, Permutation, Link,
+                                     output_scaffolds_premutations, output_permutations)
+from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
 
+
 logger = logging.getLogger()
+debugger = DebugConfig.get_instance()
 Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 
@@ -36,6 +41,15 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
 
     merged_scf = _merge_scaffolds(big_rearranged, small_updated)
     merged_scf = _merge_consecutive_contigs(merged_scf)
+
+    if debugger.debugging:
+        links_out = os.path.join(debugger.debug_dir, "merged.links")
+        output_links(merged_scf, links_out)
+        contigs_out = os.path.join(debugger.debug_dir, "merged_contigs.txt")
+        output_permutations(perm_container.target_perms, contigs_out)
+        perms_out = os.path.join(debugger.debug_dir, "merged_scaffolds.txt")
+        output_scaffolds_premutations(merged_scf, perms_out)
+
     return merged_scf
 
 
@@ -48,6 +62,7 @@ def refine_scaffolds(scaffolds, adj_refiner, perm_container):
 
 def _merge_consecutive_contigs(scaffolds):
     new_scaffolds = []
+    num_contigs = 0
     for scf in scaffolds:
         new_contigs = []
 
@@ -74,8 +89,11 @@ def _merge_consecutive_contigs(scaffolds):
 
         if cur_perm:
             new_contigs.append(ContigWithPerm(cur_perm, cur_sign, cur_link))
+        num_contigs += len(new_contigs)
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
                                                    None, new_contigs))
+
+    logger.debug("Merging consequtive contigs: {0} left".format(num_contigs))
     return new_scaffolds
 
 
@@ -127,7 +145,8 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
     for scf in old_scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="old", link=cnt_1.link)
+                              scf_set="old", link=cnt_1.link,
+                              scf_name=scf.name)
     for scf in new_scaffolds:
         prev_cont = None
         for pos, contig in enumerate(scf.contigs):
@@ -150,30 +169,29 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
             prev_cont = next_cont
     ###
 
-    #now look for valid 2-breaks
+    #now look for valid k-breaks
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
     for subgr in subgraphs:
-        #if len(subgr) not in [4, 6]:
-        #    continue
-
         #this is a cycle
         if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
             continue
 
         red_edges = []
         black_edges = []
+        scaffolds_involved = set()
         for (u, v, data) in subgr.edges_iter(data=True):
             if data["scf_set"] == "old":
                 red_edges.append((u, v))
+                scaffolds_involved.add(data["scf_name"])
             else:
                 black_edges.append((u, v))
         assert len(red_edges) == len(black_edges)
-        #assert len(red_edges) in [2, 3]
-        #if len(subgr) == 4:
-        #    logger.debug("2-break!")
-        #else:
-        #    logger.debug("3-break!")
-        logger.debug("{0}-break".format(len(subgr) / 2))
+
+        #if len(scaffolds_involved) > 2:
+        #    continue
+
+        logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
+                                                         len(scaffolds_involved)))
 
         for u, v in red_edges:
             bp_graph.remove_edge(u, v)
