@@ -45,8 +45,8 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
     if debugger.debugging:
         links_out = os.path.join(debugger.debug_dir, "merged.links")
         output_links(merged_scf, links_out)
-        contigs_out = os.path.join(debugger.debug_dir, "merged_contigs.txt")
-        output_permutations(perm_container.target_perms, contigs_out)
+        #contigs_out = os.path.join(debugger.debug_dir, "merged_contigs.txt")
+        #output_permutations(perm_container.target_perms, contigs_out)
         perms_out = os.path.join(debugger.debug_dir, "merged_scaffolds.txt")
         output_scaffolds_premutations(merged_scf, perms_out)
 

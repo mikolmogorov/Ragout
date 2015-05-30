@@ -16,7 +16,8 @@ import logging
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared.datatypes import (ContigWithPerm, Scaffold, Link,
-                                     output_scaffolds_premutations)
+                                     output_scaffolds_premutations,
+                                     output_permutations)
 from ragout.scaffolder.output_generator import output_links
 
 
@@ -42,8 +43,8 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     if debugger.debugging and debug_output:
         links_out = os.path.join(debugger.debug_dir, "scaffolder.links")
         output_links(scaffolds, links_out)
-        #contigs_out = os.path.join(debugger.debug_dir, "scaffolder_contigs.txt")
-        #output_permutations(perm_container.target_perms, contigs_out)
+        contigs_out = os.path.join(debugger.debug_dir, "scaffolder_contigs.txt")
+        output_permutations(perm_container.target_perms, contigs_out)
         perms_out = os.path.join(debugger.debug_dir, "scaffolder_scaffolds.txt")
         output_scaffolds_premutations(scaffolds, perms_out)
 

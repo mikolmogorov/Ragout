@@ -48,9 +48,14 @@ def do_job(links_file, target_perms, all_blocks):
             line = line.strip()
             if not line or line.startswith("--") or line.startswith("sequence"):
                 continue
+            if line[0] not in "+-":
+                print("\n" + line + "\n")
+                continue
 
             sign, contig_name = line[0], line.split()[0][1:]
-            print(sign, contig_name, target_chrs[contig_name])
+            blocks = (target_chrs[contig_name] if sign == "+"
+                      else target_chrs[contig_name][::-1])
+            print(sign, contig_name, blocks)
 
 
 def main():

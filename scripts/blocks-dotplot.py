@@ -16,13 +16,15 @@ import os, sys
 import subprocess
 from collections import namedtuple
 
-Block = namedtuple("Block", ["id", "start", "length", "chr_id"])
+Block = namedtuple("Block", ["id", "start", "length", "genome_id", "chr_id"])
 SeqInfo = namedtuple("SeqInfo", ["id", "length"])
 
 
-GEPARD_DIR = "~/Bioinf/tools/gepard-1.30/"
+GEPARD_DIR = "/home/mkolmogo/tools/gepard-1.30/"
 EXEC = "./gepardcmd.sh"
 MATRIX = "matrices/edna.mat"
+
+GENOMES = ["C57B6J", "BALBcJ"]
 
 def main():
     if len(sys.argv) < 4:
@@ -47,6 +49,11 @@ def draw_dot_plot(blocks, seq_files, out_dir):
     os.chdir(GEPARD_DIR)
 
     for block_id, blocklist in blocks.items():
+        blocklist = filter(lambda b: b.genome_id in GENOMES, blocklist)
+        if len(blocklist) < 2:
+            continue
+
+        """
         allBlocks = open(os.path.join(out_dir,
                                       "blocks{0}.fasta".format(block_id)), "w")
         for block in blocklist:
@@ -55,6 +62,7 @@ def draw_dot_plot(blocks, seq_files, out_dir):
                 seq = seq.reverse_complement()
             SeqIO.write(SeqRecord(seq, id=block.chr_id, description=""),
                         allBlocks, "fasta")
+        """
 
 
         block1, block2 = blocklist[0:2]
@@ -88,6 +96,8 @@ def draw_dot_plot(blocks, seq_files, out_dir):
         os.remove(file1)
         os.remove(file2)
 
+    print(len(blocks))
+
 
 def parse_coords_file(blocks_file):
     group = [[]]
@@ -109,14 +119,16 @@ def parse_coords_file(blocks_file):
         for l in g[2:]:
             chr_num, bl_strand, bl_start, bl_end, bl_length = l.split()
             chr_num = int(chr_num)
-            chr_id = seq_info[chr_num].id
+            name_string = seq_info[chr_num].id
+            genome_id, chr_id = name_string.split(".", 1)
             bl_start, bl_end = int(bl_start), int(bl_end)
             if bl_strand == "-":
                 bl_start, bl_end = bl_end, bl_start
 
             num_id = block_id if bl_strand == "+" else -block_id
             blocks_info[block_id].append(Block(num_id, bl_start,
-                                        int(bl_length), chr_id))
+                                        int(bl_length), genome_id,
+                                        chr_id))
     return blocks_info
 
 if __name__ == "__main__":
