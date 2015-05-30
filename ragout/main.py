@@ -11,6 +11,7 @@ import sys
 import shutil
 import logging
 import argparse
+from collections import namedtuple
 from copy import deepcopy
 
 import ragout.assembly_graph.assembly_refine as asref
@@ -43,6 +44,10 @@ import synteny_backend.hal
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
+
+
+RunStage = namedtuple("RunStage", ["name", "block_size", "indels",
+                                   "repeats", "rearrange", "refine"])
 
 
 def enable_logging(log_file, debug):
@@ -98,6 +103,17 @@ def run_ragout(args):
     return 0
 
 
+def make_run_stages(block_sizes, resolve_repeats):
+    stages = []
+    for block in block_sizes:
+        stages.append(RunStage(str(block), block, False,
+                      False, True, False))
+    refine = True
+    stages.append(RunStage("refine", block_sizes[-1], True,
+                           resolve_repeats, False, refine))
+    return stages
+
+
 def run_unsafe(args):
     """
     Top-level logic of the program
@@ -132,6 +148,7 @@ def run_unsafe(args):
     #Running backend to get synteny blocks
     perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
                                            args.overwrite, args.threads)
+    run_stages = make_run_stages(synteny_blocks, args.resolve_repeats)
 
     #####
     #phylogeny-related
@@ -150,48 +167,42 @@ def run_unsafe(args):
     ##Building chimera detector
     raw_bp_graphs = {}
     perms = {}
-    for block_size in synteny_blocks:
-        debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
-
-        #conservative = block_size != synteny_blocks[-1]
-        conservative = True
-        repeats = args.resolve_repeats and not conservative
-
-        perms[block_size] = PermutationContainer(perm_files[block_size],
-                                    recipe, repeats, conservative, phylogeny)
-        raw_bp_graphs[block_size] = BreakpointGraph(perms[block_size])
-    chim_detect = ChimeraDetector(raw_bp_graphs)
+    for stage in run_stages:
+        debugger.set_debug_dir(os.path.join(debug_root, stage.name))
+        perms[stage] = PermutationContainer(perm_files[stage.block_size],
+                            recipe, stage.repeats, not stage.indels, phylogeny)
+        raw_bp_graphs[stage] = BreakpointGraph(perms[stage])
+    chim_detect = ChimeraDetector(raw_bp_graphs, run_stages)
     ##
 
     #####
     scaffolds = None
-    for block_id, block_size in enumerate(synteny_blocks):
-        logger.info("Inferring adjacencies at {0}".format(block_size))
-        debugger.set_debug_dir(os.path.join(debug_root, str(block_size)))
+    prev_stages = []
+    for stage in run_stages:
+        logger.info("Stage \"{0}\"".format(stage.name))
+        debugger.set_debug_dir(os.path.join(debug_root, stage.name))
+        prev_stages.append(stage)
 
-        #conservative = block_size != synteny_blocks[-1]
-        conservative = True
-        #repeats = args.resolve_repeats and not conservative
+        if not stage.refine:
+            fixed_container = chim_detect.break_contigs(perms[stage], [stage])
+            breakpoint_graph = BreakpointGraph(fixed_container)
 
-        raw_container = deepcopy(perms[block_size])
-        chim_detect.break_contigs(perms[block_size], [block_size])
-        breakpoint_graph = BreakpointGraph(perms[block_size])
+            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
+            adjacencies = adj_inferer.infer_adjacencies()
+            cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
 
-        adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
-        adjacencies = adj_inferer.infer_adjacencies()
-        cur_scaffolds = scfldr.build_scaffolds(adjacencies, perms[block_size])
-        if scaffolds is not None:
-            chim_detect.break_contigs(raw_container, synteny_blocks[:block_id+1])
-            scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                              raw_container, conservative)
+            if scaffolds is not None:
+                all_breaks = chim_detect.break_contigs(perms[stage], prev_stages)
+                scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
+                                                  all_breaks, stage.rearrange)
+            else:
+                scaffolds = cur_scaffolds
         else:
-            scaffolds = cur_scaffolds
-        #else:
-        #    chim_detect.break_contigs(perms[block_size], synteny_blocks)
-        #    refine_bg = BreakpointGraph(perms[block_size])
-        #    adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, perms[block_size])
-        #    scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
-        #                                       perms[block_size])
+            all_breaks = chim_detect.break_contigs(perms[stage], prev_stages)
+            refine_bg = BreakpointGraph(all_breaks)
+            adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, all_breaks)
+            scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
+                                               all_breaks)
     ####
 
     if args.debug:

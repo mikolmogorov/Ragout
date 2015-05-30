@@ -18,38 +18,38 @@ logger = logging.getLogger()
 ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
 
 class ChimeraDetector(object):
-    def __init__(self, breakpoint_graphs):
+    def __init__(self, breakpoint_graphs, run_stages):
         logger.debug("Detecting chimeric adjacencies")
         self.bp_graphs = breakpoint_graphs
+        self.run_stages = run_stages
         self._make_hierarchical_breaks()
 
     def _make_hierarchical_breaks(self):
         """
         Determines where and at what synteny blocks scale to break each contig
         """
-        ordered_blocks = sorted(self.bp_graphs.keys(), reverse=True)
         seq_cuts = defaultdict(lambda : defaultdict(list))
 
         #extracting and grouping by sequence
-        for block in ordered_blocks:
-            breaks = self._get_contig_breaks(self.bp_graphs[block])
+        for stage in self.run_stages:
+            breaks = self._get_contig_breaks(self.bp_graphs[stage])
             for br in breaks:
-                seq_cuts[br.seq_name][block].append(br)
+                seq_cuts[br.seq_name][stage].append(br)
 
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
         for seq_name in seq_cuts:
-            for i in xrange(len(ordered_blocks)):
-                top_block = ordered_blocks[i]
+            for i in xrange(len(self.run_stages)):
+                top_stage = self.run_stages[i]
 
-                for top_break in seq_cuts[seq_name][top_block]:
+                for top_break in seq_cuts[seq_name][top_stage]:
                     if top_break.good:
                         continue
 
                     adjusted_break = (top_break.begin, top_break.end)
-                    for j in xrange(i + 1, len(ordered_blocks)):
-                        lower_block = ordered_blocks[j]
+                    for j in xrange(i + 1, len(self.run_stages)):
+                        lower_stage = self.run_stages[j]
                         #check if there is overlapping cut
-                        for lower_break in seq_cuts[seq_name][lower_block]:
+                        for lower_break in seq_cuts[seq_name][lower_stage]:
                             ovlp_left = max(adjusted_break[0], lower_break.begin)
                             ovlp_right = min(adjusted_break[1], lower_break.end)
                             #if so, update current and go down
@@ -58,7 +58,7 @@ class ChimeraDetector(object):
                                 break
 
                     break_pos = adjusted_break[0]
-                    hierarchical_cuts[seq_name][top_block].append(break_pos)
+                    hierarchical_cuts[seq_name][top_stage].append(break_pos)
         self.hierarchical_cuts = hierarchical_cuts
 
     def _get_contig_breaks(self, bp_graph):
@@ -128,9 +128,11 @@ class ChimeraDetector(object):
         """
         Breaks contigs in inferred cut positions
         """
-        perm_container.target_perms = \
-                self._cut_permutations(perm_container.target_perms, block_sizes)
-        perm_container.filter_indels(True)
+        new_container = deepcopy(perm_container)
+        new_container.target_perms = \
+                self._cut_permutations(new_container.target_perms, block_sizes)
+        new_container.filter_indels(True)
+        return new_container
 
     #TODO: refactoring
     def _cut_permutations(self, permutations, block_sizes):
