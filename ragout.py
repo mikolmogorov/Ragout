@@ -25,7 +25,7 @@ ragout_root = os.path.dirname(os.path.realpath(__file__))
 lib_absolute = os.path.join(ragout_root, LIB_DIR)
 sys.path.insert(0, lib_absolute)
 sys.path.insert(0, ragout_root)
-os.environ["PATH"] += os.pathsep + lib_absolute
+os.environ["PATH"] = lib_absolute + os.pathsep + os.environ["PATH"]
 
 #Ragout entry point
 from ragout.main import main

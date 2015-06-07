@@ -51,6 +51,46 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     return scaffolds
 
 
+def assign_scaffold_names(scaffolds, perm_container, ref_genome):
+    MIN_RATE = 0.1
+    PREFIX = "pseudochr"
+    chr_index = {}
+    for perm in perm_container.ref_perms:
+        if perm.genome_name == ref_genome:
+            for block in perm.blocks:
+                chr_index[block.block_id] = perm.chr_name
+
+    assigned_names = {}
+    for scf in scaffolds:
+        scf_index = defaultdict(int)
+        total = 0
+        for contig in scf.contigs:
+            for block in contig.perm.blocks:
+                if block.block_id in chr_index:
+                    scf_index[chr_index[block.block_id]] += 1
+                    total += 1
+
+        name_str = PREFIX
+        for chrom in sorted(scf_index, key=scf_index.get, reverse=True):
+            if scf_index[chrom] > MIN_RATE * total:
+                name_str += "." + chrom
+            else:
+                break
+        assigned_names[scf] = name_str
+
+    same_names = defaultdict(list)
+    for scf, name in assigned_names.items():
+        same_names[name].append(scf)
+    for name, scf_list in same_names.items():
+        if len(scf_list) == 1:
+            continue
+        for num, scf in enumerate(scf_list):
+            assigned_names[scf] += "." + str(num + 1)
+
+    for scf in scaffolds:
+        scf.name = assigned_names[scf]
+
+
 def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
     """
     Assembles contigs into scaffolds

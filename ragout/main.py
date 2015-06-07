@@ -203,6 +203,8 @@ def run_unsafe(args):
             adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, all_breaks)
             scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
                                                all_breaks)
+        scfldr.assign_scaffold_names(scaffolds, perms[stage],
+                                     recipe["genomes"].keys()[0])
     ####
 
     if args.debug:
