@@ -204,7 +204,7 @@ def run_unsafe(args):
             scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
                                                all_breaks)
         scfldr.assign_scaffold_names(scaffolds, perms[stage],
-                                     recipe["genomes"].keys()[0])
+                                     recipe["references"][0])
     ####
 
     if args.debug:

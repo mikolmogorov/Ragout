@@ -69,11 +69,13 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
                 if block.block_id in chr_index:
                     scf_index[chr_index[block.block_id]] += 1
                     total += 1
+                else:
+                    logger.debug("Fail")
 
         name_str = PREFIX
         for chrom in sorted(scf_index, key=scf_index.get, reverse=True):
             if scf_index[chrom] > MIN_RATE * total:
-                name_str += "." + chrom
+                name_str += "_" + chrom
             else:
                 break
         assigned_names[scf] = name_str
