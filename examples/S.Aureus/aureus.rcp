@@ -1,8 +1,6 @@
 .references = rf122,col,jkd,n315
 .target = usa
 
-*.circular = true
-
 col.fasta = references/COL.fasta
 jkd.fasta = references/JKD6008.fasta
 rf122.fasta = references/RF122.fasta

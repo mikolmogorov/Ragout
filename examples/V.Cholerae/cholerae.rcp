@@ -1,8 +1,6 @@
 .references = o395,biovar,inaba
 .target = h1
 
-*.circular = true
-
 biovar.fasta = references/O1_biovar.fasta
 inaba.fasta = references/O1_Inaba.fasta
 o395.fasta = references/O395.fasta

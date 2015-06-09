@@ -2,8 +2,6 @@
 .references = els,gambia,puno,g27
 .target = sjm180
 
-*.circular = true
-
 els.fasta = references/ELS37.fasta
 g27.fasta = references/G27.fasta
 gambia.fasta = references/Gambia94_24.fasta

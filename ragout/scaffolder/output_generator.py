@@ -29,7 +29,6 @@ def _fix_gaps(contigs, scaffolds):
             cont_seq = contigs[seq_name]
         else:
             cont_seq = contigs[seq_name][seg_start:seg_end]
-
         if contig.sign < 0:
             cont_seq = reverse_complement(cont_seq)
         return cont_seq
@@ -56,7 +55,11 @@ def _fix_gaps(contigs, scaffolds):
             left_ns, right_ns = count_ns(cnt_1, cnt_2)
             num_ns = left_ns + right_ns
 
-            if num_ns - MIN_GAP < abs(cnt_1.link.gap):
+            if cnt_1.link.gap > 0:
+                cnt_1.link.gap += max(0, MIN_GAP - cnt_1.link.gap - num_ns)
+                continue
+
+            if num_ns - MIN_GAP < -cnt_1.link.gap:
                 if num_ns > MIN_GAP:
                     #negative gap
                     gap = num_ns - MIN_GAP
@@ -68,8 +71,8 @@ def _fix_gaps(contigs, scaffolds):
                     cnt_1.link.gap = MIN_GAP - num_ns
             else:
                 #negative gap
-                cnt_1.link.trim_left = min(cnt_1.link.gap, left_ns)
-                cnt_1.link.trim_right = cnt_1.link.gap - cnt_1.link.trim_left
+                cnt_1.link.trim_left = min(-cnt_1.link.gap, left_ns)
+                cnt_1.link.trim_right = -cnt_1.link.gap - cnt_1.link.trim_left
 
 
 def output_links(scaffolds, out_links):
