@@ -162,6 +162,8 @@ def run_unsafe(args):
                                            recipe, False, False, None)
         phylogeny = Phylogeny.from_permutations(simple_perm)
         logger.info(phylogeny.tree_string)
+    #TODO: naming ref as colset one in phylogeny
+    naming_ref = recipe.get("naming_ref", recipe["references"][0])
     ####
 
     ##Building chimera detector
@@ -203,8 +205,7 @@ def run_unsafe(args):
             adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, all_breaks)
             scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
                                                all_breaks)
-        scfldr.assign_scaffold_names(scaffolds, perms[stage],
-                                     recipe["references"][0])
+        scfldr.assign_scaffold_names(scaffolds, perms[stage], naming_ref)
     ####
 
     if args.debug:
@@ -215,12 +216,14 @@ def run_unsafe(args):
     target_fasta_dict = read_fasta_dict(target_fasta_file)
 
     if args.no_refine:
-        out_gen.make_output(target_fasta_dict, scaffolds, args.out_dir)
+        out_gen.make_output(target_fasta_dict, scaffolds,
+                            args.out_dir, recipe["target"])
     else:
         overlap.make_overlap_graph(target_fasta_file, out_overlap)
         refined_scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
                                                    target_fasta_dict)
-        out_gen.make_output(target_fasta_dict, refined_scaffolds, args.out_dir)
+        out_gen.make_output(target_fasta_dict, refined_scaffolds,
+                            args.out_dir, recipe["target"])
         if args.debug:
             shutil.copy(out_overlap, debugger.debug_dir)
             out_colored_overlap = os.path.join(debugger.debug_dir,

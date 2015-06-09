@@ -13,12 +13,13 @@ logger = logging.getLogger()
 MIN_GAP = 11
 
 
-def make_output(contigs, scaffolds, out_dir):
-    out_links = os.path.join(out_dir, "scaffolds.links")
-    out_scaffolds = os.path.join(out_dir, "scaffolds.fasta")
+def make_output(contigs, scaffolds, out_dir, out_prefix):
+    out_links = os.path.join(out_dir, out_prefix + "_scaffolds.links")
+    out_chr = os.path.join(out_dir, out_prefix + "_scaffolds.fasta")
+    out_unlocalized = os.path.join(out_dir, out_prefix + "_unlocalized.fasta")
     _fix_gaps(contigs, scaffolds)
     output_links(scaffolds, out_links)
-    _output_fasta(contigs, scaffolds, out_scaffolds)
+    _output_fasta(contigs, scaffolds, out_chr, out_unlocalized)
 
 
 def _fix_gaps(contigs, scaffolds):
@@ -118,13 +119,13 @@ def output_links(scaffolds, out_links):
             f.write("-" * line_len + "\n\n")
 
 
-def _output_fasta(contigs_fasta, scaffolds, out_file):
+def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
     """
     Outputs scaffodls to file in "fasta" format
     """
     logger.info("Generating FASTA output")
     used_contigs = set()
-    out_fasta_dict = {}
+    out_chromosomes = {}
 
     scf_length = []
     total_contigs = 0
@@ -155,9 +156,15 @@ def _output_fasta(contigs_fasta, scaffolds, out_file):
         total_contigs += len(scf.contigs)
         scf_seq = "".join(scf_seqs)
         scf_length.append(len(scf_seq))
-        out_fasta_dict[scf.name] = scf_seq
+        out_chromosomes[scf.name] = scf_seq
+    write_fasta_dict(out_chromosomes, out_chr)
 
-    write_fasta_dict(out_fasta_dict, out_file)
+    #unused contigs
+    unused_fasta = {}
+    for cname in contigs_fasta:
+        if cname not in used_contigs:
+            unused_fasta[cname] = contigs_fasta[cname]
+    write_fasta_dict(unused_fasta, out_unlocalized)
 
     #add some statistics
     used_unique = 0

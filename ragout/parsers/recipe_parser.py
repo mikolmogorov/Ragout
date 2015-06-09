@@ -28,7 +28,7 @@ def parse_ragout_recipe(filename):
 
     recipe_dict = {"genomes" : {}}
     known_params = ["tree", "target", "blocks", "maf", "hal", "fasta",
-                    "circular", "draft", "references"]
+                    "draft", "references", "naming_ref"]
     required_params = ["references", "target"]
 
     cast_bool = ["circular", "draft"]
