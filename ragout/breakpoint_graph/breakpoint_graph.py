@@ -126,10 +126,8 @@ class BreakpointGraph(object):
         self.debug_nodes.add(node)
     """
 
+    """
     def get_orphaned_nodes(self):
-        """
-        Get nodes suspected to rearrangements
-        """
         logger.debug("Getting orphaned nodes")
         candidate_nodes = set()
 
@@ -153,6 +151,7 @@ class BreakpointGraph(object):
                     candidate_nodes.add(node_2)
 
         return candidate_nodes
+    """
 
     def alternating_cycle(self, node_1, node_2):
         """
@@ -181,10 +180,23 @@ class BreakpointGraph(object):
                 common_genomes = common_genomes.intersection(edge_colors)
 
             if common_genomes:
+                self._check_distances(path)
                 good_path = True
                 break
 
         return len(path) / 2 if good_path else None
+
+    def _check_distances(self, path):
+        assert len(path) % 2 == 0
+        path.append(path[0])
+        edges = list(zip(path[:-1], path[1:]))
+        even_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
+                             edges[1::2]))
+        odd_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
+                            edges[0::2]))
+        diff = abs(sum(even_dist) - sum(odd_dist))
+        coeff = float(diff) / (sum(even_dist) + sum(odd_dist))
+        logger.debug(coeff)
 
     def is_infinity(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):

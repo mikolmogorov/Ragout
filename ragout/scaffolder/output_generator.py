@@ -55,7 +55,7 @@ def _fix_gaps(contigs, scaffolds):
             left_ns, right_ns = count_ns(cnt_1, cnt_2)
             num_ns = left_ns + right_ns
 
-            if cnt_1.link.gap > 0:
+            if cnt_1.link.gap >= 0:
                 cnt_1.link.gap += max(0, MIN_GAP - cnt_1.link.gap - num_ns)
                 continue
 
@@ -133,9 +133,9 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
     scf_length = []
     total_contigs = 0
     total_len = 0
-    trim_left = 0
     for scf in scaffolds:
         scf_seqs = []
+        trim_left = 0
         for contig in scf.contigs:
             seq_name, seg_start, seg_end = contig.name_with_coords()
             if seg_start is None:
@@ -149,7 +149,7 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
                 scf_seqs.append(cont_seq[trim_left : -contig.link.trim_left])
             else:
                 scf_seqs.append(cont_seq[trim_left:])
-            if contig.link.gap >= 0:
+            if contig.link.gap > 0:
                 scf_seqs.append("N" * contig.link.gap)
             trim_left = contig.link.trim_right
 
