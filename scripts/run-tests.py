@@ -20,7 +20,8 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                     "min_contigs" : 79,
                     "min_contigs_refine" : 146,
                     "max_scaffolds" : 1,
-                    "outdir" : "ecoli-test"},
+                    "outdir" : "ecoli-test",
+                    "scaf_pref" : "mg1655_scaffolds"},
          #"helicobacter" : {"recipe" : "examples/H.Pylori/helicobacter.rcp",
          #                  "coords" : "examples/H.Pylori/SJM180.coords",
          #                  "max_errors" : 0,
@@ -36,7 +37,8 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                        "min_contigs" : 170,
                        "min_contigs_refine" : 720,
                        "max_scaffolds" : 3,
-                       "outdir" : "cholerae-test"},
+                       "outdir" : "cholerae-test",
+                       "scaf_pref" : "h1_scaffolds"},
          "aureus" : {"recipe" : "examples/S.Aureus/aureus.rcp",
                      "coords" : "examples/S.Aureus/usa300.coords",
                      "max_errors" : 0,
@@ -44,7 +46,8 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                      "min_contigs" : 90,
                      "min_contigs_refine" : 165,
                      "max_scaffolds" : 1,
-                     "outdir" : "aureus-test"}}
+                     "outdir" : "aureus-test",
+                     "scaf_pref" : "usa_scaffolds"}}
 
 TEST_DIR = "test-dir"
 RAGOUT_EXEC = "ragout.py"
@@ -66,8 +69,8 @@ def run_test(parameters):
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
-    links_simple = os.path.join(outdir, "scaffolds.links")
-    links_simple_out = os.path.join(outdir, "scaffolds.links_verify")
+    links_simple = os.path.join(outdir, parameters["scaf_pref"] + ".links")
+    links_simple_out = links_simple  + "_verify"
 
     #checking before refinement
     cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]

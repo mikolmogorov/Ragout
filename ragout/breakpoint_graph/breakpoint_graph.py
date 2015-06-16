@@ -180,12 +180,13 @@ class BreakpointGraph(object):
                 common_genomes = common_genomes.intersection(edge_colors)
 
             if common_genomes:
-                self._check_distances(path)
+                #self._check_distances(path)
                 good_path = True
                 break
 
         return len(path) / 2 if good_path else None
 
+    """
     def _check_distances(self, path):
         assert len(path) % 2 == 0
         path.append(path[0])
@@ -197,6 +198,7 @@ class BreakpointGraph(object):
         diff = abs(sum(even_dist) - sum(odd_dist))
         coeff = float(diff) / (sum(even_dist) + sum(odd_dist))
         logger.debug(coeff)
+    """
 
     def is_infinity(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):
