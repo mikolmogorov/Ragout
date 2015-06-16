@@ -170,6 +170,7 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
     ###
 
     #now look for valid k-breaks
+    num_kbreaks = 0
     subgraphs = list(nx.connected_component_subgraphs(bp_graph))
     for subgr in subgraphs:
         #this is a cycle
@@ -189,9 +190,9 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
 
         #if len(scaffolds_involved) > 2:
         #    continue
-
-        logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
-                                                         len(scaffolds_involved)))
+        #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
+        #                                                 len(scaffolds_involved)))
+        num_kbreaks += 1
 
         for u, v in red_edges:
             bp_graph.remove_edge(u, v)
@@ -199,6 +200,7 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
             link = bp_graph[u][v][0]["link"]
             bp_graph.add_edge(u, v, scf_set="old", link=link)
 
+    logger.debug("Made {0} k-breaks".format(num_kbreaks))
     adjacencies = {}
     for (u, v, data) in bp_graph.edges_iter(data=True):
         if data["scf_set"] == "old":

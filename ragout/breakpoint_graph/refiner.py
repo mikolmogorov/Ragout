@@ -67,14 +67,16 @@ class AdjacencyRefiner(object):
 
         generated_adj = {}
         added_contigs = 0
+        failed_paths = 0
         for (adj_left, adj_right, dist, genomes) in trusted_adj:
             p = adj_graph.shortest_path(adj_left, adj_right, prohibited_nodes,
                                         orphaned_nodes)
             #logger.debug(p)
-            if p is None or len(p) % 2 == 1:
-                assert p is None
+            if p is None:
                 add_adj(adj_left, adj_right, dist, genomes)
+                failed_paths += 1
             else:
+                assert len(p) % 2 == 0
                 for x in p[1:-1]:
                     assert x not in prohibited_nodes
 
@@ -89,4 +91,5 @@ class AdjacencyRefiner(object):
                     add_adj(adj_left, adj_right, dist, genomes)
 
         logger.debug("Inserted {0} contigs".format(added_contigs))
+        logger.debug("Missing {0} paths".format(failed_paths))
         return adjacencies
