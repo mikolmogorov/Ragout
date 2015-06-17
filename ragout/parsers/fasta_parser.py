@@ -29,7 +29,6 @@ def read_fasta_dict(filename):
                         seq = []
                     header = line[1:].split(" ")[0]
                 else:
-                    line = line.upper()
                     if not _validate_seq(line):
                         raise FastaError("Invalid char in \"{0}\" at line {1}"
                                          .format(filename, lineno))
@@ -56,13 +55,14 @@ def write_fasta_dict(fasta_dict, filename):
                 f.write(seq[i:i + 60] + "\n")
 
 
-COMPL = maketrans("ATGCURYKMSWBVDHNX-", "TACGAYRMKSWVBHDNX-")
+COMPL = maketrans("ATGCURYKMSWBVDHNXatgcurykmswbvdhnx",
+                  "TACGAYRMKSWVBHDNXtacgayrmkswvbhdnx")
 def reverse_complement(string):
     return string[::-1].translate(COMPL)
 
 
 def _validate_seq(sequence):
-    VALID_CHARS = "ACGTURYKMSWBDHVNX-"
+    VALID_CHARS = "ACGTURYKMSWBDHVNXatgcurykmswbvdhnx"
     if len(sequence.translate(None, VALID_CHARS)):
         return False
     return True
