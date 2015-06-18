@@ -103,13 +103,13 @@ def resolve_repeats(ref_perms, target_perms, repeats,
     logger.debug("Repetitive matches: {0}".format(len(repetitive_matches)))
 
     ##resolving unique
-    for trg_ctx, profile in unique_matches:
-        for ref_ctx in profile:
-            assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
-                    ref_ctx.perm.blocks[ref_ctx.pos].block_id)
-            ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
-        trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
-        next_block_id += 1
+    #for trg_ctx, profile in unique_matches:
+    #    for ref_ctx in profile:
+    #        assert (trg_ctx.perm.blocks[trg_ctx.pos].block_id ==
+    #                ref_ctx.perm.blocks[ref_ctx.pos].block_id)
+    #        ref_ctx.perm.blocks[ref_ctx.pos].block_id = next_block_id
+    #    trg_ctx.perm.blocks[trg_ctx.pos].block_id = next_block_id
+    #    next_block_id += 1
     ##
 
     #resolving repetitive
