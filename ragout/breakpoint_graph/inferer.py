@@ -63,7 +63,7 @@ class AdjacencyInferer(object):
             adjacencies[node_2] = Adjacency(node_1, distance,
                                             supporting_genomes)
 
-        #self.main_graph.debug_output()
+        self.main_graph.debug_output()
         self._debug_output(chosen_edges)
 
         return adjacencies
@@ -92,12 +92,6 @@ class AdjacencyInferer(object):
             for edge in matching_edges:
                 for n in edge:
                     unused_nodes.remove(n)
-
-                #supporting_genomes = self.main_graph \
-                #                        .supporting_genomes(edge[0], edge[1])
-                #if supporting_genomes == ["Rattus"]:
-                #    for node in subgraph.bp_graph.nodes():
-                #        self.main_graph.add_debug_node(node)
 
             chosen_edges.extend(matching_edges)
 

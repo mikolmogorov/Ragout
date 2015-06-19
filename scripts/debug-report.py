@@ -115,7 +115,8 @@ def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
 
     for v1, v2, data in base_graph.edges_iter(data=True):
         color = g2c(data["genome_id"])
-        out_graph.add_edge(v1, v2, color=color)
+        label = "oo" if data["infinity"] == "True" else ""
+        out_graph.add_edge(v1, v2, color=color, label=label)
     for v1, v2 in predicted_edges.edges_iter():
         out_graph.add_edge(v1, v2, color="red", style="dashed")
     for (v1, v2, infinite) in true_edges:
@@ -127,9 +128,14 @@ def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
 
 
 def output_graph(graph, output_dir, only_predicted):
+    MAX_SIZE = 100
     subgraphs = nx.connected_component_subgraphs(graph)
     for comp_id, subgr in enumerate(subgraphs):
         if len(subgr) == 2:
+            continue
+
+        if len(subgr) > MAX_SIZE:
+            print("Skipped component of size {0}".format(len(subgr)))
             continue
 
         if only_predicted:
@@ -155,6 +161,7 @@ def read_scaffold_file(file):
             if temp[0] != '>':
                 scaffold.add(temp)
     return scaffold
+
 
 def my_has_path(graph, ordered_contigs, src, dst):
     visited = set()
@@ -228,7 +235,7 @@ def draw_phylogeny(phylogeny_txt, out_file):
 
 
 def do_job(nucmer_coords, debug_dir, circular, only_predicted):
-    used_contigs = os.path.join(debug_dir, "used_contigs.txt")
+    used_contigs = os.path.join(debug_dir, "filtered_contigs.txt")
     true_adj_out = os.path.join(debug_dir, "true_edges.dot")
     base_dot = os.path.join(debug_dir, "breakpoint_graph.dot")
     overlap_dot = os.path.join(debug_dir, "../contigs_overlap.dot")
