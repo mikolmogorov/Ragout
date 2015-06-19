@@ -58,17 +58,21 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
     for perm in perm_container.ref_perms:
         if perm.genome_name == ref_genome:
             for block in perm.blocks:
-                chr_index[block.block_id] = perm.chr_name
+                chr_index[block.block_id] = perm.chr_name, block.sign
 
     assigned_names = {}
+    need_rev_compl = {}
     for scf in scaffolds:
         scf_index = defaultdict(int)
+        sign_agreement = 0
         total = 0
         for contig in scf.contigs:
             for block in contig.perm.blocks:
                 if block.block_id in chr_index:
-                    scf_index[chr_index[block.block_id]] += 1
+                    chrom, sign = chr_index[block.block_id]
+                    scf_index[chrom] += 1
                     total += 1
+                    sign_agreement += int(sign == block.sign)
 
         name_str = PREFIX
         for chrom in sorted(scf_index, key=scf_index.get, reverse=True):
@@ -77,6 +81,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
             else:
                 break
         assigned_names[scf] = name_str
+        need_rev_compl[scf] = sign_agreement < total / 2
 
     same_names = defaultdict(list)
     for scf, name in assigned_names.items():
@@ -89,6 +94,8 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
 
     for scf in scaffolds:
         scf.name = assigned_names[scf]
+        if need_rev_compl[scf]:
+            scf.contigs = map(lambda c: c.reverse_copy(), scf.contigs)[::-1]
 
 
 def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):

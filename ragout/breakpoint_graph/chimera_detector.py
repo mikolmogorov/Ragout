@@ -74,8 +74,12 @@ class ChimeraDetector(object):
                              .format(len(subgr.bp_graph)))
 
             for (u, v, data) in subgr.bp_graph.edges_iter(data=True):
+                if data["genome_id"] != subgr.target:
+                    continue
+
                 genomes = subgr.supporting_genomes(u, v)
-                if set(genomes) != set([bp_graph.target]):
+                if (set(genomes) != set([bp_graph.target])
+                    and not subgr.is_infinity(u, v)):
                     continue
 
                 seq_name, start, end = data["chr_name"], data["start"], data["end"]

@@ -108,7 +108,7 @@ def make_run_stages(block_sizes, resolve_repeats):
     for block in block_sizes:
         stages.append(RunStage(str(block), block, False,
                       False, True, False))
-    refine = True
+    refine = False
     stages.append(RunStage("refine", block_sizes[-1], True,
                            resolve_repeats, False, refine))
     return stages
