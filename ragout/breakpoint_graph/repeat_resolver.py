@@ -347,7 +347,7 @@ def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
         """
         Computes global alignment
         """
-        GAP = -1
+        GAP = -2
         def match(a, b):
             mult = 1 if abs(a) in repeats or abs(b) in repeats else 2
             if a != b:
@@ -373,7 +373,8 @@ def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
 
     left = alignment(ctx_ref.left, ctx_trg.left)
     right = alignment(ctx_ref.right[::-1], ctx_trg.right[::-1])
-    return float(left + right) / (len(ctx_trg.left) + len(ctx_trg.right))
+    #return float(left + right) / (len(ctx_trg.left) + len(ctx_trg.right))
+    return left + right
 
 
 def _profile_similarity(profile, genome_ctx, repeats, same_len):
