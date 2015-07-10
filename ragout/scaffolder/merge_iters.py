@@ -146,7 +146,8 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
             bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
                               scf_set="old", link=cnt_1.link,
-                              scf_name=scf.name)
+                              scf_name=scf.name, c1=cnt_1, c2=cnt_2)
+
     for scf in new_scaffolds:
         prev_cont = None
         for pos, contig in enumerate(scf.contigs):
@@ -165,7 +166,8 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                 continue
 
             bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
-                              scf_set="new", link=prev_cont.link)
+                              scf_set="new", link=prev_cont.link,
+                              c1=prev_cont, c2=next_cont)
             prev_cont = next_cont
     ###
 
@@ -180,14 +182,26 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         red_edges = []
         black_edges = []
         scaffolds_involved = set()
+        #logger.debug(">>>k-break")
+
+        num_red = 0
         for (u, v, data) in subgr.edges_iter(data=True):
             if data["scf_set"] == "old":
                 red_edges.append((u, v))
                 scaffolds_involved.add(data["scf_name"])
             else:
                 black_edges.append((u, v))
+                #logger.debug("{0} -- {1}".format(data["c1"].signed_name(),
+                #                                 data["c2"].signed_name()))
+                num_red += int(_red_supported(data["c1"], data["c2"]))
+
+        if num_red != len(subgr) / 2 - 1:
+            continue
+
         assert len(red_edges) == len(black_edges)
 
+        #if len(subgr) > 3:
+        #    continue
         #if len(scaffolds_involved) > 2:
         #    continue
         #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
@@ -210,6 +224,15 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                                        data["link"].supporting_genomes)
 
     return adjacencies
+
+
+def _red_supported(ctg_1, ctg_2):
+    if ctg_1.perm.chr_name != ctg_2.perm.chr_name:
+        return False
+
+    left = ctg_1.perm.seq_end if ctg_1.sign > 0 else ctg_1.perm.seq_start
+    right = ctg_2.perm.seq_start if ctg_2.sign > 0 else ctg_2.perm.seq_end
+    return left == right
 
 
 def _merge_scaffolds(big_scaffolds, small_scaffolds):
