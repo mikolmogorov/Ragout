@@ -41,7 +41,7 @@ def do_job(links_file, target_perms, all_blocks):
                     block_chr = block_chrs.get(abs(b), None)
                     if (not block_chr or not target_chrs[seq_name] or
                         target_chrs[seq_name][-1] != block_chr):
-                        target_chrs[seq_name].append(block_chr)
+                        target_chrs[seq_name].append(str(b) + ":" + block_chr)
 
     with open(links_file, "r") as f:
         for line in f:
