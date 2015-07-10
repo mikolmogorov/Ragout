@@ -36,6 +36,9 @@ export BIN_DIR
 
 all: overlap maf2synteny
 
+static: LDFLAGS += -static-libstdc++ -static-libgcc -static
+static: all
+
 overlap:
 	make -C ${OVLP_DIR} all
 
