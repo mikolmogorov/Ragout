@@ -183,8 +183,6 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
         black_edges = []
         scaffolds_involved = set()
         #logger.debug(">>>k-break")
-
-        num_red = 0
         for (u, v, data) in subgr.edges_iter(data=True):
             if data["scf_set"] == "old":
                 red_edges.append((u, v))
@@ -193,17 +191,14 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                 black_edges.append((u, v))
                 #logger.debug("{0} -- {1}".format(data["c1"].signed_name(),
                 #                                 data["c2"].signed_name()))
-                num_red += int(_red_supported(data["c1"], data["c2"]))
-
-        if num_red != len(subgr) / 2 - 1:
-            continue
+                #num_red += int(_red_supported(data["c1"], data["c2"]))
 
         assert len(red_edges) == len(black_edges)
 
-        #if len(subgr) > 3:
-        #    continue
-        #if len(scaffolds_involved) > 2:
-        #    continue
+        if len(subgr) / 2 > 4:
+            continue
+        if len(scaffolds_involved) > 2:
+            continue
         #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
         #                                                 len(scaffolds_involved)))
         num_kbreaks += 1
@@ -224,15 +219,6 @@ def _project_rearrangements(old_scaffolds, new_scaffolds):
                                        data["link"].supporting_genomes)
 
     return adjacencies
-
-
-def _red_supported(ctg_1, ctg_2):
-    if ctg_1.perm.chr_name != ctg_2.perm.chr_name:
-        return False
-
-    left = ctg_1.perm.seq_end if ctg_1.sign > 0 else ctg_1.perm.seq_start
-    right = ctg_2.perm.seq_start if ctg_2.sign > 0 else ctg_2.perm.seq_end
-    return left == right
 
 
 def _merge_scaffolds(big_scaffolds, small_scaffolds):
