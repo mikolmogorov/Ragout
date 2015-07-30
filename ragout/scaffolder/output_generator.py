@@ -16,7 +16,7 @@ MIN_GAP = 11
 def make_output(contigs, scaffolds, out_dir, out_prefix):
     out_links = os.path.join(out_dir, out_prefix + "_scaffolds.links")
     out_chr = os.path.join(out_dir, out_prefix + "_scaffolds.fasta")
-    out_unlocalized = os.path.join(out_dir, out_prefix + "_unlocalized.fasta")
+    out_unlocalized = os.path.join(out_dir, out_prefix + "_unplaced.fasta")
     _fix_gaps(contigs, scaffolds)
     output_links(scaffolds, out_links)
     _output_fasta(contigs, scaffolds, out_chr, out_unlocalized)

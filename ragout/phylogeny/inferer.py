@@ -50,6 +50,7 @@ class TreeInferer:
         """
         Implementation of neighbor-joining algorithm
         """
+        MIN_LEN = 0.000001
         genomes = self.perms_by_genome.keys()
         taxas = set(map(Leaf, genomes))
         for t in taxas:
@@ -96,7 +97,7 @@ class TreeInferer:
                         if len(taxas) > 2 else 0)
             dist_1 = 0.5 * distances[old_1][old_2] + div_dist
             dist_2 = distances[old_1][old_2] - dist_1
-            dist_1, dist_2 = max(0, dist_1), max(0, dist_2)
+            dist_1, dist_2 = max(MIN_LEN, dist_1), max(MIN_LEN, dist_2)
 
             new_taxa.add_edge((old_1, None, dist_1))
             new_taxa.add_edge((old_2, None, dist_2))

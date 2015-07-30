@@ -8,7 +8,7 @@ moving between two consecutive iterations
 """
 
 from collections import namedtuple, defaultdict
-from itertools import product, chain
+from itertools import product, chain, combinations
 import os
 import logging
 from copy import deepcopy
@@ -34,7 +34,9 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
     small_updated = _update_scaffolds(small_scaffolds, perm_container)
 
     if rearrange:
-        new_adj = _project_rearrangements(big_updated, small_updated)
+        projector = RearrangementProjector(big_updated, small_updated, True)
+        new_adj = projector.project()
+        #new_adj = _project_rearrangements(big_updated, small_updated)
         big_rearranged = build_scaffolds(new_adj, perm_container, False, False)
     else:
         big_rearranged = big_updated
@@ -51,13 +53,6 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
         output_scaffolds_premutations(merged_scf, perms_out)
 
     return merged_scf
-
-
-def refine_scaffolds(scaffolds, adj_refiner, perm_container):
-    updated_scf = _update_scaffolds(scaffolds, perm_container)
-    adj = adj_refiner.refine_adjacencies(updated_scf)
-    new_scf = build_scaffolds(adj, perm_container)
-    return _merge_consecutive_contigs(new_scf)
 
 
 def _merge_consecutive_contigs(scaffolds):
@@ -131,94 +126,145 @@ def _update_scaffolds(scaffolds, perm_container):
     return new_scaffolds
 
 
-def _project_rearrangements(old_scaffolds, new_scaffolds):
-    """
-    No repeats assumed!
-    """
-    old_contigs = set()
-    for scf in old_scaffolds:
-        for cnt in scf.contigs:
-            old_contigs.add(cnt.name())
+class RearrangementProjector:
+    def __init__(self, old_scaffolds, new_scaffolds, conservative):
+        self.old_scaffolds = old_scaffolds
+        self.new_scaffolds = new_scaffolds
+        self._build_bp_graph()
+        self._build_adj_graph()
+        self.conservative = conservative
 
-    ###creating 2-colored breakpoint graph
-    bp_graph = nx.MultiGraph()
-    for scf in old_scaffolds:
-        for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                              scf_set="old", link=cnt_1.link,
-                              scf_name=scf.name, c1=cnt_1, c2=cnt_2)
-
-    for scf in new_scaffolds:
-        prev_cont = None
-        for pos, contig in enumerate(scf.contigs):
-            if contig.name() in old_contigs:
-                prev_cont = contig
-                break
-        if prev_cont is None:
-            continue
-
-        for next_cont in scf.contigs[pos + 1:]:
-            if next_cont.name() not in old_contigs:
-                prev_cont.link.gap += next_cont.length() + next_cont.link.gap
-                common_genomes = (set(prev_cont.link.supporting_genomes) &
-                                  set(next_cont.link.supporting_genomes))
-                prev_cont.link.supporting_genomes = list(common_genomes)
+    def project(self):
+        #look for valid k-breaks
+        num_kbreaks = 0
+        subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
+        for subgr in subgraphs:
+            #this is a cycle
+            if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
                 continue
 
-            bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
-                              scf_set="new", link=prev_cont.link,
-                              c1=prev_cont, c2=next_cont)
-            prev_cont = next_cont
-    ###
+            red_edges = []
+            black_edges = []
+            for (u, v, data) in subgr.edges_iter(data=True):
+                if data["scf_set"] == "old":
+                    red_edges.append((u, v, data))
+                else:
+                    black_edges.append((u, v, data))
+                    #logger.debug("{0} -- {1}".format(data["c1"].signed_name(),
+                    #                                 data["c2"].signed_name()))
+                    #num_red += int(_red_supported(data["c1"], data["c2"]))
 
-    #now look for valid k-breaks
-    num_kbreaks = 0
-    subgraphs = list(nx.connected_component_subgraphs(bp_graph))
-    for subgr in subgraphs:
-        #this is a cycle
-        if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
-            continue
+            if not self._good_k_break(red_edges, black_edges):
+                continue
 
-        red_edges = []
-        black_edges = []
-        scaffolds_involved = set()
-        #logger.debug(">>>k-break")
-        for (u, v, data) in subgr.edges_iter(data=True):
+            #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
+            #                                                 len(scaffolds_involved)))
+
+            num_kbreaks += 1
+            for u, v, data in red_edges:
+                self.bp_graph.remove_edge(u, v)
+                self.adj_graph.remove_edge(u, v)
+            for u, v, data in black_edges:
+                link = self.bp_graph[u][v][0]["link"]
+                self.bp_graph.add_edge(u, v, scf_set="old", link=link)
+                self.adj_graph.add_edge(u, v)
+
+        logger.debug("Made {0} k-breaks".format(num_kbreaks))
+        adjacencies = {}
+        for (u, v, data) in self.bp_graph.edges_iter(data=True):
             if data["scf_set"] == "old":
-                red_edges.append((u, v))
-                scaffolds_involved.add(data["scf_name"])
-            else:
-                black_edges.append((u, v))
-                #logger.debug("{0} -- {1}".format(data["c1"].signed_name(),
-                #                                 data["c2"].signed_name()))
-                #num_red += int(_red_supported(data["c1"], data["c2"]))
+                adjacencies[u] = Adjacency(v, data["link"].gap,
+                                           data["link"].supporting_genomes)
+                adjacencies[v] = Adjacency(u, data["link"].gap,
+                                           data["link"].supporting_genomes)
 
-        assert len(red_edges) == len(black_edges)
+        return adjacencies
 
-        if len(subgr) / 2 > 4:
-            continue
-        if len(scaffolds_involved) > 2:
-            continue
-        #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
-        #                                                 len(scaffolds_involved)))
-        num_kbreaks += 1
+    def _good_k_break(self, old_edges, new_edges):
+        """
+        Checks that the break does not change chromomsome structure significantly
+        """
+        MIN_OVLP_SCORE = 0.9
+        assert len(old_edges) == len(new_edges)
+        if len(old_edges) > 4:
+            return False
 
-        for u, v in red_edges:
-            bp_graph.remove_edge(u, v)
-        for u, v in black_edges:
-            link = bp_graph[u][v][0]["link"]
-            bp_graph.add_edge(u, v, scf_set="old", link=link)
+        new_adj_graph = self.adj_graph.copy()
+        for u, v, data in old_edges:
+            new_adj_graph.remove_edge(u, v)
+        for u, v, data in new_edges:
+            new_adj_graph.add_edge(u, v)
 
-    logger.debug("Made {0} k-breaks".format(num_kbreaks))
-    adjacencies = {}
-    for (u, v, data) in bp_graph.edges_iter(data=True):
-        if data["scf_set"] == "old":
-            adjacencies[u] = Adjacency(v, data["link"].gap,
-                                       data["link"].supporting_genomes)
-            adjacencies[v] = Adjacency(u, data["link"].gap,
-                                       data["link"].supporting_genomes)
+        all_nodes = new_adj_graph.nodes()
+        old_sets = list(map(lambda g: set(g.nodes()),
+                            nx.connected_component_subgraphs(self.adj_graph)))
+        new_sets = list(map(lambda g: set(g.nodes()),
+                            nx.connected_component_subgraphs(new_adj_graph)))
+        if len(old_sets) != len(new_sets):
+            return False
 
-    return adjacencies
+        for old_set in old_sets:
+            max_overlap = 0
+            best_score = 0
+            for new_set in new_sets:
+                overlap = len(old_set & new_set)
+                if overlap > max_overlap:
+                    max_overlap = overlap
+                    best_score = float(overlap) / len(old_set | new_set)
+            if best_score < MIN_OVLP_SCORE:
+                return False
+
+        return True
+
+    def _build_bp_graph(self):
+        """
+        No repeats assumed!
+        """
+        old_contigs = set()
+        for scf in self.old_scaffolds:
+            for cnt in scf.contigs:
+                old_contigs.add(cnt.name())
+
+        ###creating 2-colored breakpoint graph
+        bp_graph = nx.MultiGraph()
+        for scf in self.old_scaffolds:
+            for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+                bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
+                                  scf_set="old", link=cnt_1.link,
+                                  scf_name=scf.name, c1=cnt_1, c2=cnt_2)
+
+        for scf in self.new_scaffolds:
+            prev_cont = None
+            for pos, contig in enumerate(scf.contigs):
+                if contig.name() in old_contigs:
+                    prev_cont = contig
+                    break
+            if prev_cont is None:
+                continue
+
+            for next_cont in scf.contigs[pos + 1:]:
+                if next_cont.name() not in old_contigs:
+                    prev_cont.link.gap += next_cont.length() + next_cont.link.gap
+                    common_genomes = (set(prev_cont.link.supporting_genomes) &
+                                      set(next_cont.link.supporting_genomes))
+                    prev_cont.link.supporting_genomes = list(common_genomes)
+                    continue
+
+                bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
+                                  scf_set="new", link=prev_cont.link,
+                                  scf_name=scf.name, c1=prev_cont, c2=next_cont)
+                prev_cont = next_cont
+
+        self.bp_graph = bp_graph
+
+    def _build_adj_graph(self):
+        adj_graph = nx.Graph()
+        for scf in self.old_scaffolds:
+            for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+                adj_graph.add_edge(cnt_1.right_end(), cnt_2.left_end())
+            for cnt in scf.contigs:
+                adj_graph.add_edge(cnt.left_end(), cnt.right_end())
+        self.adj_graph = adj_graph
 
 
 def _merge_scaffolds(big_scaffolds, small_scaffolds):

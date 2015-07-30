@@ -53,7 +53,7 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
 
 def assign_scaffold_names(scaffolds, perm_container, ref_genome):
     MIN_RATE = 0.1
-    PREFIX = "pseudochr"
+    PREFIX = "chr"
     chr_index = {}
     for perm in perm_container.ref_perms:
         if perm.genome_name == ref_genome:

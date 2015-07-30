@@ -47,7 +47,7 @@ debugger = DebugConfig.get_instance()
 
 
 RunStage = namedtuple("RunStage", ["name", "block_size", "indels",
-                                   "repeats", "rearrange", "refine"])
+                                   "repeats", "rearrange"])
 
 
 def enable_logging(log_file, debug):
@@ -107,10 +107,9 @@ def make_run_stages(block_sizes, resolve_repeats):
     stages = []
     for block in block_sizes:
         stages.append(RunStage(str(block), block, False,
-                      False, True, False))
-    refine = False
+                      False, True))
     stages.append(RunStage("refine", block_sizes[-1], True,
-                           resolve_repeats, False, refine))
+                           resolve_repeats, False))
     return stages
 
 
@@ -185,26 +184,19 @@ def run_unsafe(args):
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         prev_stages.append(stage)
 
-        if not stage.refine:
-            fixed_container = chim_detect.break_contigs(perms[stage], [stage])
-            breakpoint_graph = BreakpointGraph(fixed_container)
+        fixed_container = chim_detect.break_contigs(perms[stage], [stage])
+        breakpoint_graph = BreakpointGraph(fixed_container)
 
-            adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
-            adjacencies = adj_inferer.infer_adjacencies()
-            cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
+        adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
+        adjacencies = adj_inferer.infer_adjacencies()
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
 
-            if scaffolds is not None:
-                all_breaks = chim_detect.break_contigs(perms[stage], prev_stages)
-                scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                                  all_breaks, stage.rearrange)
-            else:
-                scaffolds = cur_scaffolds
-        else:
+        if scaffolds is not None:
             all_breaks = chim_detect.break_contigs(perms[stage], prev_stages)
-            refine_bg = BreakpointGraph(all_breaks)
-            adj_refiner = AdjacencyRefiner(refine_bg, phylogeny, all_breaks)
-            scaffolds = merge.refine_scaffolds(scaffolds, adj_refiner,
-                                               all_breaks)
+            scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
+                                              all_breaks, stage.rearrange)
+        else:
+            scaffolds = cur_scaffolds
         scfldr.assign_scaffold_names(scaffolds, perms[stage], naming_ref)
     ####
 
