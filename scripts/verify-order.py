@@ -30,6 +30,8 @@ def parse_links_file(filename):
     def add_contig(string):
         name = string.replace("=", "_")      #fix for nucmer
         without_sign = name[1:].strip()
+        if "[" in without_sign:
+            without_sign = without_sign[:without_sign.index("[")]
         sign = 1 if name[0] == "+" else -1
         scaffolds[-1].contigs.append(Contig(without_sign, sign))
 

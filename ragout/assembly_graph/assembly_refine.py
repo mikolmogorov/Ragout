@@ -95,7 +95,7 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len, contigs_fasta):
                 name = node[1:]
 
                 seq_len = len(contigs_fasta[name])
-                new_scaffolds[-1].contigs.append(Contig(name, seq_len, sign))
+                new_scaffolds[-1].contigs.append(Contig.with_sequence(name, seq_len, sign))
                 new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
                 new_scaffolds[-1].contigs[-1].link.supporting_genomes = \

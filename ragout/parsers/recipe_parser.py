@@ -29,6 +29,7 @@ def parse_ragout_recipe(filename):
     recipe_dict = {"genomes" : {}}
     known_params = ["tree", "target", "blocks", "maf", "hal", "fasta",
                     "draft", "references", "naming_ref"]
+    deprecated = ["circular"]
     required_params = ["references", "target"]
 
     cast_bool = ["circular", "draft"]
@@ -50,6 +51,10 @@ def parse_ragout_recipe(filename):
                                       .format(filename, lineno + 1))
 
             (obj, param_name), value = m.group(1).split("."), m.group(2)
+            if param_name in deprecated:
+                logger.warning("Recipe parameter '{0}' is deprecated"
+                                                        .format(param_name))
+                continue
             if param_name not in known_params:
                 raise RecipeException("Unknown recipe parameter '{0}' on line {1}"
                                       .format(param_name, lineno, filename))

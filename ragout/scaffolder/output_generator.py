@@ -16,10 +16,10 @@ MIN_GAP = 11
 def make_output(contigs, scaffolds, out_dir, out_prefix):
     out_links = os.path.join(out_dir, out_prefix + "_scaffolds.links")
     out_chr = os.path.join(out_dir, out_prefix + "_scaffolds.fasta")
-    out_unlocalized = os.path.join(out_dir, out_prefix + "_unplaced.fasta")
+    out_unplaced = os.path.join(out_dir, out_prefix + "_unplaced.fasta")
     _fix_gaps(contigs, scaffolds)
     output_links(scaffolds, out_links)
-    _output_fasta(contigs, scaffolds, out_chr, out_unlocalized)
+    _output_fasta(contigs, scaffolds, out_chr, out_unplaced)
 
 
 def _fix_gaps(contigs, scaffolds):
@@ -48,31 +48,17 @@ def _fix_gaps(contigs, scaffolds):
 
     for scf in scaffolds:
         for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
-            if cnt_1.link.gap >= MIN_GAP or cnt_1.link.supporting_assembly:
-                cnt_1.link.trim_left = max(0, -cnt_1.link.gap)
+            if cnt_1.link.supporting_assembly:
+                cnt_1.trim_right(max(0, -cnt_1.link.gap))
+                cnt_1.link.gap = max(0, cnt_1.link.gap)
                 continue
 
             left_ns, right_ns = count_ns(cnt_1, cnt_2)
-            num_ns = left_ns + right_ns
 
-            if cnt_1.link.gap >= 0:
-                cnt_1.link.gap += max(0, MIN_GAP - cnt_1.link.gap - num_ns)
-                continue
-
-            if num_ns - MIN_GAP < -cnt_1.link.gap:
-                if num_ns > MIN_GAP:
-                    #negative gap
-                    gap = num_ns - MIN_GAP
-                    cnt_1.link.trim_left = min(gap, left_ns)
-                    cnt_1.link.trim_right = gap - cnt_1.link.trim_left
-                    cnt_1.link.gap = -gap
-                else:
-                    #positive gap
-                    cnt_1.link.gap = MIN_GAP - num_ns
-            else:
-                #negative gap
-                cnt_1.link.trim_left = min(-cnt_1.link.gap, left_ns)
-                cnt_1.link.trim_right = -cnt_1.link.gap - cnt_1.link.trim_left
+            cnt_1.trim_right(left_ns)
+            cnt_2.trim_left(right_ns)
+            cnt_1.link.gap += left_ns + right_ns
+            cnt_1.link.gap = max(cnt_1.link.gap, MIN_GAP)
 
 
 def output_links(scaffolds, out_links):
@@ -135,7 +121,7 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
     total_len = 0
     for scf in scaffolds:
         scf_seqs = []
-        trim_left = 0
+        #trim_left = 0
         for contig in scf.contigs:
             seq_name, seg_start, seg_end = contig.name_with_coords()
             if seg_start is None:
@@ -145,13 +131,12 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
 
-            if contig.link.trim_left > 0:
-                scf_seqs.append(cont_seq[trim_left : -contig.link.trim_left])
-            else:
-                scf_seqs.append(cont_seq[trim_left:])
+            #if contig.link.trim_left > 0:
+            #    scf_seqs.append(cont_seq[trim_left : -contig.link.trim_left])
+            scf_seqs.append(cont_seq)
             if contig.link.gap > 0:
                 scf_seqs.append("N" * contig.link.gap)
-            trim_left = contig.link.trim_right
+            #trim_left = contig.link.trim_right
 
             used_contigs.add(seq_name)
             total_len += len(cont_seq)

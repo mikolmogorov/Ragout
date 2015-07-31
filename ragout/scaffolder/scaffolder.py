@@ -15,7 +15,7 @@ import copy
 import logging
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import (ContigWithPerm, Scaffold, Link,
+from ragout.shared.datatypes import (Contig, Scaffold, Link,
                                      output_scaffolds_premutations,
                                      output_permutations)
 from ragout.scaffolder.output_generator import output_links
@@ -181,7 +181,7 @@ def _make_contigs(perm_container):
     index = {}
     for perm in perm_container.target_perms:
         assert len(perm.blocks)
-        contigs.append(ContigWithPerm(perm))
+        contigs.append(Contig.with_perm(perm))
         for block in perm.blocks:
             assert block.block_id not in index
             index[block.block_id] = contigs[-1]

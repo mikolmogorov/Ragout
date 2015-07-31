@@ -16,7 +16,7 @@ from copy import deepcopy
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import (ContigWithPerm, Scaffold, Permutation, Link,
+from ragout.shared.datatypes import (Contig, Scaffold, Permutation, Link,
                                      output_scaffolds_premutations, output_permutations)
 from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
@@ -76,14 +76,14 @@ def _merge_consecutive_contigs(scaffolds):
 
             if not consistent:
                 if cur_perm:
-                    new_contigs.append(ContigWithPerm(cur_perm, cur_sign, cur_link))
+                    new_contigs.append(Contig.with_perm(cur_perm, cur_sign, cur_link))
                 cur_perm = deepcopy(cnt.perm)
 
             cur_sign = cnt.sign
             cur_link = cnt.link
 
         if cur_perm:
-            new_contigs.append(ContigWithPerm(cur_perm, cur_sign, cur_link))
+            new_contigs.append(Contig.with_perm(cur_perm, cur_sign, cur_link))
         num_contigs += len(new_contigs)
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
                                                    None, new_contigs))
@@ -117,7 +117,7 @@ def _update_scaffolds(scaffolds, perm_container):
                 logger.debug("Lost: {0}".format(contig.perm))
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
             for new_perm in inner_perms:
-                new_contigs.append(ContigWithPerm(new_perm, contig.sign,
+                new_contigs.append(Contig.with_perm(new_perm, contig.sign,
                                                   Link(0, ["^_^"])))
             new_contigs[-1].link = contig.link
 
@@ -210,7 +210,7 @@ class RearrangementProjector:
                 overlap = len(old_set & new_set)
                 if overlap > max_overlap:
                     max_overlap = overlap
-                    best_score = float(overlap) / len(old_set | new_set)
+                    best_score = float(overlap) / (len(old_set | new_set) + 1)
             if best_score < MIN_OVLP_SCORE:
                 return False
 

@@ -77,33 +77,21 @@ def output_permutations(permutations, out_file):
 
 
 class Contig:
-    def __init__(self, seq_name, seq_len, sign=1, link=None):
-        self.seq_name = seq_name
-        self.sign = sign
-        self.seq_len = seq_len
-        if not link:
-            self.link = Link(0, [])
-        else:
-            self.link = link
-
-    def name(self):
-        return self.seq_name
-
-    def length(self):
-        return self.seq_len
-
-    def signed_name(self):
-        sign = "+" if self.sign > 0 else "-"
-        return sign + self.name()
-
-    def name_with_coords(self):
-        return self.seq_name, None, None
-
-
-class ContigWithPerm(Contig):
-    def __init__(self, permutation, sign=1, link=None):
+    def __init__(self, permutation, sign, link, dummy_param):
         self.perm = permutation
-        Contig.__init__(self, None, permutation.length(), sign, link)
+        self.sign = sign
+        if link is None:
+            link = Link(0, [])
+        self.link = link
+
+    @staticmethod
+    def with_perm(permutation, sign=1, link=None):
+        return Contig(permutation, sign, link, None)
+
+    @staticmethod
+    def with_sequence(seq_name, seq_len, sign=1, link=None):
+        dummy_perm = Permutation(None, seq_name, seq_len, None)
+        return Contig.with_perm(dummy_perm, sign, link)
 
     def left_end(self):
         return (self.perm.blocks[0].signed_id() if self.sign > 0
@@ -135,8 +123,27 @@ class ContigWithPerm(Contig):
     def name(self):
         return self.perm.name()
 
+    def signed_name(self):
+        sign = "+" if self.sign > 0 else "-"
+        return sign + self.name()
+
     def name_with_coords(self):
         return self.perm.chr_name, self.perm.seq_start, self.perm.seq_end
+
+    def trim_left(self, trim_len):
+        if self.sign > 0:
+            self.perm.seq_start += trim_len
+        else:
+            self.perm.seq_end -= trim_len
+
+    def trim_right(self, trim_len):
+        if self.sign > 0:
+            self.perm.seq_end -= trim_len
+        else:
+            self.perm.seq_start += trim_len
+
+    def length(self):
+        return self.perm.length()
 
 
 class Link:
@@ -145,8 +152,6 @@ class Link:
     """
     def __init__(self, gap, supporting_genomes):
         self.gap = gap
-        self.trim_left = 0
-        self.trim_right = 0
         self.supporting_genomes = supporting_genomes
         self.supporting_assembly = False
 
