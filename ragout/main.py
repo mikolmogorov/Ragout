@@ -35,6 +35,7 @@ from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 from ragout.breakpoint_graph.inferer import AdjacencyInferer
 from ragout.breakpoint_graph.refiner import AdjacencyRefiner
 from ragout.breakpoint_graph.chimera_detector import ChimeraDetector
+from ragout.__version__ import __version__
 
 #register backends
 import synteny_backend.sibelia
@@ -197,7 +198,7 @@ def run_unsafe(args):
                                               all_breaks, stage.rearrange)
         else:
             scaffolds = cur_scaffolds
-        scfldr.assign_scaffold_names(scaffolds, perms[stage], naming_ref)
+    scfldr.assign_scaffold_names(scaffolds, perms[run_stages[-1]], naming_ref)
     ####
 
     if args.debug:
@@ -259,7 +260,7 @@ def main():
                         help="enable debug output")
     parser.add_argument("-t", "--threads", dest="threads", type=int,
                         default=1, help="number of threads for synteny backend")
-    parser.add_argument("--version", action="version", version="Ragout v1.1")
+    parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
     return run_ragout(args)

@@ -7,6 +7,7 @@ import logging
 import os
 
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
+from ragout.__version__ import __version__
 
 logger = logging.getLogger()
 
@@ -15,10 +16,12 @@ MIN_GAP = 11
 
 def make_output(contigs, scaffolds, out_dir, out_prefix):
     out_links = os.path.join(out_dir, out_prefix + "_scaffolds.links")
+    out_agp = os.path.join(out_dir, out_prefix + "_scaffolds.agp")
     out_chr = os.path.join(out_dir, out_prefix + "_scaffolds.fasta")
     out_unplaced = os.path.join(out_dir, out_prefix + "_unplaced.fasta")
     _fix_gaps(contigs, scaffolds)
     output_links(scaffolds, out_links)
+    _output_agp(scaffolds, out_agp, out_prefix)
     _output_fasta(contigs, scaffolds, out_chr, out_unplaced)
 
 
@@ -59,6 +62,42 @@ def _fix_gaps(contigs, scaffolds):
             cnt_2.trim_left(right_ns)
             cnt_1.link.gap += left_ns + right_ns
             cnt_1.link.gap = max(cnt_1.link.gap, MIN_GAP)
+
+
+def _output_agp(scaffolds, out_agp, assembly_name):
+    """
+    Output file in NCBI AGP format
+    """
+    SHIFT = 1
+    with open(out_agp, "w") as f:
+        f.write("##agp-version  2.0\n")
+        f.write("#ASSEMBLY NAME: {0}\n".format(assembly_name))
+        f.write("#DESCRIPTION: Pseudochromosome assembly\n")
+        f.write("#PROGRAM: Ragout v{0}\n".format(__version__))
+        for scf in scaffolds:
+            chr_pos = 0
+            for contig_id, contig in enumerate(scf.contigs):
+                chr_start = chr_pos
+                chr_end = chr_pos + contig.length()
+                chr_pos = chr_end + contig.link.gap
+                cont_name, cont_start, cont_end = contig.name_with_coords()
+                strand = "+" if contig.sign > 0 else "-"
+
+                supp_genomes = sorted(contig.link.supporting_genomes)
+                if contig.link.supporting_assembly:
+                    supp_genomes.append("~>")
+                support = ",".join(supp_genomes)
+
+                contig_num = 2 * contig_id + 1
+                gap_num = 2 * contig_id + 2
+                cont_fields = [scf.name, chr_start + SHIFT, chr_end,
+                               contig_num, "W", cont_name, cont_start + SHIFT,
+                               cont_end, strand]
+                f.write("\t".join(map(str, cont_fields)) + "\n")
+                if contig.link.gap > 0:
+                    gap_fields = [scf.name, chr_end + SHIFT, chr_pos, gap_num,
+                                  "N", contig.link.gap, "scaffold", "yes", support]
+                    f.write("\t".join(map(str, gap_fields)) + "\n")
 
 
 def output_links(scaffolds, out_links):
