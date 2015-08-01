@@ -95,7 +95,11 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
     for scf in scaffolds:
         scf.name = assigned_names[scf]
         if need_rev_compl[scf]:
-            scf.contigs = map(lambda c: c.reverse_copy(), scf.contigs)[::-1]
+            new_contigs = map(lambda c: c.reverse_copy(), scf.contigs)[::-1]
+            for i in xrange(len(new_contigs) - 2):
+                new_contigs[i].link = new_contigs[i + 1].link
+            new_contigs[-1].link = Link(0, [])
+            scf.contigs = new_contigs
 
 
 def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
