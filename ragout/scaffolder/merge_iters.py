@@ -210,7 +210,7 @@ class RearrangementProjector:
                 overlap = len(old_set & new_set)
                 if overlap > max_overlap:
                     max_overlap = overlap
-                    best_score = float(overlap) / (len(old_set | new_set) + 1)
+                    best_score = float(overlap) / len(old_set | new_set)
             if best_score < MIN_OVLP_SCORE:
                 return False
 
