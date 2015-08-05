@@ -160,6 +160,7 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
     scf_length = []
     total_contigs = 0
     total_len = 0
+    gap_len = 0
     for scf in scaffolds:
         scf_seqs = []
         #trim_left = 0
@@ -172,12 +173,10 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
 
-            #if contig.link.trim_left > 0:
-            #    scf_seqs.append(cont_seq[trim_left : -contig.link.trim_left])
             scf_seqs.append(cont_seq)
             if contig.link.gap > 0:
                 scf_seqs.append("N" * contig.link.gap)
-            #trim_left = contig.link.trim_right
+                gap_len += contig.link.gap
 
             used_contigs.add(seq_name)
             total_len += len(cont_seq)
@@ -207,24 +206,26 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
         else:
             unused_count += 1
             unused_len += len(contigs_fasta[h])
-    assembly_len = unused_len + used_len
-    used_perc = 100 * float(used_len) / assembly_len
-    unused_perc = 100 * float(unused_len) / assembly_len
+    input_len = unused_len + used_len
+    assembly_len = total_len + gap_len
+    used_perc = 100 * float(used_len) / input_len
+    unused_perc = 100 * float(unused_len) / input_len
+    gap_perc = 100 * float(gap_len) / assembly_len
     contigs_length = [len(c) for c in contigs_fasta.values()]
 
     logger.info("Assembly statistics:\n\n"
                 "\tScaffolds:\t\t{0}\n"
-                "\tUnique contigs:\t\t{1}\n"
-                "\tUnique contigs length:\t{2} ({3:2.4}%)\n"
-                "\tTotal contigs:\t\t{4}\n"
-                "\tTotal contigs length:\t{5}\n"
-                "\tUnused contigs count:\t{6}\n"
-                "\tUnused contigs length:\t{7} ({8:2.4}%)\n"
-                "\tContigs N50: \t\t{9}\n"
-                "\tScaffolds N50:\t\t{10}\n"
-                .format(len(scaffolds), used_unique, used_len, used_perc,
-                        total_contigs, total_len, unused_count, unused_len,
-                        unused_perc,
+                "\tInput fragments used:\t{1}\n"
+                "\tInput fragments parts:\t{2}\n"
+                "\tUnplaced fragments:\t{6}\n"
+                "\tUnplaced length:\t{7} ({8:2.2f}%)\n"
+                "\tAssembly length:\t{3}\n"
+                "\tAdded gaps length:\t{4} ({5:2.2f}%)\n"
+                "\tInput fragments N50: \t{9}\n"
+                "\tAssembly N50:\t\t{10}\n"
+                .format(len(scaffolds), used_unique, total_contigs,
+                        assembly_len, gap_len, gap_perc,
+                        unused_count, unused_len, unused_perc,
                         _calc_n50(contigs_length, unused_len + used_len),
                         _calc_n50(scf_length, unused_len + used_len)))
 
