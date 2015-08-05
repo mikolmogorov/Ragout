@@ -83,14 +83,18 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
         assigned_names[scf] = name_str
         need_rev_compl[scf] = sign_agreement < total / 2
 
+    #in case of same names
     same_names = defaultdict(list)
     for scf, name in assigned_names.items():
         same_names[name].append(scf)
     for name, scf_list in same_names.items():
-        if len(scf_list) == 1:
-            continue
-        for num, scf in enumerate(scf_list):
-            assigned_names[scf] += "." + str(num + 1)
+        scf_list.sort(key=lambda s: len(s.contigs), reverse=True)
+        unlocalized = scf_list[1:]
+        for scf in unlocalized:
+            assigned_names[scf] += "_unlocalized"
+        if len(unlocalized) > 1:
+            for num, scf in enumerate(unlocalized):
+                assigned_names[scf] += "." + str(num + 1)
 
     for scf in scaffolds:
         scf.name = assigned_names[scf]

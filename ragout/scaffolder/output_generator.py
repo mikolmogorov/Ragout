@@ -12,6 +12,7 @@ from ragout.__version__ import __version__
 logger = logging.getLogger()
 
 MIN_GAP = 11
+MAX_GAP = 100000
 
 
 def make_output(contigs, scaffolds, out_dir, out_prefix):
@@ -62,6 +63,7 @@ def _fix_gaps(contigs, scaffolds):
             cnt_2.trim_left(right_ns)
             cnt_1.link.gap += left_ns + right_ns
             cnt_1.link.gap = max(cnt_1.link.gap, MIN_GAP)
+            cnt_1.link.gap = min(cnt_1.link.gap, MAX_GAP)
 
 
 def _output_agp(scaffolds, out_agp, assembly_name):

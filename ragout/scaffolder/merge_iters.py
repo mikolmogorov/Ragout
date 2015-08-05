@@ -185,8 +185,9 @@ class RearrangementProjector:
         Checks that the break does not change chromomsome structure significantly
         """
         MIN_OVLP_SCORE = 0.9
+        MAX_K_BREAK = 4
         assert len(old_edges) == len(new_edges)
-        if len(old_edges) > 4:
+        if len(old_edges) > MAX_K_BREAK:
             return False
 
         new_adj_graph = self.adj_graph.copy()
