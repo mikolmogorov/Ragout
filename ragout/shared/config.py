@@ -41,4 +41,6 @@ vals =  {
 
             "min_synteny_coverage" : 0.6,
             "min_overlap_rate" : 0.5,
+            "min_scaffold_gap": 11,
+            "max_scaffold_gap": 10000
         }

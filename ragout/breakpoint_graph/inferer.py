@@ -53,7 +53,8 @@ class AdjacencyInferer(object):
             if self.main_graph.is_infinity(node_1, node_2):
                 continue
 
-            distance = self.main_graph.get_distance(node_1, node_2)
+            distance = self.main_graph.get_distance(node_1, node_2,
+                                                    self.phylogeny)
             supporting_genomes = self.main_graph \
                                         .supporting_genomes(node_1, node_2)
 

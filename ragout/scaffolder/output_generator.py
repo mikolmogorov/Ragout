@@ -8,11 +8,9 @@ import os
 
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 from ragout.__version__ import __version__
+import ragout.shared.config as config
 
 logger = logging.getLogger()
-
-MIN_GAP = 11
-MAX_GAP = 100000
 
 
 def make_output(contigs, scaffolds, out_dir, out_prefix):
@@ -27,6 +25,10 @@ def make_output(contigs, scaffolds, out_dir, out_prefix):
 
 
 def _fix_gaps(contigs, scaffolds):
+    """
+    Handles negative gaps, ensures that gap values are
+    within some range
+    """
     def get_seq(contig):
         seq_name, seg_start, seg_end = contig.name_with_coords()
         if seg_start is None:
@@ -62,8 +64,10 @@ def _fix_gaps(contigs, scaffolds):
             cnt_1.trim_right(left_ns)
             cnt_2.trim_left(right_ns)
             cnt_1.link.gap += left_ns + right_ns
-            cnt_1.link.gap = max(cnt_1.link.gap, MIN_GAP)
-            cnt_1.link.gap = min(cnt_1.link.gap, MAX_GAP)
+            cnt_1.link.gap = max(cnt_1.link.gap,
+                                 config.vals["min_scaffold_gap"])
+            cnt_1.link.gap = min(cnt_1.link.gap,
+                                 config.vals["max_scaffold_gap"])
 
 
 def _output_agp(scaffolds, out_agp, assembly_name):
@@ -98,7 +102,8 @@ def _output_agp(scaffolds, out_agp, assembly_name):
                 f.write("\t".join(map(str, cont_fields)) + "\n")
                 if contig.link.gap > 0:
                     gap_fields = [scf.name, chr_end + SHIFT, chr_pos, gap_num,
-                                  "N", contig.link.gap, "scaffold", "yes", support]
+                                  "N", contig.link.gap,
+                                  "scaffold", "yes", support]
                     f.write("\t".join(map(str, gap_fields)) + "\n")
 
 

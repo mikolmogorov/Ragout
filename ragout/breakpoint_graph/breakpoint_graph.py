@@ -126,33 +126,6 @@ class BreakpointGraph(object):
         self.debug_nodes.add(node)
     """
 
-    """
-    def get_orphaned_nodes(self):
-        logger.debug("Getting orphaned nodes")
-        candidate_nodes = set()
-
-        subgraphs = self.connected_components()
-        for subgr in subgraphs:
-            known_nodes = set(subgr.bp_graph.nodes())
-            for v1, v2, data in subgr.bp_graph.edges_iter(data=True):
-                genome_ids = subgr.supporting_genomes(v1, v2)
-                if self.target in genome_ids:
-                    known_nodes.discard(v1)
-                    known_nodes.discard(v2)
-
-            if len(known_nodes) == 2:
-                node_1, node_2 = tuple(known_nodes)
-                if subgr.bp_graph.has_edge(node_1, node_2):
-                    continue
-
-                cycle = subgr.alternating_cycle(node_1, node_2)
-                if (abs(node_1) != abs(node_2) and cycle in [2, 3]):
-                    candidate_nodes.add(node_1)
-                    candidate_nodes.add(node_2)
-
-        return candidate_nodes
-    """
-
     def alternating_cycle(self, node_1, node_2):
         """
         Determines if there is a cycle of alternating colors
@@ -209,7 +182,7 @@ class BreakpointGraph(object):
                 return True
         return False
 
-    def get_distance(self, node_1, node_2):
+    def get_distance(self, node_1, node_2, phylogeny):
         """
         Tries to guess the distance between synteny blocks
         in a target genome
@@ -217,9 +190,13 @@ class BreakpointGraph(object):
         DEFAULT_DISTANCE = 0
         if not self.bp_graph.has_edge(node_1, node_2):
             return DEFAULT_DISTANCE
-        distances = [e["end"] - e["start"]
-                     for e in self.bp_graph[node_1][node_2].values()]
-        return _median(distances) #currently, just a median :(
+        distances = {e["genome_id"] : e["end"] - e["start"]
+                     for e in self.bp_graph[node_1][node_2].values()}
+
+        genomes_order = phylogeny.leaves_by_distance(self.target)
+        for g in genomes_order:
+            if g in distances:
+                return distances[g]
 
     def debug_output(self):
         if not debugger.debugging:
@@ -270,14 +247,6 @@ def _update_edge(graph, v1, v2, weight):
         graph.add_edge(v1, v2, weight=weight)
     else:
         graph[v1][v2]["weight"] += weight
-
-
-def _median(values):
-    """
-    Not a true median, but we keep real distances
-    """
-    sorted_values = sorted(values)
-    return sorted_values[(len(values) - 1) / 2]
 
 
 def _output_graph(graph, out_file):

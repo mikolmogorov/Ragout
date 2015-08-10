@@ -132,8 +132,12 @@ def get_phylogeny_and_name_ref(recipe, permutation_file):
         phylogeny = Phylogeny.from_permutations(perm_cont)
         logger.info(phylogeny.tree_string)
 
-    #TODO: naming ref as colset one in phylogeny
-    naming_ref = recipe.get("naming_ref", recipe["references"][0])
+    leaves_sorted = phylogeny.leaves_by_distance(recipe["target"])
+    if "naming_ref" in recipe:
+        naming_ref = recipe["naming_ref"]
+    else:
+        naming_ref = leaves_sorted[0]
+        logger.info("'{0}' is chosen as a naming reference".format(naming_ref))
 
     return phylogeny, naming_ref
 

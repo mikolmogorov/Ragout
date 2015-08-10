@@ -12,6 +12,8 @@ from collections import defaultdict
 from itertools import chain
 import logging
 
+import networkx as nx
+
 from ragout.parsers.phylogeny_parser import (parse_tree, PhyloException)
 from ragout.phylogeny.inferer import TreeInferer
 logger = logging.getLogger()
@@ -112,6 +114,28 @@ class Phylogeny:
             return list(chain(*map(lambda e: get_labels(e[0]), edges)))
 
         return get_labels(self.tree)
+
+    def leaves_by_distance(self, genome):
+        """
+        Returns leaves names sorted by the distance from
+        the given genome.
+        """
+        graph = nx.Graph()
+        start = [None]
+        def rec_helper(root):
+            if root.identifier == genome:
+                start[0] = root
+            if root.terminal:
+                return
+            for node, _bootstrap, branch_length in root.edges:
+                graph.add_edge(root, node, weight=branch_length)
+                rec_helper(node)
+
+        rec_helper(self.tree)
+        distances = nx.single_source_dijkstra_path_length(graph, start[0])
+        leaves = [str(g) for g in distances.keys()
+                  if g.terminal and g.identifier != genome]
+        return sorted(leaves, key=distances.get)
 
 
 def _median(values):
