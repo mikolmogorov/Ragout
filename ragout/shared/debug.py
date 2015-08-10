@@ -21,9 +21,6 @@ class DebugConfig():
         self.debugging = debugging
 
     def set_debug_dir(self, debug_dir):
-        """
-        Also enables debugging
-        """
         if not self.debugging:
             return
         self.debug_dir = debug_dir
@@ -31,6 +28,8 @@ class DebugConfig():
             os.mkdir(debug_dir)
 
     def clear_debug_dir(self):
+        if not self.debugging:
+            return
         if os.path.isdir(self.debug_dir):
             shutil.rmtree(self.debug_dir)
             os.mkdir(self.debug_dir)

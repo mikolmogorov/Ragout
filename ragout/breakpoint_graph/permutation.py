@@ -30,7 +30,7 @@ class PermException(Exception):
 
 class PermutationContainer:
     def __init__(self, block_coords_file, recipe,
-                 resolve_repeats, conservative, phylogeny):
+                 resolve_repeats, allow_ref_indels, phylogeny):
         """
         Parses permutation files referenced from recipe and filters duplications
         """
@@ -75,7 +75,7 @@ class PermutationContainer:
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
-        self.filter_indels(not conservative)
+        self._filter_indels(allow_ref_indels)
         logger.debug("{0} target sequences left after indel filtering"
                                         .format(len(self.target_perms)))
 
@@ -96,8 +96,7 @@ class PermutationContainer:
             file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
             output_permutations(self.target_perms, file)
 
-
-    def filter_indels(self, allow_ref_indels):
+    def _filter_indels(self, allow_ref_indels):
         """
         Keep only blocks that appear in target and
         all references (or one reference, if allow_ref_indels is set)
@@ -134,6 +133,7 @@ class PermutationContainer:
         self.ref_perms = _filter_permutations(self.ref_perms, repeats,
                                               inverse=True)
 
+
 def _find_repeats(permutations):
     """
     Returns a set of repetitive blocks
@@ -162,37 +162,6 @@ def _filter_permutations(permutations, blocks, inverse=False):
             new_perms.append(deepcopy(perm))
             new_perms[-1].blocks = new_blocks
     return new_perms
-
-
-def _parse_permutations(filename):
-    """
-    Parses a file with signed permutations
-    """
-    permutations = []
-    chr_count = 0
-    with open(filename, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-
-            if line.startswith(">"):
-                tokens = line[1:].split(".", 1)
-                if len(tokens) != 2:
-                    raise PermException("permutation ids in " + filename +
-                                        " do not follow naming convention: " +
-                                        "'genome.chromosome'")
-
-                genome_name, chr_name = tokens
-            else:
-                permutations.append(Permutation(genome_name, chr_name,
-                                    None, []))
-                blocks_ids = map(int, line.split(" ")[:-1])
-                for b in blocks_ids:
-                    permutations[-1].blocks.append(Block(abs(b),
-                                                         math.copysign(1, b)))
-                chr_count += 1
-    return permutations
 
 
 def _parse_blocks_coords(filename):

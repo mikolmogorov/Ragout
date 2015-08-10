@@ -28,7 +28,7 @@ debugger = DebugConfig.get_instance()
 def build_scaffolds(adjacencies, perm_container, debug_output=True,
                     correct_distances=True):
     """
-    Assembles scaffolds
+    Assembles scaffolds wrt to inferred adjacencies
     """
     logger.info("Building scaffolds")
     contigs, contig_index = _make_contigs(perm_container)
@@ -52,6 +52,11 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
 
 
 def assign_scaffold_names(scaffolds, perm_container, ref_genome):
+    """
+    Names scaffolds according to homology to a chosen reference genome.
+    Also ensures that scaffolds and corresponding reference chromosomes
+    have the same strand.
+    """
     MIN_RATE = 0.1
     PREFIX = "chr"
     chr_index = {}
@@ -183,7 +188,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
 
 def _make_contigs(perm_container):
     """
-    Converts permutations into contigs
+    A halper function to make Contig structures
     """
     contigs = []
     index = {}

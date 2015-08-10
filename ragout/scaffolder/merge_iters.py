@@ -28,15 +28,19 @@ Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 
 def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
+    """
+    Merges scaffold sets from different iterations. If rearrangements are allowed,
+    tries to keep some small-scale rearrangements from the weaker scaffold set.
+    """
     logger.info("Merging two iterations")
-    #synchronizing scaffolds
+
+    #synchronizing scaffolds to the same permutations
     big_updated = _update_scaffolds(big_scaffolds, perm_container)
     small_updated = _update_scaffolds(small_scaffolds, perm_container)
 
     if rearrange:
         projector = RearrangementProjector(big_updated, small_updated, True)
         new_adj = projector.project()
-        #new_adj = _project_rearrangements(big_updated, small_updated)
         big_rearranged = build_scaffolds(new_adj, perm_container, False, False)
     else:
         big_rearranged = big_updated
@@ -47,8 +51,6 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
     if debugger.debugging:
         links_out = os.path.join(debugger.debug_dir, "merged.links")
         output_links(merged_scf, links_out)
-        #contigs_out = os.path.join(debugger.debug_dir, "merged_contigs.txt")
-        #output_permutations(perm_container.target_perms, contigs_out)
         perms_out = os.path.join(debugger.debug_dir, "merged_scaffolds.txt")
         output_scaffolds_premutations(merged_scf, perms_out)
 
@@ -56,6 +58,9 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
 
 
 def _merge_consecutive_contigs(scaffolds):
+    """
+    Merges consecutive contig fragments originating from a same contig
+    """
     new_scaffolds = []
     num_contigs = 0
     for scf in scaffolds:
@@ -127,6 +132,10 @@ def _update_scaffolds(scaffolds, perm_container):
 
 
 class RearrangementProjector:
+    """
+    This class handles the projection of rearrangements from weaker set
+    of scaffolds and ensures that these rearrangements are small-scale
+    """
     def __init__(self, old_scaffolds, new_scaffolds, conservative):
         self.old_scaffolds = old_scaffolds
         self.new_scaffolds = new_scaffolds
@@ -150,8 +159,6 @@ class RearrangementProjector:
                     red_edges.append((u, v, data))
                 else:
                     black_edges.append((u, v, data))
-                    #logger.debug("{0} -- {1}".format(data["c1"].signed_name(),
-                    #                                 data["c2"].signed_name()))
                     #num_red += int(_red_supported(data["c1"], data["c2"]))
 
             if not self._good_k_break(red_edges, black_edges):
@@ -159,7 +166,6 @@ class RearrangementProjector:
 
             #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
             #                                                 len(scaffolds_involved)))
-
             num_kbreaks += 1
             for u, v, data in red_edges:
                 self.bp_graph.remove_edge(u, v)
@@ -270,7 +276,7 @@ class RearrangementProjector:
 
 def _merge_scaffolds(big_scaffolds, small_scaffolds):
     """
-    Merges two assemblies assuming that big one is correct
+    Performs the final merging step
     """
     count_diff_scaf = 0
     count_diff_orient = 0

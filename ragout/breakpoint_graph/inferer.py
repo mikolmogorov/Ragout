@@ -29,7 +29,7 @@ class AdjacencyInferer(object):
         """
         Infers missing adjacencies by recovering perfect matching
         """
-        logger.info("Infering missing adjacencies")
+        logger.info("Inferring missing adjacencies")
 
         subgraphs = self.main_graph.connected_components()
         logger.debug("Found {0} connected components"

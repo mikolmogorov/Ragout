@@ -72,7 +72,6 @@ def resolve_repeats(ref_perms, target_perms, repeats,
         for ctx in contexts:
             by_genome[ctx.perm.genome_name].append(ctx)
 
-        #logger.debug("==Resolving {0}".format(repeat_id))
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
         parsimony_test = lambda p: _parsimony_test(p, phylogeny, target_name,
                                                    draft_refs)
@@ -81,14 +80,6 @@ def resolve_repeats(ref_perms, target_perms, repeats,
                                             trg_contexts[repeat_id], repeats)
         unique_matches.extend(unique_m)
         repetitive_matches.extend(repetitive_m)
-
-        #for matches in [unique_m, repetitive_m]:
-        #    for trg_ctx, profile in matches:
-        #        logger.debug("T: {0}".format(trg_ctx))
-        #        for ref_ctx in profile:
-        #            logger.debug("R: {0}".format(ref_ctx))
-        #        logger.debug("--")
-        #    logger.debug("~~~~~~~~~~~~~~~~")
     ##
 
     matched_contigs = set()
@@ -97,8 +88,6 @@ def resolve_repeats(ref_perms, target_perms, repeats,
             matched_contigs.add(m.trg.perm)
     logger.debug("Repetitive sequences with matches: {0}".format(len(matched_contigs)))
 
-    #logger.debug("Discarded: {0}".format(g_discarded))
-    #logger.debug("Unmatched: {0}".format(g_unmatched))
     logger.debug("Unique matches: {0}".format(len(unique_matches)))
     logger.debug("Repetitive matches: {0}".format(len(repetitive_matches)))
 
@@ -234,8 +223,6 @@ def _match_target_contexts(profiles, target_contexts, repeats):
             dups.add(ctx_1)
             dups.add(ctx_2)
     different = [ctx for ctx in t_repetitive if ctx not in dups]
-    #if dups:
-    #    logger.debug(map(str, dups))
 
     if different:
         many_rep = different * len(profiles)
@@ -281,10 +268,6 @@ def _split_by_instance(matches):
     if len(target_perm.blocks) == 1:    #trivial case
         return list(map(lambda m: [m], matches))
 
-    #logger.debug("=========")
-    #logger.debug(target_perm)
-    #logger.debug("=========")
-
     by_pos = defaultdict(list)
     for match in matches:
         by_pos[match.trg.pos].append(match)
@@ -324,17 +307,7 @@ def _split_by_instance(matches):
                     break
         groups.extend([[m] for m in unused_matches])
 
-    #min_group = max(2, (len(target_perm.blocks) + 1) / 2)
     min_group = len(target_perm.blocks) / 2 + 1
-    #for group in groups:
-    #    if len(group) < min_group:
-    #        continue
-    #    logger.debug("##group")
-    #    for match in group:
-    #        logger.debug("####profile pos {0}".format(match.trg.pos))
-    #        for ctx in match.prof:
-    #            logger.debug(ctx)
-    #    logger.debug("")
 
     return list(filter(lambda g: len(g) >= min_group, groups))
 

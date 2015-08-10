@@ -15,7 +15,6 @@ from collections import namedtuple
 from copy import deepcopy
 
 import ragout.assembly_graph.assembly_refine as asref
-import ragout.assembly_graph.assembly_graph as asgraph
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
 import ragout.scaffolder.output_generator as out_gen
@@ -33,7 +32,6 @@ from ragout.parsers.fasta_parser import read_fasta_dict, FastaError
 from ragout.shared.debug import DebugConfig
 from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 from ragout.breakpoint_graph.inferer import AdjacencyInferer
-from ragout.breakpoint_graph.refiner import AdjacencyRefiner
 from ragout.breakpoint_graph.chimera_detector import ChimeraDetector
 from ragout.__version__ import __version__
 
@@ -47,7 +45,7 @@ logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
 
-RunStage = namedtuple("RunStage", ["name", "block_size", "indels",
+RunStage = namedtuple("RunStage", ["name", "block_size", "ref_indels",
                                    "repeats", "rearrange"])
 
 
@@ -105,30 +103,54 @@ def run_ragout(args):
 
 
 def make_run_stages(block_sizes, resolve_repeats):
+    """
+    Setting parameters of run stages
+    """
     stages = []
     for block in block_sizes:
-        stages.append(RunStage(str(block), block, False,
-                      False, True))
-    stages.append(RunStage("refine", block_sizes[-1], True,
-                           resolve_repeats, False))
+        stages.append(RunStage(name=str(block), block_size=block,
+                               ref_indels=False, repeats=False,
+                               rearrange=True))
+    stages.append(RunStage(name="refine", block_size=block_sizes[-1],
+                           ref_indels=True, repeats=resolve_repeats,
+                           rearrange=False))
     return stages
+
+
+def get_phylogeny_and_name_ref(recipe, permutation_file):
+    """
+    Retrieves phylogeny (infers if necessary) as well as
+    naming reference genome
+    """
+    if "tree" in recipe:
+        logger.info("Phylogeny is taken from the recipe")
+        phylogeny = Phylogeny.from_newick(recipe["tree"])
+    else:
+        logger.info("Inferring phylogeny from synteny blocks data")
+        perm_cont = PermutationContainer(permutation_file,
+                                           recipe, False, True, None)
+        phylogeny = Phylogeny.from_permutations(perm_cont)
+        logger.info(phylogeny.tree_string)
+
+    #TODO: naming ref as colset one in phylogeny
+    naming_ref = recipe.get("naming_ref", recipe["references"][0])
+
+    return phylogeny, naming_ref
 
 
 def run_unsafe(args):
     """
     Top-level logic of the program
     """
-    out_log = os.path.join(args.out_dir, "ragout.log")
-    out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
-    debug_root = os.path.join(args.out_dir, "debug")
-
     if not os.path.isdir(args.out_dir):
         os.mkdir(args.out_dir)
-    if args.debug:
-        debugger.set_debugging(True)
-        debugger.set_debug_dir(debug_root)
-        debugger.clear_debug_dir()
 
+    debug_root = os.path.join(args.out_dir, "debug")
+    debugger.set_debugging(args.debug)
+    debugger.set_debug_dir(debug_root)
+    debugger.clear_debug_dir()
+
+    out_log = os.path.join(args.out_dir, "ragout.log")
     enable_logging(out_log, args.debug)
     logger.info("Cooking Ragout...")
 
@@ -149,43 +171,30 @@ def run_unsafe(args):
     perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
                                            args.overwrite, args.threads)
     run_stages = make_run_stages(synteny_blocks, args.resolve_repeats)
+    phylo_perm_file = perm_files[synteny_blocks[-1]]
+    phylogeny, naming_ref = get_phylogeny_and_name_ref(recipe, phylo_perm_file)
 
-    #####
-    #phylogeny-related
-    if "tree" in recipe:
-        logger.info("Phylogeny is taken from the recipe")
-        phylogeny = Phylogeny.from_newick(recipe["tree"])
-    else:
-        logger.info("Inferring phylogeny from synteny blocks data")
-        small_blocks = synteny_blocks[-1]
-        simple_perm = PermutationContainer(perm_files[small_blocks],
-                                           recipe, False, False, None)
-        phylogeny = Phylogeny.from_permutations(simple_perm)
-        logger.info(phylogeny.tree_string)
-    #TODO: naming ref as colset one in phylogeny
-    naming_ref = recipe.get("naming_ref", recipe["references"][0])
-    ####
-
-    ##Building chimera detector
+    logger.info("Processing permutation files")
     raw_bp_graphs = {}
-    perms = {}
+    stage_perms = {}
     for stage in run_stages:
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
-        perms[stage] = PermutationContainer(perm_files[stage.block_size],
-                            recipe, stage.repeats, not stage.indels, phylogeny)
-        raw_bp_graphs[stage] = BreakpointGraph(perms[stage])
+        stage_perms[stage] = PermutationContainer(perm_files[stage.block_size],
+                                                  recipe, stage.repeats,
+                                                  stage.ref_indels, phylogeny)
+        raw_bp_graphs[stage] = BreakpointGraph(stage_perms[stage])
     chim_detect = ChimeraDetector(raw_bp_graphs, run_stages)
-    ##
 
     #####
     scaffolds = None
     prev_stages = []
+    last_stage = run_stages[-1]
     for stage in run_stages:
         logger.info("Stage \"{0}\"".format(stage.name))
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         prev_stages.append(stage)
 
-        fixed_container = chim_detect.break_contigs(perms[stage], [stage])
+        fixed_container = chim_detect.break_contigs(stage_perms[stage], [stage])
         breakpoint_graph = BreakpointGraph(fixed_container)
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
@@ -193,53 +202,42 @@ def run_unsafe(args):
         cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
 
         if scaffolds is not None:
-            all_breaks = chim_detect.break_contigs(perms[stage], prev_stages)
+            all_breaks = chim_detect.break_contigs(stage_perms[stage],
+                                                   prev_stages)
             scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
                                               all_breaks, stage.rearrange)
         else:
             scaffolds = cur_scaffolds
-    scfldr.assign_scaffold_names(scaffolds, perms[run_stages[-1]], naming_ref)
+    debugger.set_debug_dir(debug_root)
     ####
 
-    if args.debug:
-        debugger.set_debug_dir(debug_root)
+    scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
+    target_sequences = read_fasta_dict(backend.get_target_fasta())
 
-    logger.info("Reading contigs file")
-    target_fasta_file = backend.get_target_fasta()
-    target_fasta_dict = read_fasta_dict(target_fasta_file)
-
-    if args.no_refine:
-        out_gen.make_output(target_fasta_dict, scaffolds,
-                            args.out_dir, recipe["target"])
-    else:
-        overlap.make_overlap_graph(target_fasta_file, out_overlap)
-        refined_scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
-                                                   target_fasta_dict)
-        out_gen.make_output(target_fasta_dict, refined_scaffolds,
-                            args.out_dir, recipe["target"])
+    if not args.no_refine:
+        out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
+        overlap.make_overlap_graph(backend.get_target_fasta(), out_overlap)
+        scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
+                                           target_sequences)
         if args.debug:
             shutil.copy(out_overlap, debugger.debug_dir)
-            out_colored_overlap = os.path.join(debugger.debug_dir,
-                                               "colored_overlap.dot")
-            asgraph.save_colored_insert_overlap_graph(out_overlap, scaffolds,
-                                                      refined_scaffolds,
-                                                      out_colored_overlap)
         os.remove(out_overlap)
 
-    logger.info("Your Ragout is ready!")
+    out_gen.make_output(target_sequences, scaffolds,
+                        args.out_dir, recipe["target"])
+    logger.info("Done!")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Comparative assembly"
-                                                 " with multiple references",
-                                     formatter_class= \
+    parser = argparse.ArgumentParser(description="A tool for reference-assisted"
+                                                 " assembly", formatter_class= \
                                         argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("recipe", metavar="recipe_file",
                         help="path to recipe file")
     parser.add_argument("-o", "--outdir", dest="out_dir",
                         metavar="output_dir",
-                        help="path to the working directory",
+                        help="output directory",
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
                         default="sibelia",
@@ -250,11 +248,10 @@ def main():
                         help="disable refinement with assembly graph")
     parser.add_argument("--overwrite", action="store_true", default=False,
                         dest="overwrite",
-                        help="overwrite existing synteny blocks")
+                        help="overwrite results from the previous run")
     parser.add_argument("--repeats", action="store_true", default=False,
                         dest="resolve_repeats",
-                        help="try to resolve repeats before constructing "
-                             "breakpoint graph")
+                        help="resolve repetitive input sequences")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")

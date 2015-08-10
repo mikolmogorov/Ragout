@@ -135,10 +135,8 @@ class ChimeraDetector(object):
         new_container = deepcopy(perm_container)
         new_container.target_perms = \
                 self._cut_permutations(new_container.target_perms, block_sizes)
-        new_container.filter_indels(True)
         return new_container
 
-    #TODO: refactoring
     def _cut_permutations(self, permutations, block_sizes):
         """
         Actually breaks these contigs

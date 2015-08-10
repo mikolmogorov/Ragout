@@ -6,7 +6,11 @@
 This module provides some basic FASTA I/O
 """
 
+import logging
+
 from string import maketrans
+
+logger = logging.getLogger()
 
 class FastaError(Exception):
     pass
@@ -15,6 +19,8 @@ def read_fasta_dict(filename):
     """
     Reads fasta file into dictionary. Also preforms some validation
     """
+    logger.info("Reading contigs file")
+
     header = None
     seq = []
     fasta_dict = {}
