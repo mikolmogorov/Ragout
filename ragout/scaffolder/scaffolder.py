@@ -188,7 +188,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
 
 def _make_contigs(perm_container):
     """
-    A halper function to make Contig structures
+    A helper function to make Contig structures
     """
     contigs = []
     index = {}
