@@ -23,14 +23,9 @@ Runtime Depenencies
 Binary Distribution
 -------------------
 
-While we recommend to build Ragout from source on each machine, you also can
-use pre-compiled binaries which are available for Linux and Mac OS from 
-Releases page on Github: https://github.com/fenderglass/Ragout/releases
-
-In this case, you do not need any installation procedures. If you are unsure,
-which version (binary or source) you have downloaded, you can check for
-binary files in "lib" directory. If they exist - you have obtained a binary
-version, otherwise it is source.
+Pre-compiled binaries are available for Linux and Mac OS from 
+Releases page: https://github.com/fenderglass/Ragout/releases
+In this case you will not need any installation procedures.
 
 
 Building
@@ -55,7 +50,7 @@ HAL alignment could be used for synteny blocks decomposition instead of Sibelia
 (recommended for large genomes). If you want to use HAL alignment as input,
 you need to install HAL Tools package: https://github.com/glennhickey/hal.
 Follow the manuals and do not forget to properly set PATH and PYTHONPATH
-environment variables as it is described in them.
+environment variables as it is described.
 
 
 Troubleshooting
@@ -70,6 +65,6 @@ versions of GCC and Clang are mentioned at the beginnig of this documtent.
 
 Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" or similar error when running
 
-A: Ensure, that version of libc++ which was used to compile Ragout is similar
-to one which is used to run it. You can specify an extra search path
+A: Ensure that the version of libc++ used to compile Ragout is similar
+to one the you currently trying to use. You can specify an extra search path
 to a specific library by setting "LD_LIBRARY_PATH" variable.

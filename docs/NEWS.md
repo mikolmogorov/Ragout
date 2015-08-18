@@ -1,3 +1,13 @@
+Ragout 1.2 (?? Aug 2015)
+========================
+* A significant improvement in missassmblies detection inside input sequences
+* New output format: NCBI AGP
+* Output of unplaced input sequences in a separate file
+* Output scaffolds naming wrt to reference chromosome names
+* "Links" format changed a bit
+* "Circular" option is deprecated
+* Various improvements and bugfixes
+
 Ragout 1.1 (22 Mar 2015)
 ================
 * Added optional repeat resolution algorithm

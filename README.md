@@ -1,9 +1,9 @@
 Ragout
 ======
 
-Version: 1.1
+Version: 1.2
 
-Release date: 22 Mar 2015
+Release date: ?? Mar 2015
 
 Website: http://fenderglass.github.io/Ragout/
 
@@ -23,17 +23,19 @@ Website: http://fenderglass.github.io/Ragout/
 
 Description
 -----------
-Ragout (Reference-Assisted Genome Ordering UTility) is a tool for
-assisted assembly using multiple references. It takes a short read
-assembly (a set of contigs), a set of related references
-and a corresponding phylogenetic tree and then assembles the contigs into
-scaffolds.
+Ragout (Reference-Assisted Genome Ordering UTility)
+is a tool for reference-assisted assembly using rearrangement approach. 
+It takes initial sequences (a set of contigs/scaffolds) 
+and a set of related references as input and produces a chromosome-scale
+assembly (as a set of gapped scaffolds).
 
-The benefits of assembly with multiple references become significant,
-when those references have structural variations compared to the target
-genome. Even if each reference is structurally divergent, it is possible
-to assemble the target into the correct set of scaffolds. Enlarge your
-contigs with Ragout!
+Our approach involves the analysis of medium- and large-scale rearrangements
+(like inversions or chromosomal translocations) between the input genomes
+and finding most likely genomic structure for a target one. We also
+try to make the assembly as complete as possible by using hierarchial
+synteny structure as well as incorporating information from the assembly graph.
+The first version of Ragout was limited to bacterial genomes only,
+but currently there is an experimental support of mammalian-scaled ones.
 
 
 Install
@@ -69,8 +71,8 @@ https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
 
 Contacts
 --------
-Please report any bugs directly to the issue tracker of this project.
-Also, you can send your feedback at fenderglass@gmail.com
+Please report any problems directly to the github issue tracker.
+Also, you can send your feedback to fenderglass@gmail.com
 
 
 Acknowledgements

@@ -72,7 +72,7 @@ def enable_logging(log_file, debug):
 
 def check_extern_modules(backend):
     """
-    Checks if all neccessary native modules are available
+    Checks if all necessary native modules are available
     """
     backends = SyntenyBackend.get_available_backends()
     if backend not in backends:
