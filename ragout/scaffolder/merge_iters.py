@@ -20,11 +20,11 @@ from ragout.shared.datatypes import (Contig, Scaffold, Permutation, Link,
                                      output_scaffolds_premutations, output_permutations)
 from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
+from ragout.breakpoint_graph.inferer import Adjacency
 
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
-Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
 
 
 def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
@@ -180,9 +180,9 @@ class RearrangementProjector:
         for (u, v, data) in self.bp_graph.edges_iter(data=True):
             if data["scf_set"] == "old":
                 adjacencies[u] = Adjacency(v, data["link"].gap,
-                                           data["link"].supporting_genomes)
+                                        data["link"].supporting_genomes, False)
                 adjacencies[v] = Adjacency(u, data["link"].gap,
-                                           data["link"].supporting_genomes)
+                                        data["link"].supporting_genomes, False)
 
         return adjacencies
 

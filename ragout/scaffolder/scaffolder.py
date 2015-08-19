@@ -34,8 +34,6 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index,
                                   correct_distances)
-    scaffolds = list(filter(lambda s: len(s.contigs) > 1, scaffolds))
-
     num_contigs = sum(map(lambda s: len(s.contigs), scaffolds))
     logger.debug("{0} contigs were joined into {1} scaffolds"
                         .format(num_contigs, len(scaffolds)))
@@ -125,10 +123,16 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
         counter[0] += 1
         scf = Scaffold.with_contigs(scf_name, contig.left_end(),
                                     contig.right_end(), [contig])
-        scaffolds.append(scf)
+
+        already_complete = (scf.right in adjacencies and
+                            adjacencies[scf.right] == scf.left and
+                            adjacencies[scf.right].infinity)
+        if already_complete:
+            scaffolds.append(scf)
+            return
 
         #go right
-        while scf.right in adjacencies:
+        while scf.right in adjacencies and not adjacencies[scf.right].infinity:
             adj_block = adjacencies[scf.right].block
             adj_distance = adjacencies[scf.right].distance
             adj_supporting_genomes = adjacencies[scf.right].supporting_genomes
@@ -154,7 +158,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
             break
 
         #go left
-        while scf.left in adjacencies:
+        while scf.left in adjacencies and not adjacencies[scf.left].infinity:
             adj_block = adjacencies[scf.left].block
             adj_distance = adjacencies[scf.left].distance
             adj_supporting_genomes = adjacencies[scf.left].supporting_genomes
@@ -178,6 +182,9 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
                 continue
 
             break
+
+        if len(scf.contigs) > 1:
+            scaffolds.append(scf)
 
     for contig in contigs:
         if contig not in visited:

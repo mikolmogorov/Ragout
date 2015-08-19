@@ -17,7 +17,8 @@ from ragout.shared.debug import DebugConfig
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
-Adjacency = namedtuple("Adjacency", ["block", "distance", "supporting_genomes"])
+Adjacency = namedtuple("Adjacency", ["block", "distance",
+                                     "supporting_genomes", "infinity"])
 
 
 class AdjacencyInferer(object):
@@ -49,20 +50,20 @@ class AdjacencyInferer(object):
 
         adjacencies = {}
         for node_1, node_2 in chosen_edges:
-            #infinity edges correspond to joined chromosome ends -- ignore them
-            if self.main_graph.is_infinity(node_1, node_2):
-                continue
-
-            distance = self.main_graph.get_distance(node_1, node_2,
-                                                    self.phylogeny)
-            supporting_genomes = self.main_graph \
-                                        .supporting_genomes(node_1, node_2)
+            distance = 0
+            supporting_genomes = []
+            infinity = self.main_graph.is_infinity(node_1, node_2)
+            if not infinity:
+                distance = self.main_graph.get_distance(node_1, node_2,
+                                                        self.phylogeny)
+                supporting_genomes = self.main_graph \
+                                            .supporting_genomes(node_1, node_2)
 
             assert abs(node_1) != abs(node_2)
             adjacencies[node_1] = Adjacency(node_2, distance,
-                                            supporting_genomes)
+                                            supporting_genomes, infinity)
             adjacencies[node_2] = Adjacency(node_1, distance,
-                                            supporting_genomes)
+                                            supporting_genomes, infinity)
 
         self.main_graph.debug_output()
         self._debug_output(chosen_edges)
