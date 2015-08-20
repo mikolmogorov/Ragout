@@ -30,7 +30,8 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     """
     Assembles scaffolds wrt to inferred adjacencies
     """
-    logger.info("Building scaffolds")
+    if debug_output:
+        logger.info("Building scaffolds")
     contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index,
                                   correct_distances)
@@ -125,7 +126,7 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
                                     contig.right_end(), [contig])
 
         already_complete = (scf.right in adjacencies and
-                            adjacencies[scf.right] == scf.left and
+                            adjacencies[scf.right].block == scf.left and
                             adjacencies[scf.right].infinity)
         if already_complete:
             scaffolds.append(scf)

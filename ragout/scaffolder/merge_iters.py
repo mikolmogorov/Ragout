@@ -159,30 +159,31 @@ class RearrangementProjector:
                     red_edges.append((u, v, data))
                 else:
                     black_edges.append((u, v, data))
-                    #num_red += int(_red_supported(data["c1"], data["c2"]))
 
             if not self._good_k_break(red_edges, black_edges):
                 continue
 
-            #logger.debug("{0}-break in {1} scaffolds".format(len(subgr) / 2,
-            #                                                 len(scaffolds_involved)))
             num_kbreaks += 1
             for u, v, data in red_edges:
                 self.bp_graph.remove_edge(u, v)
                 self.adj_graph.remove_edge(u, v)
             for u, v, data in black_edges:
                 link = self.bp_graph[u][v][0]["link"]
-                self.bp_graph.add_edge(u, v, scf_set="old", link=link)
+                infinity = self.bp_graph[u][v][0]["infinity"]
+                self.bp_graph.add_edge(u, v, scf_set="old",
+                                       link=link, infinity=infinity)
                 self.adj_graph.add_edge(u, v)
 
         logger.debug("Made {0} k-breaks".format(num_kbreaks))
         adjacencies = {}
         for (u, v, data) in self.bp_graph.edges_iter(data=True):
             if data["scf_set"] == "old":
-                adjacencies[u] = Adjacency(v, data["link"].gap,
-                                        data["link"].supporting_genomes, False)
-                adjacencies[v] = Adjacency(u, data["link"].gap,
-                                        data["link"].supporting_genomes, False)
+                gap, support = 0, []
+                if not data["infinity"]:
+                    gap = data["link"].gap
+                    support = data["link"].supporting_genomes
+                adjacencies[u] = Adjacency(v, gap, support, data["infinity"])
+                adjacencies[v] = Adjacency(u, gap, support, data["infinity"])
 
         return adjacencies
 
@@ -238,7 +239,11 @@ class RearrangementProjector:
             for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
                 bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
                                   scf_set="old", link=cnt_1.link,
-                                  scf_name=scf.name, c1=cnt_1, c2=cnt_2)
+                                  scf_name=scf.name, infinity=False)
+            #chromosome ends
+            bp_graph.add_edge(scf.contigs[0].left_end(),
+                              scf.contigs[-1].right_end(), scf_set="old",
+                              infinity=True)
 
         for scf in self.new_scaffolds:
             prev_cont = None
@@ -259,7 +264,7 @@ class RearrangementProjector:
 
                 bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
                                   scf_set="new", link=prev_cont.link,
-                                  scf_name=scf.name, c1=prev_cont, c2=next_cont)
+                                  scf_name=scf.name, infinity=False)
                 prev_cont = next_cont
 
         self.bp_graph = bp_graph

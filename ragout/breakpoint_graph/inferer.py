@@ -58,8 +58,8 @@ class AdjacencyInferer(object):
                                                         self.phylogeny)
                 supporting_genomes = self.main_graph \
                                             .supporting_genomes(node_1, node_2)
+                assert abs(node_1) != abs(node_2)
 
-            assert abs(node_1) != abs(node_2)
             adjacencies[node_1] = Adjacency(node_2, distance,
                                             supporting_genomes, infinity)
             adjacencies[node_2] = Adjacency(node_1, distance,
