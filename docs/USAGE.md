@@ -26,10 +26,9 @@ Quick Usage
       --no-refine           disable refinement with assembly graph (default:
                             False)
     
-      --overwrite           overwrite existing synteny blocks (default: False)
+      --overwrite           overwrite results from the previous run (default: False)
     
-      --repeats             try to resolve repeats before constructing breakpoint
-                            graph (default: False)
+      --repeats             resolve repetitive input sequences (default: False)
     
       --debug               enable debug output (default: False)
     
@@ -140,7 +139,7 @@ Here is an example of such file (a full version, some parameters could be ommite
     .naming_ref = rf122
     
 
-or, if using *HAL* as input, tree and blocks scale are inffered automatically
+or, if using *HAL* as input, tree, blocks scale and naming reference are inferred automatically
 
     .references = miranda,simulans,melanogaster
     .target = yakuba
@@ -201,8 +200,8 @@ Parameters Description
 ### Phylogenetic tree
 
 Ragout algorithm requires a phylogenetic tree as input. This tree
-could be inferred automatically from the information about
-breakpoints between the input genomes. The automatic inference
+could be inferred automatically from the breakpoint configuration
+of the input genomes. The automatic inference
 generally produces a good approximation of a real phylogeny
 and is therefore recommended for most of the purposes.
 However, if you already have the tree structure from a different source,
