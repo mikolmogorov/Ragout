@@ -120,6 +120,8 @@ def _update_scaffolds(scaffolds, perm_container):
 
             if not inner_perms:
                 logger.debug("Lost: {0}".format(contig.perm))
+                continue
+
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
             for new_perm in inner_perms:
                 new_contigs.append(Contig.with_perm(new_perm, contig.sign,
