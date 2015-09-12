@@ -88,11 +88,7 @@ def _output_agp(scaffolds, out_agp, assembly_name):
                 chr_pos = chr_end + contig.link.gap
                 cont_name, cont_start, cont_end = contig.name_with_coords()
                 strand = "+" if contig.sign > 0 else "-"
-
-                supp_genomes = sorted(contig.link.supporting_genomes)
-                if contig.link.supporting_assembly:
-                    supp_genomes.append("~>")
-                support = ",".join(supp_genomes)
+                support = _support_to_string(contig.link)
 
                 contig_num = 2 * contig_id + 1
                 gap_num = 2 * contig_id + 2
@@ -122,11 +118,7 @@ def output_links(scaffolds, out_links):
             for contig in scf.contigs:
                 start = cur_pos
                 cur_pos = start + contig.length() + contig.link.gap
-
-                supp_genomes = sorted(contig.link.supporting_genomes)
-                if contig.link.supporting_assembly:
-                    supp_genomes.append("~>")
-                support = ",".join(supp_genomes)
+                support = _support_to_string(contig.link)
 
                 rows.append([contig.signed_name(), str(start),
                             str(contig.length()), str(contig.link.gap),
@@ -233,6 +225,18 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
                         unused_count, unused_len, unused_perc,
                         _calc_n50(contigs_length, unused_len + used_len),
                         _calc_n50(scf_length, unused_len + used_len)))
+
+
+def _support_to_string(link):
+    """
+    Converts information about supporting adjacencies to string
+    """
+    supp_genomes = sorted(link.supporting_genomes)
+    support_to_str = lambda gc: "{0}:{1}".format(gc.genome, gc.chr)
+    support = ",".join(map(support_to_str, supp_genomes))
+    if link.supporting_assembly:
+        support += ",~>"
+    return support
 
 
 def _calc_n50(scaffolds_lengths, assembly_len):
