@@ -117,7 +117,7 @@ def make_run_stages(block_sizes, resolve_repeats):
     return stages
 
 
-def get_phylogeny_and_name_ref(recipe, permutation_file):
+def get_phylogeny_and_naming_ref(recipe, permutation_file):
     """
     Retrieves phylogeny (infers if necessary) as well as
     naming reference genome
@@ -156,7 +156,7 @@ def run_unsafe(args):
 
     out_log = os.path.join(args.out_dir, "ragout.log")
     enable_logging(out_log, args.debug)
-    logger.info("Cooking Ragout...")
+    logger.info("Starting Ragout v{0}".format(__version__))
 
     check_extern_modules(args.synteny_backend)
     all_backends = SyntenyBackend.get_available_backends()
@@ -176,7 +176,8 @@ def run_unsafe(args):
                                            args.overwrite, args.threads)
     run_stages = make_run_stages(synteny_blocks, args.resolve_repeats)
     phylo_perm_file = perm_files[synteny_blocks[-1]]
-    phylogeny, naming_ref = get_phylogeny_and_name_ref(recipe, phylo_perm_file)
+    phylogeny, naming_ref = get_phylogeny_and_naming_ref(recipe,
+                                                         phylo_perm_file)
 
     logger.info("Processing permutation files")
     raw_bp_graphs = {}
