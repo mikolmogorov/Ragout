@@ -193,7 +193,6 @@ def run_unsafe(args):
     #####
     scaffolds = None
     prev_stages = []
-    last_stage = run_stages[-1]
     for stage in run_stages:
         logger.info("Stage \"{0}\"".format(stage.name))
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
@@ -216,6 +215,7 @@ def run_unsafe(args):
     debugger.set_debug_dir(debug_root)
     ####
 
+    last_stage = run_stages[-1]
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
     target_sequences = read_fasta_dict(backend.get_target_fasta())
 
