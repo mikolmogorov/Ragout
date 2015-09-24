@@ -3,6 +3,7 @@
 #Released under the BSD license (see LICENSE file)
 
 from itertools import repeat
+from collections import defaultdict
 import logging
 import os
 
@@ -18,16 +19,18 @@ def make_output(contigs, scaffolds, out_dir, out_prefix):
     out_agp = os.path.join(out_dir, out_prefix + "_scaffolds.agp")
     out_chr = os.path.join(out_dir, out_prefix + "_scaffolds.fasta")
     out_unplaced = os.path.join(out_dir, out_prefix + "_unplaced.fasta")
+
+    _output_unplaced_fasta(contigs, scaffolds, out_unplaced)
     _fix_gaps(contigs, scaffolds)
     output_links(scaffolds, out_links)
     _output_agp(scaffolds, out_agp, out_prefix)
-    _output_fasta(contigs, scaffolds, out_chr, out_unplaced)
+    _output_scaffolds_fasta(contigs, scaffolds, out_chr)
 
 
 def _fix_gaps(contigs, scaffolds):
     """
     Handles negative gaps, ensures that gap values are
-    within some range
+    within deined range
     """
     def get_seq(contig):
         seq_name, seg_start, seg_end = contig.name_with_coords()
@@ -146,9 +149,42 @@ def output_links(scaffolds, out_links):
             f.write("-" * line_len + "\n\n")
 
 
-def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
+def _output_unplaced_fasta(contigs_fasta, scaffolds, out_unplaced):
     """
-    Outputs scaffodls to file in "fasta" format
+    Outputs unplaced (not used in scaffolds) sequences in "fasta" format
+    """
+    used_ranges_by_seq = defaultdict(list)
+    for scf in scaffolds:
+        for ctg in scf.contigs:
+            seq_name, seq_start, seq_end = ctg.name_with_coords()
+            used_ranges_by_seq[seq_name].append((seq_start, seq_end))
+    for seq_name in contigs_fasta:
+        seq_len = len(contigs_fasta[seq_name])
+        used_ranges_by_seq[seq_name].append((0, 0))
+        used_ranges_by_seq[seq_name].append((seq_len, seq_len))
+        used_ranges_by_seq[seq_name].sort()
+
+    unused_ranges_by_seq = defaultdict(list)
+    for seq_name in contigs_fasta:
+        for range_1, range_2 in zip(used_ranges_by_seq[seq_name][:-1],
+                                    used_ranges_by_seq[seq_name][1:]):
+            if range_1[1] < range_2[0]:
+                unused_ranges_by_seq[seq_name].append((range_1[1], range_2[0]))
+
+    unplaced_fasta = {}
+    for seq_name, unused_ranges in unused_ranges_by_seq.items():
+        for ur in unused_ranges:
+            if ur[0] == 0 and ur[1] == len(contigs_fasta[seq_name]):
+                fragment_name = seq_name
+            else:
+                fragment_name = seq_name + "[{0}:{1}]".format(ur[0], ur[1])
+            unplaced_fasta[fragment_name] = contigs_fasta[seq_name][ur[0]:ur[1]]
+    write_fasta_dict(unplaced_fasta, out_unplaced)
+
+
+def _output_scaffolds_fasta(contigs_fasta, scaffolds, out_chr):
+    """
+    Outputs scaffolds to file in "fasta" format
     """
     logger.info("Generating FASTA output")
     used_contigs = set()
@@ -160,13 +196,12 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
     gap_len = 0
     for scf in scaffolds:
         scf_seqs = []
-        #trim_left = 0
         for contig in scf.contigs:
-            seq_name, seg_start, seg_end = contig.name_with_coords()
-            if seg_start is None:
-                cont_seq = contigs_fasta[seq_name]
-            else:
-                cont_seq = contigs_fasta[seq_name][seg_start:seg_end]
+            seq_name, seq_start, seq_end = contig.name_with_coords()
+            #if seg_start is None:
+            #    cont_seq = contigs_fasta[seq_name]
+            #else:
+            cont_seq = contigs_fasta[seq_name][seq_start:seq_end]
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
 
@@ -183,13 +218,6 @@ def _output_fasta(contigs_fasta, scaffolds, out_chr, out_unlocalized):
         scf_length.append(len(scf_seq))
         out_chromosomes[scf.name] = scf_seq
     write_fasta_dict(out_chromosomes, out_chr)
-
-    #unused contigs
-    unused_fasta = {}
-    for cname in contigs_fasta:
-        if cname not in used_contigs:
-            unused_fasta[cname] = contigs_fasta[cname]
-    write_fasta_dict(unused_fasta, out_unlocalized)
 
     #add some statistics
     used_unique = 0
