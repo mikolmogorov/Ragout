@@ -267,7 +267,8 @@ def output_links(scaffolds, out_links):
 
 def _support_to_string(link):
     """
-    Converts information about supporting adjacencies to string
+    Converts information about supporting adjacencies to string.
+    Could be used separately form OutputGenerator for debugging purposes
     """
     supp_genomes = sorted(link.supporting_genomes)
     support_to_str = lambda gc: "{0}:{1}".format(gc.genome, gc.chr)

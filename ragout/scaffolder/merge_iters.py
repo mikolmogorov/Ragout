@@ -158,18 +158,18 @@ class RearrangementProjector:
             black_edges = []
             for (u, v, data) in subgr.edges_iter(data=True):
                 if data["scf_set"] == "old":
-                    red_edges.append((u, v, data))
+                    red_edges.append((u, v))
                 else:
-                    black_edges.append((u, v, data))
+                    black_edges.append((u, v))
 
             if not self._good_k_break(red_edges, black_edges):
                 continue
 
             num_kbreaks += 1
-            for u, v, data in red_edges:
+            for u, v in red_edges:
                 self.bp_graph.remove_edge(u, v)
                 self.adj_graph.remove_edge(u, v)
-            for u, v, data in black_edges:
+            for u, v in black_edges:
                 link = self.bp_graph[u][v][0]["link"]
                 infinity = self.bp_graph[u][v][0]["infinity"]
                 self.bp_graph.add_edge(u, v, scf_set="old",
@@ -195,14 +195,13 @@ class RearrangementProjector:
         """
         MIN_OVLP_SCORE = 0.9
         MAX_K_BREAK = 4
-        assert len(old_edges) == len(new_edges)
         if len(old_edges) > MAX_K_BREAK:
             return False
 
         new_adj_graph = self.adj_graph.copy()
-        for u, v, data in old_edges:
+        for u, v in old_edges:
             new_adj_graph.remove_edge(u, v)
-        for u, v, data in new_edges:
+        for u, v in new_edges:
             new_adj_graph.add_edge(u, v)
 
         all_nodes = new_adj_graph.nodes()
@@ -278,6 +277,9 @@ class RearrangementProjector:
                 adj_graph.add_edge(cnt_1.right_end(), cnt_2.left_end())
             for cnt in scf.contigs:
                 adj_graph.add_edge(cnt.left_end(), cnt.right_end())
+            #chromosome ends
+            adj_graph.add_edge(scf.contigs[0].left_end(),
+                               scf.contigs[-1].right_end())
         self.adj_graph = adj_graph
 
 
