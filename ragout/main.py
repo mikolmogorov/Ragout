@@ -17,10 +17,10 @@ from copy import deepcopy
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
-import ragout.scaffolder.output_generator as out_gen
 import ragout.maf2synteny.maf2synteny as m2s
 import ragout.overlap.overlap as overlap
 import ragout.shared.config as config
+from ragout.scaffolder.output_generator import OutputGenerator
 from ragout.overlap.overlap import OverlapException
 from ragout.phylogeny.phylogeny import Phylogeny, PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
@@ -228,8 +228,8 @@ def run_unsafe(args):
             shutil.copy(out_overlap, debugger.debug_dir)
         os.remove(out_overlap)
 
-    out_gen.make_output(target_sequences, scaffolds,
-                        args.out_dir, recipe["target"])
+    out_gen = OutputGenerator(target_sequences, scaffolds)
+    out_gen.make_output(args.out_dir, recipe["target"])
     logger.info("Done!")
 
 
