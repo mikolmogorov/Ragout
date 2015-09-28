@@ -123,9 +123,12 @@ def _update_scaffolds(scaffolds, perm_container):
                 continue
 
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
+            gap_length = contig.link.gap
             for new_perm in inner_perms:
+                gap_length -= new_perm.length()
+                new_link = Link(gap_length, contig.link.supporting_genomes)
                 new_contigs.append(Contig.with_perm(new_perm, contig.sign,
-                                                  Link(0, ["^_^"])))
+                                                    new_link))
             new_contigs[-1].link = contig.link
 
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
