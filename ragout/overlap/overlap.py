@@ -51,7 +51,7 @@ def make_overlap_graph(contigs_file, dot_file):
     if config.vals["overlap"]["detect_kmer"]:
         cmdline.append("--detect-kmer")
 
-    logger.info("Building overlap graph")
+    logger.info("Building assembly graph")
     proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)
     for line in iter(proc.stderr.readline, ""):
         logger.debug(line.strip())
