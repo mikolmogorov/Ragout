@@ -24,18 +24,16 @@ Website: http://fenderglass.github.io/Ragout/
 Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
-is a tool for reference-assisted assembly using rearrangement approach. 
-It takes initial sequences (a set of contigs/scaffolds) 
-and a set of related references as input and produces a chromosome-scaled
-assembly (as a set of gapped scaffolds).
+is a tool for reference-assisted assembly. Given a set of initial sequences 
+(contigs/scaffolds) and multiple references (complete or draft) as input
+it produces a chromosome-scaled assembly (as a set of gapped scaffolds).
 
-Our approach involves the analysis of medium- and large-scale rearrangements
+The approach is based on the analysis of medium- and large-scale rearrangements
 (like inversions or chromosomal translocations) between the input genomes
-and finding most likely genomic structure for a target one. We also
-try to make the assembly as complete as possible by using hierarchial
-synteny structure as well as incorporating information from the assembly graph.
+using breakpoint graph.
+
 The first version of Ragout was limited to bacterial genomes only,
-but currently there is an experimental support of mammalian-scaled ones.
+but currently there is an experimental support of mammalian-scaled genomes as well.
 
 
 Install
@@ -60,13 +58,6 @@ Citation
 - Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
 "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
-
-
-ISMB 2014 supplementary
------------------------
-
-Supplementary materials for ISMB submission could be found at:
-https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
 
 
 Contacts
@@ -101,3 +92,10 @@ some third-party software. Most of this software is completely free to redistrib
 but some such as Sibelia or Newick parser are released under the GPL. We therefore release
 Ragout distribution under the GPL and note that the licenses of the constituent
 packages can be viewed in their subfolders. (see *LICENSE* file)
+
+
+ISMB 2014 supplementary
+-----------------------
+
+Supplementary materials for ISMB submission could be found at:
+https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing

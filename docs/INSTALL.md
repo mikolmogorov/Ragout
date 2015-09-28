@@ -56,15 +56,15 @@ environment variables as it is described.
 Troubleshooting
 ---------------
 
-Q: Different errors during compilation, possibly with 
+Q: Multiple compilation errors, possibly with 
 "unrecognized command line option '-std=c++0x'" message:
 
-A: Probably your compiler is too old and does not support C++0x. Minimum
-versions of GCC and Clang are mentioned at the beginnig of this documtent.
+A: Probably your compiler is too old and does not support C++0x. Minimum reqired
+versions of GCC and Clang are given in the beginnig of this documtent.
 
 
 Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" or similar error when running
 
-A: Ensure that the version of libc++ used to compile Ragout is similar
-to one the you currently trying to use. You can specify an extra search path
+A: Ensure that the version of libc++ that was used to compile Ragout is similar
+to one the you currently using. You can specify an extra search path
 to a specific library by setting "LD_LIBRARY_PATH" variable.
