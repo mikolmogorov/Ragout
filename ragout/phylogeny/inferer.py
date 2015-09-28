@@ -52,7 +52,7 @@ class TreeInferer:
         """
         MIN_LEN = 0.000001
         genomes = self.perms_by_genome.keys()
-        taxas = set(map(Leaf, genomes))
+        taxas = list(map(Leaf, sorted(genomes)))
         for t in taxas:
             t.terminal = True
 
@@ -79,7 +79,7 @@ class TreeInferer:
             q_matrix = calc_q(taxas)
             lowest_dst = float("inf")
             lowest_pair = None
-            for t_1, t_2 in combinations(taxas, 2):
+            for t_1, t_2 in sorted(combinations(taxas, 2)):
                 if q_matrix[t_1][t_2] < lowest_dst:
                     lowest_dst = q_matrix[t_1][t_2]
                     lowest_pair = (t_1, t_2)
@@ -88,7 +88,7 @@ class TreeInferer:
             new_taxa = Tree()
             new_taxa.terminal = False
 
-            old_1, old_2 = lowest_pair
+            old_1, old_2 = sorted(lowest_pair)
             other_dist = 0
             for other_taxa in taxas:
                 other_dist += distances[old_1][other_taxa]
@@ -111,7 +111,7 @@ class TreeInferer:
                            distances[old_1][old_2])
                 distances[other_taxa][new_taxa] = distances[new_taxa][other_taxa]
             distances[new_taxa][new_taxa] = 0
-            taxas.add(new_taxa)
+            taxas.append(new_taxa)
 
         tree = list(taxas)[0]
         return tree

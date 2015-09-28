@@ -77,8 +77,8 @@ class ChimeraDetector(object):
                 if data["genome_id"] != subgr.target:
                     continue
 
-                genomes = subgr.supporting_genomes(u, v)
-                if (set(genomes) != set([bp_graph.target])
+                genomes = set(subgr.genomes_support(u, v))
+                if (genomes != set([bp_graph.target])
                     and not subgr.is_infinity(u, v)):
                     continue
 

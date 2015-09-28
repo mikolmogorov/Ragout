@@ -17,10 +17,10 @@ from copy import deepcopy
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.scaffolder.scaffolder as scfldr
 import ragout.scaffolder.merge_iters as merge
-import ragout.scaffolder.output_generator as out_gen
 import ragout.maf2synteny.maf2synteny as m2s
 import ragout.overlap.overlap as overlap
 import ragout.shared.config as config
+from ragout.scaffolder.output_generator import OutputGenerator
 from ragout.overlap.overlap import OverlapException
 from ragout.phylogeny.phylogeny import Phylogeny, PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
@@ -117,7 +117,7 @@ def make_run_stages(block_sizes, resolve_repeats):
     return stages
 
 
-def get_phylogeny_and_name_ref(recipe, permutation_file):
+def get_phylogeny_and_naming_ref(recipe, permutation_file):
     """
     Retrieves phylogeny (infers if necessary) as well as
     naming reference genome
@@ -156,7 +156,7 @@ def run_unsafe(args):
 
     out_log = os.path.join(args.out_dir, "ragout.log")
     enable_logging(out_log, args.debug)
-    logger.info("Cooking Ragout...")
+    logger.info("Starting Ragout v{0}".format(__version__))
 
     check_extern_modules(args.synteny_backend)
     all_backends = SyntenyBackend.get_available_backends()
@@ -176,7 +176,8 @@ def run_unsafe(args):
                                            args.overwrite, args.threads)
     run_stages = make_run_stages(synteny_blocks, args.resolve_repeats)
     phylo_perm_file = perm_files[synteny_blocks[-1]]
-    phylogeny, naming_ref = get_phylogeny_and_name_ref(recipe, phylo_perm_file)
+    phylogeny, naming_ref = get_phylogeny_and_naming_ref(recipe,
+                                                         phylo_perm_file)
 
     logger.info("Processing permutation files")
     raw_bp_graphs = {}
@@ -192,7 +193,6 @@ def run_unsafe(args):
     #####
     scaffolds = None
     prev_stages = []
-    last_stage = run_stages[-1]
     for stage in run_stages:
         logger.info("Stage \"{0}\"".format(stage.name))
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
@@ -215,6 +215,7 @@ def run_unsafe(args):
     debugger.set_debug_dir(debug_root)
     ####
 
+    last_stage = run_stages[-1]
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
     target_sequences = read_fasta_dict(backend.get_target_fasta())
 
@@ -227,8 +228,8 @@ def run_unsafe(args):
             shutil.copy(out_overlap, debugger.debug_dir)
         os.remove(out_overlap)
 
-    out_gen.make_output(target_sequences, scaffolds,
-                        args.out_dir, recipe["target"])
+    out_gen = OutputGenerator(target_sequences, scaffolds)
+    out_gen.make_output(args.out_dir, recipe["target"])
     logger.info("Done!")
 
 

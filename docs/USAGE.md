@@ -60,11 +60,11 @@ work fine too, if their output satisfy the following conditions:
 * *All* contigs/scaffolds output by assembler should be used (including
   short ones)
 * For the better performance of the refinment module, contigs/scaffolds
-  that were connected in a graph used by assembler should overlap on a
-  constant value (usually k-mer or (k-1)-mer). This works
+  that were connected in a graph used by assembler should share
+  the same sequence on their ends (usually k-mer or (k-1)-mer). This works
   for the most of assemblers which utilize de Bruijn graphs. Currently,
   for other types of assemblers (such as SGA) the performance of
-  the refinement procedure is limited.
+  the refinement module is limited.
 
 
 
@@ -75,16 +75,16 @@ Ragout works with genomes represented as sequences of synteny blocks
 and firstly uses *Sibelia* or *HAL alignment* for this decomposition. 
 This step is usually the most time-consuming.
 
-Next, Ragout constructs a breakpoint graph (which encodes the order of synteny blocks
-in the input genomes) and predicts missing adjacencies between synteny blocks 
-in the target genome (as it is fragmented into contigs/scaffolds, some adjacencies are missing). 
-Then, assembly fragments are being joined into scaffolds with respect to the 
-inferred adjacencies. This procedure is repeated multiple times with the different 
-scale of the synteny blocks decomposition.
+Next, Ragout constructs a breakpoint graph (which reflects adjacencies 
+between synteny blocks in the input genomes) and predicts missing adjacencies 
+in the target genome (as it is fragmented into contigs/scaffolds, 
+some adjacencies are missing). Then, assembly fragments are being joined 
+into scaffolds with respect to the inferred adjacencies. This procedure is 
+repeated multiple times with the different synteny blocks scale.
 
 Afterwards, a refinement step is performed. Ragout reconstructs
-assembly (overlap) graph by overlapping input assembly fragments. This 
-graph is used to insert very short/repetitive fragments into the 
+assembly (overlap) graph from the assembly fragments and uses
+this graph to insert very short/repetitive fragments into the 
 final scaffolds.
 
 
@@ -164,12 +164,12 @@ To set local parameter, use:
 * __tree__: phylogenetic tree in NEWICK format
 * __blocks__: synteny blocks scale
 * __hal__: path to the alignment in *HAL* format
-* __naming_ref__: referece to use for output sequences naming
+* __naming_ref__: referece to use for output scaffolds naming
 
 ###Local parameters
 
 * __fasta__: path to *FASTA* [default = not set]
-* __draft__: indicates that reference is in a draft form (contigs/scaffolds) [default = false]
+* __draft__: indicates that reference is in a draft form (not chromosomes) [default = false]
 
 ###Default values
 
@@ -191,7 +191,7 @@ Running with Sibelia requires all sequence headers (">gi...")
 among ALL *FASTA* files to be unique.
 
 If you do not specify phylogenetic tree or synteny block scale, 
-they are inferred automatically.
+they will be inferred automatically.
 
 
 Parameters Description
@@ -223,8 +223,8 @@ based on input genomes size (recommended).
 
 ### Reference genome in draft form
 
-Ragout can use even an incomplete assembly (contigs/scaffolds) as reference 
-sequences. If one of the reference is incomplete you should specify by
+Ragout can use an incomplete assembly (contigs/scaffolds) as a reference.
+In such a case you should specify that the reference is in draft from by
 setting the corresponding parameter in the recipe file.
 
 
@@ -235,16 +235,16 @@ reference (naming reference). This reference could be set with a corresponding
 recipe parameter, otherwise it would be chosen as the closest reference in the
 phylogenetic tree. The naming pattern is as follows. If a scaffold is homologous
 to a single reference chromosome "A", it would be named as "chr_A". If there
-are multuple homologous chromosomes, for example "A" and "B" in case of 
-chromosomal fusion, it would be named "chr_A_B". If there would be multiple
-scaffodlds with a same name, the largest one would be chosen as "primary", 
+are multuple homologous chromosomes, for example "A" and "B" (in case of 
+chromosomal fusion), it will be named "chr_A_B". If there are multiple
+scaffodlds with a same name, the longest one would be chosen as primary,
 others will get an extra "_unlocalized" suffix.
 
 
 Synteny backends
 ----------------
 
-Ragout have two different options for synteny block decomposition:
+Ragout has two different options for synteny block decomposition:
 
 * Decomposition with *Sibelia*
 * Use of whole genome alignment (in *HAL* format)
@@ -266,7 +266,7 @@ aligner [https://github.com/glennhickey/progressiveCactus].
 
 The pipeline is as follows: first, align references and target genomes using
 Progressive Cactus (you will need phylogenetic tree) and then run Ragout
-on the resulted *HAL* file. This would require *HAL Tools* package to be 
+with the resulted *HAL* file. This would require *HAL Tools* package to be 
 installed in your system.
 
 ### Progressive Cactus and MAF backends are deprecated
@@ -287,8 +287,8 @@ Repeat Resolution
 
 As the main Ragout algorithm works only with unique synteny blocks, we filter
 all repetitive ones before building the breakpoint graph. Therefore, some
-target sequences (generally, short and repetitive contigs) will be ignored.
-(some portion of them will be put back during the refinement step of the algorithm)
+target sequences (generally, short and repetitive contigs) will be ignored
+(some portion of them will be put back during the refinement step of the algorithm).
 
 To incorporate these repetitive fragments into the assembly you can
 use the experimental algorithm, which tries to resolve the repetitive contigs
@@ -335,12 +335,13 @@ It is organized as a table for each scaffold and includes values described below
 * __gap__ : gap size between the current and the next fragment
 * __support__ : names of the references that support corresponding adjacency
 
-Input fragments are described in form:
+Input fragments are described in a form:
 
     [+/-]seq_name[start:end]
 
-Sign corresponds to a fragment's strand. If the [start:end] structure is ommited, the full fragment is used.
-A symbol "~>" in support field means the support of the assembly graph.
+Sign corresponds to a fragment's strand. If the [start:end] structure is ommited, 
+the full fragment is used. A symbol "~>" in support field means the support 
+of the assembly graph.
 
 
 Useful Scripts

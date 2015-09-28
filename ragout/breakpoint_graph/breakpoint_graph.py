@@ -11,6 +11,7 @@ from itertools import chain
 import os
 import logging
 from copy import copy
+from collections import namedtuple
 
 import networkx as nx
 
@@ -19,6 +20,7 @@ from ragout.shared.debug import DebugConfig
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
+GenChrPair = namedtuple("GenChrPair", ["genome", "chr"])
 
 class BreakpointGraph(object):
     """
@@ -82,11 +84,15 @@ class BreakpointGraph(object):
             bp_graphs.append(bg)
         return bp_graphs
 
-    def supporting_genomes(self, node_1, node_2):
+    def genomes_chrs_support(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):
             return []
-        return list(map(lambda e: e["genome_id"],
+        return list(map(lambda e: GenChrPair(e["genome_id"], e["chr_name"]),
                     self.bp_graph[node_1][node_2].values()))
+
+    def genomes_support(self, node_1, node_2):
+        return list(map(lambda gp: gp.genome,
+                    self.genomes_chrs_support(node_1, node_2)))
 
     def to_weighted_graph(self, phylogeny):
         """
@@ -132,7 +138,7 @@ class BreakpointGraph(object):
         that goes through the given red-supported (!) edge
         """
         def get_genome_ids((u, v)):
-            return self.supporting_genomes(u, v)
+            return self.genomes_support(u, v)
 
         good_path = False
         for path in self._alternating_paths(node_1, node_2):
@@ -221,7 +227,7 @@ class BreakpointGraph(object):
                     continue
 
                 ##
-                genomes = self.supporting_genomes(node, neighbor)
+                genomes = self.genomes_support(node, neighbor)
                 non_target = set(filter(lambda g: g != self.target, genomes))
                 if colored and len(non_target) == 0:
                     continue

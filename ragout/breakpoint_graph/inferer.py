@@ -57,7 +57,7 @@ class AdjacencyInferer(object):
                 distance = self.main_graph.get_distance(node_1, node_2,
                                                         self.phylogeny)
                 supporting_genomes = self.main_graph \
-                                            .supporting_genomes(node_1, node_2)
+                                        .genomes_chrs_support(node_1, node_2)
                 assert abs(node_1) != abs(node_2)
 
             adjacencies[node_1] = Adjacency(node_2, distance,
@@ -119,7 +119,7 @@ class AdjacencyInferer(object):
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
                 continue
 
-            genome_ids = self.main_graph.supporting_genomes(v1, v2)
+            genome_ids = set(self.main_graph.genomes_support(v1, v2))
             if self.main_graph.target in genome_ids:
                 for node in [v1, v2]:
                     trimmed_graph.remove_node(node)
