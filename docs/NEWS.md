@@ -1,4 +1,4 @@
-Ragout 1.2 (29 Sep 2015)
+Ragout 1.2 (28 Sep 2015)
 ========================
 * A significant improvement in missassmblies detection inside input sequences
 * New output format: NCBI AGP
