@@ -1,9 +1,9 @@
 Ragout
 ======
 
-Version: 1.2b
+Version: 1.2
 
-Release date: ?? Aug 2015
+Release date: 28 Sep 2015
 
 Website: http://fenderglass.github.io/Ragout/
 

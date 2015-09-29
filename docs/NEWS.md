@@ -1,9 +1,9 @@
-Ragout 1.2 (?? Aug 2015)
+Ragout 1.2 (29 Sep 2015)
 ========================
 * A significant improvement in missassmblies detection inside input sequences
 * New output format: NCBI AGP
 * Output of unplaced input sequences in a separate file
-* Output scaffolds naming wrt to reference chromosome names
+* Scaffolds naming wrt to reference genomes
 * "Links" format changed a bit
 * "Circular" option is deprecated
 * Various improvements and bugfixes
