@@ -37,81 +37,71 @@
 
         <p><center><img src="images/ragout.png"/></center></p>
 
-          <p>Ragout (Reference-Assisted Genome Ordering UTility) is a tool for
-assisted assembly using multiple references. It takes a short read
-assembly (a set of contigs), a set of related references
-and a corresponding phylogenetic tree and then assembles the contigs into
-scaffolds.</p>
+<p>Version: 1.2</p>
+<p>Release date: 28 Sep 2015</p>
 
-<p>The benefits of assembly with multiple references become significant,
-when those references have structural variations compared to the target
-genome. Even if each reference is structurally divergent, it is possible
-to assemble the target into the correct set of scaffolds. Enlarge your
-contigs with Ragout!</p>
+<h2><a id="Description_23"></a>Description</h2>
+<p>Ragout (Reference-Assisted Genome Ordering UTility)
+is a tool for reference-assisted assembly. Given a set of initial sequences
+(contigs/scaffolds) and multiple references (complete or draft) as input
+it produces a chromosome-scaled assembly (as a set of gapped scaffolds).</p>
+<p>The approach is based on the analysis of medium- and large-scale rearrangements
+(like inversions or chromosomal translocations) between the input genomes
+using breakpoint graph.</p>
+<p>The first version of Ragout was limited to bacterial genomes only,
+but currently there is an experimental support of mammalian-scaled genomes as well.</p>
+<h2><a id="Install_38"></a>Install</h2>
 
-<p>The current version of Ragout was mostly tested on bacterial genomes,
-however it also contains an experimental support of mamalian-scaled ones.</p>
-
-<h2>
-<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
-
-<p>Latest version: 1.1 (22 Mar 2015)</p>
 
 <p>Read detailed installation instructions <em><a href="install.html">here</a></em>.</p>
 
-<h2>
-<a name="manual" class="anchor" href="#manual"><span class="octicon octicon-link"></span></a>Manual</h2>
+
+<h2><a id="Usage_42"></a>Usage</h2>
 
 <p>Please read it <em><a href="usage.html">here</a></em>.</p>
 
-<h2>
-<a name="authors" class="anchor" href="#authors"><span class="octicon octicon-link"></span></a>Authors</h2>
+<h2><a id="Authors_47"></a>Authors</h2>
 
 <ul>
 <li>Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)</li>
 <li>Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)</li>
 <li>Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)</li>
 <li>Son Pham (UCSD)</li>
-<a name="citation" class="anchor" href="#citation"><span class="octicon octicon-link"></span></a>Citation</h2>
-
-<p>If you use Ragout for your research, please cite:</p>
-
+</ul>
+<h2><a id="Citation_55"></a>Citation</h2>
 <ul>
-<li>Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
-"Ragout: A reference-assisted assembly tool for bacterial genomes",
+<li>Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham.
+“Ragout: A reference-assisted assembly tool for bacterial genomes”,
 Bioinformatics, 2014</li>
-</ul><h2>
-<a name="ismb-2014-supplementary" class="anchor" href="#ismb-2014-supplementary"><span class="octicon octicon-link"></span></a>ISMB 2014 supplementary</h2>
-
-<p>Supplementary materials for ISMB submission could be found at:
-<a href="https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing">https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing</a></p>
-
-<h2>
-<a name="contacts" class="anchor" href="#contacts"><span class="octicon octicon-link"></span></a>Contacts</h2>
-
-<p>Please report any bugs directly to the issue tracker of this project.
-Also, you can send your feedback at <a href="mailto:fenderglass@gmail.com">fenderglass@gmail.com</a></p>
-
-<h2>
-<a name="acknowledgements" class="anchor" href="#acknowledgements"><span class="octicon octicon-link"></span></a>Acknowledgements</h2>
-
+</ul>
+<h2><a id="Contacts_62"></a>Contacts</h2>
+<p>Please report any problems directly to the github issue tracker.
+Also, you can send your feedback to <a href="mailto:fenderglass@gmail.com">fenderglass@gmail.com</a></p>
+<h2><a id="Acknowledgements_68"></a>Acknowledgements</h2>
 <p>The work was partially supported by VP Foundation.</p>
-
 <p>We would like to thank:</p>
-
 <ul>
 <li>Anna Liosnova (benchmarks and useful suggestions)</li>
 <li>Nikolay Vyahhi (testing and useful suggestions)</li>
 <li>Aleksey Gurevich (testing)</li>
 </ul>
-<h2>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
-
+<h2><a id="Thirdparty_78"></a>Third-party</h2>
+<p>Ragout package includes some third-patry software (see <a href="http://INSTALL.md">INSTALL.md</a> for details)</p>
+<ul>
+<li>Networkx Python library [<a href="http://networkx.github.io/">http://networkx.github.io/</a>]</li>
+<li>Newick Python parser [<a href="http://www.daimi.au.dk/~mailund/newick.html">http://www.daimi.au.dk/~mailund/newick.html</a>]</li>
+<li>Sibelia [<a href="http://github.com/bioinf/Sibelia">http://github.com/bioinf/Sibelia</a>]</li>
+</ul>
+<h2><a id="License_87"></a>License</h2>
 <p>Ragout itself is distributed under BSD license, but the package also contains
 some third-party software. Most of this software is completely free to redistribute,
 but some such as Sibelia or Newick parser are released under the GPL. We therefore release
 Ragout distribution under the GPL and note that the licenses of the constituent
 packages can be viewed in their subfolders. (see <em>LICENSE</em> file)</p>
+<h2><a id="ISMB_2014_supplementary_96"></a>ISMB 2014 supplementary</h2>
+<p>Supplementary materials for ISMB submission could be found at:
+<a href="https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing">https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing</a></p>
+
 
         </section>
 
