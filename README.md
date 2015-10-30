@@ -25,7 +25,7 @@ Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
 is a tool for reference-assisted assembly. Given a set of initial sequences 
-(contigs/scaffolds) and multiple references (complete or draft) as input
+(contigs/scaffolds) and one or multiple references (complete or draft) as input
 it produces a chromosome-scaled assembly (as a set of gapped scaffolds).
 
 The approach is based on the analysis of medium- and large-scale rearrangements
