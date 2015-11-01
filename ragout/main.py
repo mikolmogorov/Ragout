@@ -27,6 +27,7 @@ from ragout.breakpoint_graph.permutation import (PermutationContainer,
                                                  PermException)
 from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
                                                     BackendException)
+from ragout.breakpoint_graph.chromosome_map import ChromosomeMap
 from ragout.parsers.recipe_parser import parse_ragout_recipe, RecipeException
 from ragout.parsers.fasta_parser import read_fasta_dict, FastaError
 from ragout.shared.debug import DebugConfig
@@ -200,6 +201,9 @@ def run_unsafe(args):
 
         fixed_container = chim_detect.break_contigs(stage_perms[stage], [stage])
         breakpoint_graph = BreakpointGraph(fixed_container)
+
+        chr_map = ChromosomeMap("chr_map.txt")
+        chr_map.fix_container_and_graph(stage_perms[stage], breakpoint_graph)
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()

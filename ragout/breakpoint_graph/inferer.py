@@ -74,6 +74,8 @@ class AdjacencyInferer(object):
         """
         Processes a connected component of the breakpoint graph
         """
+        if len(subgraph.bp_graph) < 2:
+            return []
         adjacency = subgraph.to_weighted_graph(self.phylogeny)
         trimmed_graph = self._trim_known_edges(adjacency)
         unused_nodes = set(trimmed_graph.nodes())
