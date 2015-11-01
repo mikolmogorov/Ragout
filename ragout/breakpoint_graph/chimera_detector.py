@@ -133,70 +133,64 @@ class ChimeraDetector(object):
         Breaks contigs in inferred cut positions
         """
         new_container = deepcopy(perm_container)
-        new_container.target_perms = \
-                self._cut_permutations(new_container.target_perms, block_sizes)
-        return new_container
+        new_target_perms = []
+        num_breaks = 0
+        num_chimeras = 0
 
-    def _cut_permutations(self, permutations, block_sizes):
-        """
-        Actually breaks these contigs
-        """
-        new_perms = []
-        num_chim_perms = 0
-        num_cuts = 0
-        num_lost = 0
-        for perm in permutations:
-            cuts = []
+        for perm in new_container.target_perms:
+            break_points = []
             for size in block_sizes:
-                cuts.extend(self.hierarchical_cuts[perm.chr_name][size])
-            cuts = list(set(cuts))
-            if not cuts:
-                new_perms.append(perm)
-                continue
-
-            #logger.debug("Original {0}".format(perm))
-            cuts_stack = copy(sorted(cuts))
-            cuts_stack.append(perm.seq_len)
-            cur_perm = deepcopy(perm)
-            cur_perm.blocks = []
-            shift = 0
-
-            num_chim_perms += 1
-            num_cuts += len(cuts_stack) - 1
-
-            for block in perm.blocks:
-                if block.end <= cuts_stack[0]:
-                    block.start -= shift
-                    block.end -= shift
-                    cur_perm.blocks.append(block)
-                    continue
-
-                if block.start < cuts_stack[0]:
-                    num_lost += 1
-                    continue
-
-                #we have passed the current cut
-                cur_perm.seq_start = shift
-                cur_perm.seq_end = cuts_stack[0]
-                if cur_perm.blocks:
-                    new_perms.append(cur_perm)
-                #logger.debug(cur_perm)
-
-                shift = cuts_stack[0]
-                cuts_stack.pop(0)
-
-                cur_perm = deepcopy(perm)
-                block.start -= shift
-                block.end -= shift
-                cur_perm.blocks = [block]
-
-            cur_perm.seq_start = shift
-            cur_perm.seq_end = cuts_stack[0]
-            if cur_perm.blocks:
-                new_perms.append(cur_perm)
-            #logger.debug(cur_perm)
+                break_points.extend(self.hierarchical_cuts[perm.chr_name][size])
+            break_points = list(set(break_points))
+            num_breaks += len(break_points)
+            if not break_points:
+                new_target_perms.append(perm)
+            else:
+                num_chimeras += 1
+                new_target_perms.extend(_break_permutation(perm, break_points))
 
         logger.debug("Chimera Detector: {0} cuts made in {1} sequences"
-                        .format(num_cuts, num_chim_perms))
-        logger.debug("Lost {0} blocks".format(num_lost))
-        return new_perms
+                        .format(num_breaks, num_chimeras))
+        new_container.target_perms = new_target_perms
+        return new_container
+
+
+def _break_permutation(permutation, break_points):
+    broken_perms = []
+
+    cuts_stack = copy(sorted(break_points))
+    cuts_stack.append(permutation.seq_len)
+    current_perm = deepcopy(permutation)
+    current_perm.blocks = []
+    shift = 0
+
+    for block in permutation.blocks:
+        if block.end <= cuts_stack[0]:
+            block.start -= shift
+            block.end -= shift
+            current_perm.blocks.append(block)
+            continue
+
+        if block.start < cuts_stack[0]:
+            block.start = cuts_stack[0]
+
+        #we have passed the current cut
+        current_perm.seq_start = shift
+        current_perm.seq_end = cuts_stack[0]
+        if current_perm.blocks:
+            broken_perms.append(current_perm)
+
+        shift = cuts_stack[0]
+        cuts_stack.pop(0)
+
+        current_perm = deepcopy(permutation)
+        block.start -= shift
+        block.end -= shift
+        current_perm.blocks = [block]
+
+    current_perm.seq_start = shift
+    current_perm.seq_end = cuts_stack[0]
+    if current_perm.blocks:
+        broken_perms.append(current_perm)
+
+    return broken_perms

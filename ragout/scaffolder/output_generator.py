@@ -210,7 +210,7 @@ class OutputGenerator:
         logger.info("Assembly statistics:\n\n"
                     "\tScaffolds:\t\t{0}\n"
                     "\tUsed fragments:\t\t{1}\n"
-                    "\tUsed fragments length:\t{2}\n\n"
+                    "\tScaffolds length:\t{2}\n\n"
                     "\tUnplaced fragments:\t{3}\n"
                     "\tUnplaced length:\t{4} ({5:2.2f}%)\n"
                     "\tIntroduced Ns length:\t{6} ({7:2.2f}%)\n\n"
