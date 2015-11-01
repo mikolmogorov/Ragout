@@ -202,8 +202,10 @@ def run_unsafe(args):
         fixed_container = chim_detect.break_contigs(stage_perms[stage], [stage])
         breakpoint_graph = BreakpointGraph(fixed_container)
 
-        chr_map = ChromosomeMap("chr_map.txt")
-        chr_map.fix_container_and_graph(stage_perms[stage], breakpoint_graph)
+        if stage == run_stages[0]:
+            chr_map_name = os.path.join(os.path.dirname(args.recipe), "chr_map.txt")
+            chr_map = ChromosomeMap(chr_map_name)
+            chr_map.fix_container_and_graph(stage_perms[stage], breakpoint_graph)
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()
