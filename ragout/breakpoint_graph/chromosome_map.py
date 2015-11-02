@@ -15,7 +15,7 @@ from copy import copy, deepcopy
 from ragout.breakpoint_graph.chimera_detector import _break_permutation
 
 ChrBreak = namedtuple("ChrBreak", ["chr_id", "pos"])
-ChrJoin = namedtuple("ChrJoin", ["chr_id_1", "pos_1", "chr_id_2", "pos_2"])
+ChrJoin = namedtuple("ChrJoin", ["chr_left", "chr_right"])
 
 logger = logging.getLogger()
 
@@ -42,10 +42,7 @@ class ChromosomeMap(object):
             elif line.startswith(".join"):
                 val = line.split("=")[1].strip()
                 left, right = val.split("-")
-                chr_1, pos_1 = left.split(":")
-                chr_2, pos_2 = right.split(":")
-                self.joins.append(ChrJoin(chr_1, _pos_num(pos_1),
-                                          chr_2, _pos_num(pos_2)))
+                self.joins.append(ChrJoin(left, right))
 
     def fix_container_and_graph(self, perm_container, bp_graph):
         breaks_by_chr = defaultdict(list)
@@ -53,34 +50,73 @@ class ChromosomeMap(object):
             breaks_by_chr[br.chr_id].append(br.pos)
 
         breakpoints = []
+        endpoints = {}
         for perm in perm_container.ref_perms:
             if perm.genome_name == self.ref_name:
-                for br in breaks_by_chr[perm.chr_name]:
-                    breakpoints.append(_get_breakpoint(perm, br))
+                bp_list = [perm.blocks[0].signed_id()]
+                for br in sorted(breaks_by_chr[perm.chr_name]):
+                    breakpoints.append(_get_breakpoint(perm, br, bp_graph))
+                    bp_list.append(breakpoints[-1][0])
+                    bp_list.append(breakpoints[-1][1])
+                bp_list.append(-perm.blocks[-1].signed_id())
 
+                if len(bp_list) == 2:
+                    endpoints[perm.chr_name] = tuple(bp_list)
+                else:
+                    for frag_num in xrange(len(bp_list) / 2):
+                        frag_name = "{0}.{1}".format(perm.chr_name, frag_num + 1)
+                        endpoints[frag_name] = tuple(bp_list[frag_num * 2 :
+                                                             frag_num * 2 + 2])
+
+        #apply breaks to breakpoint graph
         target_breaks = defaultdict(list)
         for node_1, node_2 in breakpoints:
             for edge in bp_graph.bp_graph[node_1][node_2].values():
                 if edge["genome_id"] == bp_graph.target:
                     target_breaks[edge["chr_name"]].append(edge["start"])
-            bp_graph.bp_graph.remove_node(node_1)
-            bp_graph.bp_graph.remove_node(node_2)
+            _disconnect(bp_graph.bp_graph, node_1)
+            _disconnect(bp_graph.bp_graph, node_2)
+            bp_graph.bp_graph.add_edge(node_1, node_2, chr_name=None,
+                                       genome_id=self.ref_name, infinity=True)
 
-        new_target_perms = []
-        for perm in perm_container.target_perms:
-            if perm.chr_name in target_breaks:
-                new_target_perms.extend(_break_permutation(perm,
-                                                target_breaks[perm.chr_name]))
-                logger.debug("Extra break")
-            else:
-                new_target_perms.append(perm)
-        perm_container.target_perms = new_target_perms
+        #apply breaks to target permutations
+        #new_target_perms = []
+        #for perm in perm_container.target_perms:
+        #    if perm.chr_name in target_breaks:
+        #        new_target_perms.extend(_break_permutation(perm,
+        #                                        target_breaks[perm.chr_name]))
+        #        logger.debug("Extra break")
+        #    else:
+        #        new_target_perms.append(perm)
+        #perm_container.target_perms = new_target_perms
+
+        #apply joins to breakpoint graph
+        for join in self.joins:
+            node_1 = endpoints[join.chr_left][1]
+            node_2 = endpoints[join.chr_right][0]
+            _disconnect(bp_graph.bp_graph, node_1)
+            _disconnect(bp_graph.bp_graph, node_2)
+            bp_graph.bp_graph.add_edge(node_1, node_2, chr_name="chr_map",
+                                       start=0, end=1000000,
+                                       genome_id=self.ref_name, infinity=False)
 
 
-def _get_breakpoint(perm, position):
+def _disconnect(graph, node):
+   for neighbor in graph.neighbors(node):
+       graph.remove_edges_from([(node, neighbor)] * 10)
+
+
+def _get_breakpoint(perm, position, bp_graph):
+    breaking = False
     for prev_block, next_block in zip(perm.blocks[:-1], perm.blocks[1:]):
         if prev_block.start <= position < next_block.end:
-            return (-prev_block.signed_id(), next_block.signed_id())
+            breaking = True
+
+        if breaking:
+            v1, v2 = -prev_block.signed_id(), next_block.signed_id()
+            genome_ids = set(bp_graph.genomes_support(v1, v2))
+            if bp_graph.target not in genome_ids:
+                return (v1, v2)
     return None
 
 
