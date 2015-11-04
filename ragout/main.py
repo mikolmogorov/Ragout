@@ -189,7 +189,9 @@ def run_unsafe(args):
                                                   recipe, stage.repeats,
                                                   stage.ref_indels, phylogeny)
         raw_bp_graphs[stage] = BreakpointGraph(stage_perms[stage])
-    chim_detect = ChimeraDetector(raw_bp_graphs, run_stages)
+
+    target_sequences = read_fasta_dict(backend.get_target_fasta())
+    chim_detect = ChimeraDetector(raw_bp_graphs, run_stages, target_sequences)
 
     #####
     scaffolds = None
@@ -223,7 +225,6 @@ def run_unsafe(args):
 
     last_stage = run_stages[-1]
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
-    target_sequences = read_fasta_dict(backend.get_target_fasta())
 
     if not args.no_refine:
         out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
