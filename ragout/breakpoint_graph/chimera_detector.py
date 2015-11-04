@@ -18,10 +18,11 @@ logger = logging.getLogger()
 ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
 
 class ChimeraDetector(object):
-    def __init__(self, breakpoint_graphs, run_stages):
+    def __init__(self, breakpoint_graphs, run_stages, target_seqs):
         logger.debug("Detecting chimeric adjacencies")
         self.bp_graphs = breakpoint_graphs
         self.run_stages = run_stages
+        self.target_seqs = target_seqs
         self._make_hierarchical_breaks()
 
     def _make_hierarchical_breaks(self):
@@ -57,9 +58,29 @@ class ChimeraDetector(object):
                                 adjusted_break = (ovlp_left, ovlp_right)
                                 break
 
-                    break_pos = adjusted_break[0]
+                    break_pos = self._optimal_break(seq_name, *adjusted_break)
                     hierarchical_cuts[seq_name][top_stage].append(break_pos)
         self.hierarchical_cuts = hierarchical_cuts
+
+    def _optimal_break(self, seq_name, break_start, break_end):
+        """
+        Finds the longet run of Ns within given range
+        """
+        seq = self.target_seqs[seq_name]
+        cur_pos = break_start
+        cur_len = 0
+        max_pos = break_start
+        max_len = 0
+        for i in xrange(break_start, break_end):
+            if seq[i].upper() == "N":
+                cur_len += 1
+            if seq[i].upper() != "N" or i == break_end - 1:
+                if max_len < cur_len:
+                    max_len = cur_len
+                    max_pos = cur_pos
+                cur_pos = i + 1
+                cur_len = 0
+        return max_pos + max_len / 2
 
     def _get_contig_breaks(self, bp_graph):
         """
