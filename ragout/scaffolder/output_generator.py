@@ -84,8 +84,8 @@ class OutputGenerator:
                 cnt_1.link.gap += left_ns + right_ns
                 cnt_1.link.gap = max(cnt_1.link.gap,
                                      config.vals["min_scaffold_gap"])
-                cnt_1.link.gap = min(cnt_1.link.gap,
-                                     config.vals["max_scaffold_gap"])
+                #cnt_1.link.gap = min(cnt_1.link.gap,
+                #                     config.vals["max_scaffold_gap"])
 
     def _output_agp(self, out_agp, assembly_name):
         """
