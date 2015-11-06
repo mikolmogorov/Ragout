@@ -51,16 +51,14 @@ class OutputGenerator:
         """
         def get_seq(contig):
             seq_name, seg_start, seg_end = contig.name_with_coords()
-            if seg_start is None:
-                cont_seq = self.fragments_fasta[seq_name]
-            else:
-                cont_seq = self.fragments_fasta[seq_name][seg_start:seg_end]
+            cont_seq = self.fragments_fasta[seq_name][seg_start:seg_end]
             if contig.sign < 0:
                 cont_seq = reverse_complement(cont_seq)
             return cont_seq
 
         def count_ns(cnt_1, cnt_2):
             seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
+
             left_ns, right_ns = 0, 0
             for i in xrange(len(seq_1) - 1, 0, -1):
                 if seq_1[i].upper() != "N":
@@ -86,8 +84,8 @@ class OutputGenerator:
                 cnt_1.link.gap += left_ns + right_ns
                 cnt_1.link.gap = max(cnt_1.link.gap,
                                      config.vals["min_scaffold_gap"])
-                cnt_1.link.gap = min(cnt_1.link.gap,
-                                     config.vals["max_scaffold_gap"])
+                #cnt_1.link.gap = min(cnt_1.link.gap,
+                #                     config.vals["max_scaffold_gap"])
 
     def _output_agp(self, out_agp, assembly_name):
         """
