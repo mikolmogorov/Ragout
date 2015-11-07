@@ -50,12 +50,17 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     return scaffolds
 
 
-def assign_scaffold_names(scaffolds, perm_container, ref_genome):
+def assign_scaffold_names(scaffolds, perm_container, ref_genome, names_table):
     """
     Names scaffolds according to homology to a chosen reference genome.
     Also ensures that scaffolds and corresponding reference chromosomes
     have the same strand.
     """
+    names_trans = {}
+    for line in open(names_table, "r"):
+        mm, mp = line.strip().split()
+        names_trans[mm] = mp
+
     MIN_RATE = 0.1
     PREFIX = "chr"
     chr_index = {}
@@ -101,7 +106,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
                 assigned_names[scf] += "." + str(num + 1)
 
     for scf in scaffolds:
-        scf.name = assigned_names[scf]
+        scf.name = names_trans.get(assigned_names[scf], assigned_names[scf])
         if need_rev_compl[scf]:
             new_contigs = map(lambda c: c.reverse_copy(), scf.contigs)[::-1]
             for i in xrange(len(new_contigs) - 2):

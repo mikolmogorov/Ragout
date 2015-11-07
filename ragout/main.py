@@ -224,7 +224,9 @@ def run_unsafe(args):
     ####
 
     last_stage = run_stages[-1]
-    scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
+    chr_names = os.path.join(os.path.dirname(args.recipe), "chr_names.txt")
+    scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage],
+                                 naming_ref, chr_names)
 
     if not args.no_refine:
         out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
