@@ -3,8 +3,6 @@ Ragout
 
 Version: 2.0b
 
-Release date: 28 Sep 2015
-
 Website: http://fenderglass.github.io/Ragout/
 
 [![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
