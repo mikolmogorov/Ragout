@@ -1,7 +1,7 @@
 Ragout
 ======
 
-Version: 1.2
+Version: 2.0b
 
 Release date: 28 Sep 2015
 
@@ -35,6 +35,9 @@ using breakpoint graph.
 The first version of Ragout was limited to bacterial genomes only,
 but currently there is an experimental support of mammalian-scaled genomes as well.
 
+RECOMB 2016
+-----------
+Supplementary materials for RECOMB 2016 submission could be found at: https://drive.google.com/file/d/0B1pUguR1yn7TNklYUnpxZVdnSFk/view?usp=sharing
 
 Install
 -------
