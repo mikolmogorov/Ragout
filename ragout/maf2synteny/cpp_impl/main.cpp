@@ -138,7 +138,7 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 
 		std::cerr << "\tSimplification with " << ppair.minBlock << " "
 				  << ppair.maxGap << std::endl;
-		PermVec inputBlocks = filterBySize(currentBlocks, BlockGroups(),
+		PermVec inputBlocks = filterBySize(currentBlocks, EMPTY_GROUP,
 										   ppair.minBlock, true);
 		PermVec outBlocks;
 		blockGroups.clear();

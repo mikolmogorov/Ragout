@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include <iostream>
 
-void extendPath(BreakpointGraph& graph, int prevNode, int curNode, 
+bool extendPath(BreakpointGraph& graph, int prevNode, int curNode, 
 				int maxGap, std::deque<int>& outPath)
 {
 	outPath.push_back(prevNode);
@@ -20,12 +20,12 @@ void extendPath(BreakpointGraph& graph, int prevNode, int curNode,
 		//check for bifurcation
 		if (graph.isBifurcation(curNode) || graph.INFINUM == prevNode ||
 			graph.INFINUM == curNode)
-			break;
+			return true;
 
 		//check distance
 		for (Edge* e : graph.getColoredEdges(prevNode, curNode))
 			if (e->getLen() > maxGap)
-				break;
+				return false;
 
 		//everything is ok, continue path
 		NodeVec neighbors = graph.getNeighbors(curNode);
@@ -87,6 +87,9 @@ int compressGraph(BreakpointGraph& graph, int maxGap)
 	int numCompressed = 0;
 	std::unordered_set<int> nodesToDel;
 
+	int failsLength = 0;
+	int failsStructure = 0;
+
 	for (int node : graph.iterNodes())
 	{
 		if (nodesToDel.count(node) || !graph.isBifurcation(node))
@@ -96,7 +99,14 @@ int compressGraph(BreakpointGraph& graph, int maxGap)
 		{
 			assert(graph.getNeighbors(node).size() >= 2);
 			std::deque<int> path;
-			extendPath(graph, node, neighbor, maxGap, path);
+			if (extendPath(graph, node, neighbor, maxGap, path))
+			{
+				failsStructure += 1;
+			}
+			else
+			{
+				failsLength += 1;
+			}
 			if (compressPath(graph, path, nodesToDel))
 			{
 				++numCompressed;
@@ -110,6 +120,8 @@ int compressGraph(BreakpointGraph& graph, int maxGap)
 		graph.removeNode(node);
 	}
 	
+	DEBUG_PRINT("Stuctural fails: " << failsStructure);
+	DEBUG_PRINT("Length fails: " << failsLength);
 	DEBUG_PRINT("Finished compression");
 	return numCompressed;
 }

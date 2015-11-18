@@ -170,9 +170,9 @@ void BreakpointGraph::getPermutations(PermVec& permutations,
 		}
 		while (!curEdge->hasNode(INFINUM));
 	}
-	std::unordered_map<Edge*, int> edgeToGroup = getConjunctionEdges(*this);
-	for (auto &edgePair : edgeToGroup)
-		blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
+	//std::unordered_map<Edge*, int> edgeToGroup = getConjunctionEdges(*this);
+	//for (auto &edgePair : edgeToGroup)
+	//	blockGroups[getEdgeId(edgePair.first)] = edgePair.second;
 		
 	DEBUG_PRINT("Reading permutations from graph - finished");
 }
