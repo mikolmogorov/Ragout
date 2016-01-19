@@ -44,9 +44,9 @@ def parse_links_file(filename):
             if line[0] not in ["+", "-"]:
                 scaffolds.append(Scaffold(line, []))
             else:
-                left_cont, right_cont = line.split()[0:2]
+                left_cont = line.split()[0]
                 add_contig(left_cont)
-        add_contig(right_cont)
+        #add_contig(right_cont)
 
     return scaffolds
 
@@ -103,14 +103,15 @@ def agreement_ord(increasing, lst_1, lst_2, chr_len_dict):
                     (not increasing and i.coord < lower and j.coord > higher))
 
         if ((j.index > i.index) == increasing and
-            abs(i.coord - j.coord) < chr_len / 3) or over_zero:
+            abs(i.coord - j.coord) < chr_len / 1) or over_zero:
             return True
     return False
 
 
-def agreement_strands(lst_1, lst_2):
+def agreement_strands(lst_1, lst_2, increasing):
+    incr_sign = 1 if increasing else -1
     for i, j in product(lst_1, lst_2):
-        if i == j:
+        if i == j and i == incr_sign:
             return True
     return False
 
@@ -153,7 +154,7 @@ def do_job(nucmer_coords, scaffolds_ord):
             cur_strand = list(map(lambda h: h.sign * contig.sign,
                                   entry_ord[contig.name]))
             if not miss_ord and prev_strand and cur_strand:
-                if not agreement_strands(prev_strand, cur_strand):
+                if not agreement_strands(prev_strand, cur_strand, increasing):
                     breaks.append(contig.name)
                     total_breaks += 1
                     miss_strand = True
