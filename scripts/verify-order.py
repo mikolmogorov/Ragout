@@ -158,7 +158,6 @@ def do_job(nucmer_coords, scaffolds_ord):
                     breaks.append(contig.name)
                     total_breaks += 1
                     miss_strand = True
-                    prev_strand = None
                     increasing = None
 
             if gap_count(prev_aln, entry_ord[contig.name]) > 0:
@@ -167,8 +166,7 @@ def do_job(nucmer_coords, scaffolds_ord):
             #only if this contig has alignments
             if entry_ord[contig.name]:
                 prev_aln = entry_ord[contig.name]
-                if not miss_strand:
-                    prev_strand = cur_strand
+                prev_strand = cur_strand
 
             #output
             sign = "+" if contig.sign > 0 else "-"
