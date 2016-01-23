@@ -171,7 +171,8 @@ def do_job(nucmer_coords, scaffolds_ord):
             #output
             sign = "+" if contig.sign > 0 else "-"
             pos_list = list(map(str, entry_ord[contig.name]))
-            pos_list_str = str(pos_list) if len(pos_list) < 5 else str(pos_list[:5]) + "..."
+            pos_list_str = (str(pos_list) if len(pos_list) < 5 else
+                            str(pos_list[:5]) + "...")
             print("{0}{1}\t{2}\t{3}".format(sign, contig.name,
                                             contig_len[contig.name], pos_list_str),
                                             end="")
