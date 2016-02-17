@@ -246,7 +246,7 @@ def main():
                         help="disable refinement with assembly graph")
     parser.add_argument("--solid-scaffolds", action="store_true",
                         dest="solid_scaffolds", default=False,
-                        help="do not break input sequences (disables) "
+                        help="do not break input sequences - disables "
                         "chimera detection module")
     parser.add_argument("--overwrite", action="store_true", default=False,
                         dest="overwrite",

@@ -25,6 +25,9 @@ Quick Usage
     
       --no-refine           disable refinement with assembly graph (default:
                             False)
+
+      --solid-scaffolds     do not break input sequences - disables chimera
+                            detection module (default: False)
     
       --overwrite           overwrite results from the previous run (default: False)
     
@@ -297,6 +300,20 @@ on nature of the input, you may get a significant increase in the assembly
 coverage, therefore decreasing scaffolds gaps. However, if there are copy number 
 variations between reference and target genomes, the algorithm could make 
 some false insertions.
+
+
+Chimera detection
+-----------------
+
+Ragout can detect chimeric adjacencies inside the input sequences and fix
+them by breaking the sequences into parts. The chimera detection algorithm
+tries to distinguish such erroneous joins from target-specific adjacencies,
+that are not observed in the references. By default, the adjacency which is
+not supported by references is considered chimeric, unless there is an
+evidence of a rearrangement in the target genome. Sometimes, due to the 
+fragmentation of the target genome, such evidence support is missing
+for true rearrangements. If you have high quality contigs/scaffolds,
+you may choose not to break them at all by specifying --solid-scaffolds option.
 
 
 Refinement with Assembly Graph
