@@ -87,21 +87,6 @@ def check_extern_modules(backend):
                                "did you run 'make'?")
 
 
-def run_ragout(args):
-    """
-    A wrapper to catch possible exceptions
-    """
-    try:
-        run_unsafe(args)
-    except (RecipeException, PhyloException, PermException,
-            BackendException, OverlapException, FastaError) as e:
-        logger.error("An error occured while running Ragout:")
-        logger.error(e)
-        return 1
-
-    return 0
-
-
 def make_run_stages(block_sizes, resolve_repeats):
     """
     Setting parameters of run stages
@@ -142,7 +127,7 @@ def get_phylogeny_and_naming_ref(recipe, permutation_file):
     return phylogeny, naming_ref
 
 
-def run_unsafe(args):
+def run_ragout(args):
     """
     Top-level logic of the program
     """
@@ -190,7 +175,8 @@ def run_unsafe(args):
         raw_bp_graphs[stage] = BreakpointGraph(stage_perms[stage])
 
     target_sequences = read_fasta_dict(backend.get_target_fasta())
-    chim_detect = ChimeraDetector(raw_bp_graphs, run_stages, target_sequences)
+    if not args.solid_scaffolds:
+        chim_detect = ChimeraDetector(raw_bp_graphs, run_stages, target_sequences)
 
     #####
     scaffolds = None
@@ -200,18 +186,24 @@ def run_unsafe(args):
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         prev_stages.append(stage)
 
-        fixed_container = chim_detect.break_contigs(stage_perms[stage], [stage])
-        breakpoint_graph = BreakpointGraph(fixed_container)
+        if not args.solid_scaffolds:
+            broken_perms = chim_detect.break_contigs(stage_perms[stage], [stage])
+        else:
+            broken_perms = stage_perms[stage]
+        breakpoint_graph = BreakpointGraph(broken_perms)
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()
-        cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, broken_perms)
 
         if scaffolds is not None:
-            all_breaks = chim_detect.break_contigs(stage_perms[stage],
-                                                   prev_stages)
+            if not args.solid_scaffolds:
+                merging_perms = chim_detect.break_contigs(stage_perms[stage],
+                                                          prev_stages)
+            else:
+                merging_perms = stage_perms[stage]
             scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                              all_breaks, stage.rearrange)
+                                              merging_perms, stage.rearrange)
         else:
             scaffolds = cur_scaffolds
     debugger.set_debug_dir(debug_root)
@@ -252,6 +244,10 @@ def main():
     parser.add_argument("--no-refine", action="store_true",
                         dest="no_refine", default=False,
                         help="disable refinement with assembly graph")
+    parser.add_argument("--solid-scaffolds", action="store_true",
+                        dest="solid_scaffolds", default=False,
+                        help="do not break input sequences (disables) "
+                        "chimera detection module")
     parser.add_argument("--overwrite", action="store_true", default=False,
                         dest="overwrite",
                         help="overwrite results from the previous run")
@@ -266,4 +262,12 @@ def main():
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
-    return run_ragout(args)
+    try:
+        run_ragout(args)
+    except (RecipeException, PhyloException, PermException,
+            BackendException, OverlapException, FastaError) as e:
+        logger.error("An error occured while running Ragout:")
+        logger.error(e)
+        return 1
+
+    return 0
