@@ -230,7 +230,8 @@ def _run_ragout(args):
     #refine with the assembly graph
     if not args.no_refine:
         out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
-        overlap.make_overlap_graph(backend.get_target_fasta(), out_overlap)
+        overlap.make_overlap_graph(synteny_backend.get_target_fasta(),
+                                   out_overlap)
         scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
                                            target_sequences)
         if args.debug:
