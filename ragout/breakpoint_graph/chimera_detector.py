@@ -89,6 +89,9 @@ class ChimeraDetector(object):
         seq_cuts = []
 
         subgraphs = bp_graph.connected_components()
+        num_target_adj = 0
+        num_unique_adj = 0
+        num_removed_adj = 0
         for subgr in subgraphs:
             if len(subgr.bp_graph) > 100:
                 logger.debug("Processing component of size {0}"
@@ -98,19 +101,26 @@ class ChimeraDetector(object):
                 if data["genome_id"] != subgr.target:
                     continue
 
+                num_target_adj += 1
                 genomes = set(subgr.genomes_support(u, v))
                 if (genomes != set([bp_graph.target])
                     and not subgr.is_infinity(u, v)):
                     continue
 
+                num_unique_adj += 1
                 seq_name, start, end = data["chr_name"], data["start"], data["end"]
                 if subgr.alternating_cycle(u, v) is not None:
                     seq_cuts.append(ContigBreak(seq_name, start, end, True))
                     continue
 
                 seq_cuts.append(ContigBreak(seq_name, start, end, False))
+                num_removed_adj += 1
 
         #bp_graph.debug_output()
+        logger.debug("Checking {0} target adjacencies".format(num_target_adj))
+        logger.debug("Found {0} target-specific adjacencies, "
+                     "{1} broken as chimeric".format(num_unique_adj,
+                                                     num_removed_adj))
         return seq_cuts
 
     def _valid_2break(self, bp_graph, red_edge):
@@ -153,6 +163,8 @@ class ChimeraDetector(object):
         """
         Breaks contigs in inferred cut positions
         """
+        logger.info("Removing chimeric adjacencies")
+
         new_container = deepcopy(perm_container)
         new_target_perms = []
         num_breaks = 0
