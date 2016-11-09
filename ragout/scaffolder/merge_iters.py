@@ -57,6 +57,25 @@ def merge_scaffolds(big_scaffolds, small_scaffolds, perm_container, rearrange):
     return merged_scf
 
 
+def get_breakpoints(scaffolds, bp_graph, perm_container):
+    """
+    Counts target-specific adjacencies in scaffolds
+    """
+    updated_scaffolds = _update_scaffolds(scaffolds, perm_container)
+    specific = 0
+    for scf in scaffolds:
+        for cnt in scf.contigs:
+            for block_1, block_2 in cnt.perm.iter_pairs():
+                genomes = bp_graph.genomes_support(-block_1.signed_id(),
+                                                   block_2.signed_id())
+                if set(genomes) == set([bp_graph.target]):
+                    specific += 1
+
+    logger.debug("Target-specific adjacencies in scaffolds: {0}"
+                 .format(specific))
+    return specific
+
+
 def _merge_consecutive_contigs(scaffolds):
     """
     Merges consecutive contig fragments originating from a same contig

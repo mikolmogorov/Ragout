@@ -211,13 +211,15 @@ def _run_ragout(args):
         cur_scaffolds = scfldr.build_scaffolds(adjacencies, broken_perms)
 
         if scaffolds is not None:
-            merging_perms = stage_perms[stage]
             if not args.solid_scaffolds:
-                merging_perms = chim_detect.break_contigs(stage_perms[stage],
-                                                          prev_stages)
+                broken_perms = chim_detect.break_contigs(stage_perms[stage],
+                                                         prev_stages)
             cur_scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                                  merging_perms,
+                                                  broken_perms,
                                                   stage.rearrange)
+
+        merge.get_breakpoints(cur_scaffolds, breakpoint_graph, broken_perms)
+
         scaffolds = cur_scaffolds
 
     debugger.set_debug_dir(debug_root)
