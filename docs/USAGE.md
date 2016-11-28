@@ -23,7 +23,7 @@ Quick Usage
                             backend for synteny block decomposition (default:
                             sibelia)
     
-      --refine              refinement with assembly graph (default:
+      --refine              enable refinement with assembly graph (default:
                             False)
 
       --solid-scaffolds     do not break input sequences - disables chimera
@@ -31,7 +31,7 @@ Quick Usage
     
       --overwrite           overwrite results from the previous run (default: False)
     
-      --repeats             resolve repetitive input sequences (default: False)
+      --repeats             enable repeat resolution algorithm (default: False)
     
       --debug               enable debug output (default: False)
     

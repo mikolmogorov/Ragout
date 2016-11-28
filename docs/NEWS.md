@@ -2,6 +2,7 @@ Ragout 2.0 (28 Nov 2016)
 ========================
 * The support of lagre genomes if finally stable
 * Fixes in scaffold gaps estimations
+* maf2synteny module updated
 * Assembly graph refinement is now disabled by default
 * Various improvements and bugfixes
 
