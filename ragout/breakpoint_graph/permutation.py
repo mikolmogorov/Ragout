@@ -92,8 +92,8 @@ class PermutationContainer:
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
         if not len(self.target_perms):
-            raise PermException("No unique synteny blocks found in the target "
-                                "genome.")
+            raise PermException("No synteny blocks found in the target "
+                                "genome after repeat/indel filtering.")
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")

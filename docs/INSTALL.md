@@ -25,42 +25,49 @@ Binary Distribution
 
 Pre-compiled binaries are available for Linux and Mac OS from 
 Releases page: https://github.com/fenderglass/Ragout/releases
-In this case you will not need any installation procedures.
+In this case you will not need the installation procedures below.
 
 
 Building
 --------
 
-1. To build Ragout native modules, type:
+To build Ragout native modules, type:
     
         make
 
-2. To build and install Sibelia, use:
+You will also need either Sibelia or HAL tools installed (see below)
+
+
+Sibelia
+-------
+
+To build and install Sibelia, use:
 
         python scripts/install-sibelia.py
 
-If you already have Sibelia installed or do not need it, 
-you can skip the second step.
+If you already have Sieblia installed into your system, it will
+be picked up automatically by Ragout.
 
 
 HAL Tools
 ---------
 
-HAL alignment could be used for synteny blocks decomposition instead of Sibelia
-(recommended for large genomes). If you want to use HAL alignment as input,
-you need to install HAL Tools package: https://github.com/glennhickey/hal.
-Follow the manuals and do not forget to properly set PATH and PYTHONPATH
-environment variables as it is described.
+HAL alignment produced by Progressive Cactus could be used for synteny 
+blocks decomposition instead of Sibelia (recommended for large genomes). 
+If you want to use HAL alignment as input,
+you need to install HAL Tools package [https://github.com/glennhickey/hal]
+as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH
+environment variables.
 
 
 Troubleshooting
 ---------------
 
-Q: Multiple compilation errors, possibly with 
+Q: Many compilation errors, possibly with 
 "unrecognized command line option '-std=c++0x'" message:
 
-A: Probably your compiler is too old and does not support C++0x. Minimum reqired
-versions of GCC and Clang are given in the beginnig of this documtent.
+A: Probably your compiler is too old and does not support C++0x. Minimum required
+versions of GCC and Clang are given in the beginning of this document.
 
 
 Q: "libstdc++.so.6: version `CXXABI_1.3.5' not found" or similar error when running

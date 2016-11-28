@@ -22,16 +22,16 @@ Website: http://fenderglass.github.io/Ragout/
 Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
-is a tool for reference-assisted assembly. Given a set of initial sequences 
-(contigs/scaffolds) and one or multiple references (complete or draft) as input
-it produces a chromosome-scaled assembly (as a set of gapped scaffolds).
+is a tool for reference-assisted assembly. Given a set of assembly fragments
+(contigs/scaffolds) and one or multiple related references (complete or draft),
+it produces a chromosome-scale assembly (as a set of scaffolds).
 
-The approach is based on the analysis of medium- and large-scale rearrangements
+The approach is based on the analysis of genome rearrangements
 (like inversions or chromosomal translocations) between the input genomes
-using breakpoint graph.
+and reconstructing the most parsimonious structure of the target genome.
 
-The first version of Ragout was limited to bacterial genomes only,
-but currently there is an experimental support of mammalian-scaled genomes as well.
+Ragout now supports both small and large genomes (of mammalian scale and complexity).
+The assembly of highly polymorphic genomes is currently limited.
 
 Install
 -------
@@ -50,20 +50,22 @@ Authors
 - Son Pham (UCSD)
 
 
-Citation
---------
-- Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
-"Ragout: A reference-assisted assembly tool for bacterial genomes",
+Publications
+------------
+Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references"
+bioRxiv preprint, 2016
+
+Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
 
 
 Contacts
 --------
-Please report any problems directly to the github issue tracker.
+Please report any issues directly to the github issue tracker.
 Also, you can send your feedback to fenderglass@gmail.com
 
 
-Acknowledgements
+Acknowledgments
 ----------------
 The work was partially supported by VP Foundation.
 
