@@ -65,7 +65,7 @@ def test_environment():
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
     cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--debug", "--no-refine"]
+           "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
@@ -99,7 +99,7 @@ def run_test(parameters):
 
     #checking after refinement
     cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--debug"]
+           "--outdir", outdir, "--debug", "--refine"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 

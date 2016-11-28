@@ -1,7 +1,7 @@
 Ragout
 ======
 
-Version: 2.0b
+Version: 2.0
 
 Website: http://fenderglass.github.io/Ragout/
 
@@ -22,7 +22,7 @@ Website: http://fenderglass.github.io/Ragout/
 Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
-is a tool for reference-assisted assembly. Given a set of assembly fragments
+is a tool for chromosome assembly using multiple. Given a set of assembly fragments
 (contigs/scaffolds) and one or multiple related references (complete or draft),
 it produces a chromosome-scale assembly (as a set of scaffolds).
 
@@ -52,10 +52,10 @@ Authors
 
 Publications
 ------------
-Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references"
+- Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
 bioRxiv preprint, 2016
 
-Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
+- Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
 
 

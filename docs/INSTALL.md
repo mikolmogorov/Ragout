@@ -3,8 +3,7 @@ Installation Instructions for Ragout
 
 Availability
 ------------
-Ragout was tested under Mac OS and Linux. While it should work
-under Windows, we currently do not provide an official support.
+Ragout is available for Mac OS and Linux.
 
 
 Build Requirements
@@ -24,7 +23,7 @@ Binary Distribution
 -------------------
 
 Pre-compiled binaries are available for Linux and Mac OS from 
-Releases page: https://github.com/fenderglass/Ragout/releases
+the releases page [https://github.com/fenderglass/Ragout/releases].
 In this case you will not need the installation procedures below.
 
 
@@ -35,7 +34,7 @@ To build Ragout native modules, type:
     
         make
 
-You will also need either Sibelia or HAL tools installed (see below)
+You will also need either *Sibelia* or *HAL tools* installed (see below)
 
 
 Sibelia
@@ -52,10 +51,10 @@ be picked up automatically by Ragout.
 HAL Tools
 ---------
 
-HAL alignment produced by Progressive Cactus could be used for synteny 
-blocks decomposition instead of Sibelia (recommended for large genomes). 
+HAL alignment produced by *Progressive Cactus* could be used for synteny 
+blocks decomposition instead of *Sibelia* (recommended for large genomes). 
 If you want to use HAL alignment as input,
-you need to install HAL Tools package [https://github.com/glennhickey/hal]
+you need to install *HAL Tools* package [https://github.com/glennhickey/hal]
 as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH
 environment variables.
 

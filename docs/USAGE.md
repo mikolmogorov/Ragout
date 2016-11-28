@@ -23,7 +23,7 @@ Quick Usage
                             backend for synteny block decomposition (default:
                             sibelia)
     
-      --no-refine           disable refinement with assembly graph (default:
+      --refine              refinement with assembly graph (default:
                             False)
 
       --solid-scaffolds     do not break input sequences - disables chimera
@@ -46,10 +46,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    ./ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/
-    ./ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/
-    ./ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/
-    ./ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/
+    ./ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    ./ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    ./ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    ./ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
 
 
 Algorithm Overview

@@ -230,7 +230,7 @@ def _run_ragout(args):
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
 
     #refine with the assembly graph
-    if not args.no_refine:
+    if args.refine:
         out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
         overlap.make_overlap_graph(synteny_backend.get_target_fasta(),
                                    out_overlap)
@@ -246,9 +246,10 @@ def _run_ragout(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for reference-assisted"
-                                                 " assembly", formatter_class= \
-                                        argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+                description="Chromosome assembly with multiple "
+                "references",
+                formatter_class= argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("recipe", metavar="recipe_file",
                         help="path to recipe file")
@@ -260,9 +261,9 @@ def main():
                         default="sibelia",
                         choices=["sibelia", "maf", "hal"],
                         help="backend for synteny block decomposition")
-    parser.add_argument("--no-refine", action="store_true",
-                        dest="no_refine", default=False,
-                        help="disable refinement with assembly graph")
+    parser.add_argument("--refine", action="store_true",
+                        dest="refine", default=False,
+                        help="enable refinement with assembly graph")
     parser.add_argument("--solid-scaffolds", action="store_true",
                         dest="solid_scaffolds", default=False,
                         help="do not break input sequences - disables "
@@ -272,7 +273,7 @@ def main():
                         help="overwrite results from the previous run")
     parser.add_argument("--repeats", action="store_true", default=False,
                         dest="resolve_repeats",
-                        help="resolve repetitive input sequences")
+                        help="enable repeat resolution algorithm")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")
