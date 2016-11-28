@@ -22,7 +22,7 @@
 
         <header>
           <h1>Ragout</h1>
-          <h2>A tool for assisted assembly using multiple references</h2>
+          <h2>Chromosome assembly using multiple references</h2>
         </header>
 
         <section id="downloads" class="clearfix">
@@ -37,45 +37,47 @@
         
 <h1><a id="Installation_Instructions_for_Ragout_0"></a>Installation Instructions for Ragout</h1>
 <h2><a id="Availability_3"></a>Availability</h2>
-<p>Ragout was tested under Mac OS and Linux. While it should work
-under Windows, we currently do not provide an official support.</p>
-<h2><a id="Build_Requirements_9"></a>Build Requirements</h2>
+<p>Ragout is available for Mac OS and Linux.</p>
+<h2><a id="Build_Requirements_8"></a>Build Requirements</h2>
 <ul>
 <li>C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)</li>
 <li>GNU make / Cmake (for building Sibelia)</li>
 </ul>
-<h2><a id="Runtime_Depenencies_15"></a>Runtime Depenencies</h2>
+<h2><a id="Runtime_Depenencies_14"></a>Runtime Depenencies</h2>
 <ul>
 <li>Python 2.7</li>
 <li>Sibelia [<a href="http://github.com/bioinf/Sibelia">http://github.com/bioinf/Sibelia</a>] or HAL Tools [<a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>]</li>
 </ul>
-<h2><a id="Binary_Distribution_22"></a>Binary Distribution</h2>
-<p>Pre-compiled binaries are available for Linux and Mac OS from
-Releases page: <a href="https://github.com/fenderglass/Ragout/releases">https://github.com/fenderglass/Ragout/releases</a>
-In this case you will not need any installation procedures.</p>
-<h2><a id="Building_30"></a>Building</h2>
+<h2><a id="Binary_Distribution_21"></a>Binary Distribution</h2>
+<p>Pre-compiled binaries are available for Linux and Mac OS from<br>
+the releases page [<a href="https://github.com/fenderglass/Ragout/releases">https://github.com/fenderglass/Ragout/releases</a>].<br>
+In this case you will not need the installation procedures below.</p>
+<h2><a id="Building_29"></a>Building</h2>
 <p>To build Ragout native modules, type:</p>
-<pre><code> make
+<pre><code>    make
 </code></pre>
+<p>You will also need either <em>Sibelia</em> or <em>HAL tools</em> installed (see below)</p>
+<h2><a id="Sibelia_39"></a>Sibelia</h2>
 <p>To build and install Sibelia, use:</p>
-<pre><code> python scripts/install-sibelia.py
+<pre><code>    python scripts/install-sibelia.py
 </code></pre>
-<p>If you already have Sibelia installed or do not need it,
-you can skip the second step.</p>
-<h2><a id="HAL_Tools_45"></a>HAL Tools</h2>
-<p>HAL alignment could be used for synteny blocks decomposition instead of Sibelia
-(recommended for large genomes). If you want to use HAL alignment as input,
-you need to install HAL Tools package: <a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>.
-Follow the manuals and do not forget to properly set PATH and PYTHONPATH
-environment variables as it is described.</p>
-<h2><a id="Troubleshooting_55"></a>Troubleshooting</h2>
-<p>Q: Multiple compilation errors, possibly with
+<p>If you already have Sieblia installed into your system, it will<br>
+be picked up automatically by Ragout.</p>
+<h2><a id="HAL_Tools_50"></a>HAL Tools</h2>
+<p>HAL alignment produced by <em>Progressive Cactus</em> could be used for synteny<br>
+blocks decomposition instead of <em>Sibelia</em> (recommended for large genomes).<br>
+If you want to use HAL alignment as input,<br>
+you need to install <em>HAL Tools</em> package [<a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>]<br>
+as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH<br>
+environment variables.</p>
+<h2><a id="Troubleshooting_61"></a>Troubleshooting</h2>
+<p>Q: Many compilation errors, possibly with<br>
 “unrecognized command line option ‘-std=c++0x’” message:</p>
-<p>A: Probably your compiler is too old and does not support C++0x. Minimum reqired
-versions of GCC and Clang are given in the beginnig of this documtent.</p>
+<p>A: Probably your compiler is too old and does not support C++0x. Minimum required<br>
+versions of GCC and Clang are given in the beginning of this document.</p>
 <p>Q: “libstdc++.so.6: version `CXXABI_1.3.5’ not found” or similar error when running</p>
-<p>A: Ensure that the version of libc++ that was used to compile Ragout is similar
-to one the you currently using. You can specify an extra search path
+<p>A: Ensure that the version of libc++ that was used to compile Ragout is similar<br>
+to one the you currently using. You can specify an extra search path<br>
 to a specific library by setting “LD_LIBRARY_PATH” variable.</p>
 
         </section>
