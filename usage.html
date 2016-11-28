@@ -81,20 +81,20 @@ optional arguments:
 ./ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
 </code></pre>
 <h2><a id="Algorithm_Overview_54"></a>Algorithm Overview</h2>
-<p>Ragout first uses <em>Sibelia</em> or <em>HAL alignment</em> for to decompose the input<br>
-genomes into the sequences of synteny blocks – this step is usually<br>
+<p>Ragout first uses <em>Sibelia</em> or <em>HAL alignment</em> for to decompose the input
+genomes into the sequences of synteny blocks – this step is usually
 the most time-consuming.</p>
-<p>Using the synteny information, Ragout infers the phylogenetic tree<br>
-of the input genomes (if it is not given as input).<br>
-Next, Ragout constructs the breakpoint graph (which reflects adjacencies<br>
-between the synteny blocks in the input genomes) and recovers the missing adjacencies<br>
-in the target genome (as it is fragmented, some adjacencies are missing).<br>
-Then, assembly fragments are joined into scaffolds. The final<br>
-chromosomes are constructed as a consensus of scaffolds built<br>
+<p>Using the synteny information, Ragout infers the phylogenetic tree
+of the input genomes (if it is not given as input).
+Next, Ragout constructs the breakpoint graph (which reflects adjacencies
+between the synteny blocks in the input genomes) and recovers the missing adjacencies
+in the target genome (as it is fragmented, some adjacencies are missing).
+Then, assembly fragments are joined into scaffolds. The final
+chromosomes are constructed as a consensus of scaffolds built
 with different synteny block scales.</p>
-<p>Finally, an optional refinement step is performed. Ragout reconstructs<br>
-assembly (overlap) graph from the assembly fragments and uses<br>
-this graph to insert very short/repetitive fragments into the<br>
+<p>Finally, an optional refinement step is performed. Ragout reconstructs
+assembly (overlap) graph from the assembly fragments and uses
+this graph to insert very short/repetitive fragments into the
 assembly.</p>
 <h2><a id="Input_76"></a>Input</h2>
 <p>Ragout takes as input:</p>
@@ -117,7 +117,7 @@ assembly.</p>
 <li><strong>target_scaffolds.agp</strong>: same as below, but in NCBI AGP format</li>
 </ul>
 <h2><a id="Recipe_File_103"></a>Recipe File</h2>
-<p>A recipe file describes the Ragout run configuration.<br>
+<p>A recipe file describes the Ragout run configuration.
 Here is an example of such file (full version, some parameters could be ommited):</p>
 <pre><code>.references = rf122,col,jkd,n315
 .target = usa
@@ -138,7 +138,7 @@ usa.fasta = usa300_contigs.fasta
 .hal = genomes/alignment.hal
 </code></pre>
 <p><h3>Parameters description:</h3></p>
-<p>Each parameter could be “global” (related to the run) or “local” (for a particular genome).<br>
+<p>Each parameter could be “global” (related to the run) or “local” (for a particular genome).
 Global parameters start from dot:</p>
 <pre><code>.global_param_name = value
 </code></pre>
@@ -160,51 +160,51 @@ Global parameters start from dot:</p>
 <li><strong>draft</strong>: indicates that reference is in a draft form (not chromosomes) [default = false]</li>
 </ul>
 <p><h3>Default values</h3></p>
-<p>You can change default values of the local parameters by assigning the<br>
-parameter value to the special “star” object:<br>
+<p>You can change default values of the local parameters by assigning the
+parameter value to the special “star” object:
 for instance, if all input references except one are in a draft form, you can write:</p>
 <pre><code>*.draft = true
 complete_ref.draft = false
 </code></pre>
 <p><h3>Quick comments</h3></p>
 <p>Paths to <em>FASTA</em>/<em>HAL</em> can be both relative and absolute.</p>
-<p>If you use <em>Sibelia</em> for synteny blocks decomposition you must specify<br>
+<p>If you use <em>Sibelia</em> for synteny blocks decomposition you must specify
 FASTA for each input genome. If you use <em>HAL</em>, all sequences will be taken from it.</p>
-<p><em>Sibelia</em> requires all sequence headers (&quot;&gt;gi…&quot;)<br>
+<p><em>Sibelia</em> requires all sequence headers (&quot;&gt;gi…&quot;)
 among ALL <em>FASTA</em> files to be unique.</p>
-<p>If you do not specify phylogenetic tree or synteny block scale,<br>
+<p>If you do not specify phylogenetic tree or synteny block scale,
 they will be inferred automatically.</p>
 <h2><a id="Parameters_Description_178"></a>Parameters Description</h2>
 <h3><a id="Phylogenetic_tree_181"></a>Phylogenetic tree</h3>
-<p>Ragout algorithm requires a phylogenetic tree as input. This tree<br>
-could be inferred automatically from the breakpoint configuration<br>
-of the input genomes. The automatic inference<br>
-generally produces a good approximation of a real phylogeny<br>
-and is therefore recommended for most of the purposes.<br>
-However, if you already have the tree structure from a different source,<br>
+<p>Ragout algorithm requires a phylogenetic tree as input. This tree
+could be inferred automatically from the breakpoint configuration
+of the input genomes. The automatic inference
+generally produces a good approximation of a real phylogeny
+and is therefore recommended for most of the purposes.
+However, if you already have the tree structure from a different source,
 you may guide the algorithm with it by setting the corresponding parameter.</p>
 <h3><a id="Synteny_block_scale_192"></a>Synteny block scale</h3>
-<p>Because the decomposition procedure is parameter-dependent, the assembly<br>
-is performed in multiple iterations with different synteny block<br>
-scale. Intuitively, the algorithm firstly considers only fragments<br>
+<p>Because the decomposition procedure is parameter-dependent, the assembly
+is performed in multiple iterations with different synteny block
+scale. Intuitively, the algorithm firstly considers only fragments
 that are long enough and then insert shorter ones into final scaffolds.</p>
-<p>There are two pre-defined scales: “small” and “large”. We recommend<br>
-“small” for relatively small genomes (bacterial) and large otherwise<br>
-(mammalian). If the parameter is not set, it is automatically inferred<br>
+<p>There are two pre-defined scales: “small” and “large”. We recommend
+“small” for relatively small genomes (bacterial) and large otherwise
+(mammalian). If the parameter is not set, it is automatically inferred
 based on input genomes size (recommended).</p>
 <h3><a id="Reference_genome_in_draft_form_205"></a>Reference genome in draft form</h3>
-<p>Ragout can use an incomplete assembly (contigs/scaffolds) as a reference.<br>
-In such a case you should specify that the reference is in draft from by<br>
+<p>Ragout can use an incomplete assembly (contigs/scaffolds) as a reference.
+In such a case you should specify that the reference is in draft from by
 setting the corresponding parameter in the recipe file.</p>
 <h3><a id="Naming_reference_212"></a>Naming reference</h3>
-<p>Output scaffolds will be named according to a homology to one of the input<br>
-references (naming reference). This reference can be set with the corresponding<br>
-recipe parameter, otherwise it will be chosen as the closest reference in the<br>
-phylogenetic tree. The naming pattern is as follows. If a scaffold is homologous<br>
-to a single reference chromosome “A”, it will be named as “chr_A”. If there<br>
-are multiple homologous chromosomes, for example “A” and “B” (in case of<br>
-chromosomal fusion), it will be named “chr_A_B”. If there are multiple<br>
-scaffolds with a same name, the longest one would be chosen as primary,<br>
+<p>Output scaffolds will be named according to a homology to one of the input
+references (naming reference). This reference can be set with the corresponding
+recipe parameter, otherwise it will be chosen as the closest reference in the
+phylogenetic tree. The naming pattern is as follows. If a scaffold is homologous
+to a single reference chromosome “A”, it will be named as “chr_A”. If there
+are multiple homologous chromosomes, for example “A” and “B” (in case of
+chromosomal fusion), it will be named “chr_A_B”. If there are multiple
+scaffolds with a same name, the longest one would be chosen as primary,
 others will get an extra “_unlocalized” suffix.</p>
 <h2><a id="Synteny_Backends_225"></a>Synteny Backends</h2>
 <p>Ragout has two different options for synteny block decomposition:</p>
@@ -216,52 +216,52 @@ others will get an extra “_unlocalized” suffix.</p>
 <h3><a id="Sibelia_236"></a>Sibelia</h3>
 <p>“Sibelia” is the default option and recommended for bacterial genomes.</p>
 <h3><a id="Whole_genome_alignment_in_HAL_format_240"></a>Whole genome alignment in <em>HAL</em> format</h3>
-<p>Alternatively, Ragout can use <em>HAL</em> whole genome alignment for synteny blocks<br>
-decomposition. This option is recommended for large (over 100MB) genomes, which<br>
-<em>Sibelia</em> can not process. This alignment is done by Progressive Cactus<br>
-aligner [<a href="https://github.com/glennhickey/progressiveCactus">https://github.com/glennhickey/progressiveCactus</a>]. Currently, we do not<br>
-provide bindings for running Progressive Cactus from Ragout, as the procedure<br>
-might vary for different setups. Ragout starts with the alignment<br>
+<p>Alternatively, Ragout can use <em>HAL</em> whole genome alignment for synteny blocks
+decomposition. This option is recommended for large (over 100MB) genomes, which
+<em>Sibelia</em> can not process. This alignment is done by Progressive Cactus
+aligner [<a href="https://github.com/glennhickey/progressiveCactus">https://github.com/glennhickey/progressiveCactus</a>]. Currently, we do not
+provide bindings for running Progressive Cactus from Ragout, as the procedure
+might vary for different setups. Ragout starts with the alignment
 result in <em>HAL</em> format, <em>HAL tools</em> should be installed in your system.</p>
 <h3><a id="MAF_backend_is_deprecated_251"></a>MAF backend is deprecated</h3>
-<p>The support of MAF synteny backend is deprecated, because it is more<br>
-convenient to work directly with <em>HAL</em>, which is a default output of<br>
+<p>The support of MAF synteny backend is deprecated, because it is more
+convenient to work directly with <em>HAL</em>, which is a default output of
 Progressive Cactus.</p>
 <h2><a id="Repeat_Resolution_258"></a>Repeat Resolution</h2>
-<p>As the main Ragout algorithm works only with unique synteny blocks, we filter<br>
-all repetitive blocks before building the breakpoint graph. Therefore, some<br>
-target sequences (generally, short and repetitive contigs) will be ignored<br>
+<p>As the main Ragout algorithm works only with unique synteny blocks, we filter
+all repetitive blocks before building the breakpoint graph. Therefore, some
+target sequences (generally, short and repetitive contigs) will be ignored
 (some of them could be put back during the refinement step below).</p>
-<p>To incorporate these repetitive fragments into the assembly, you can<br>
-use the optional algorithm, which tries to resolve the repetitive contigs<br>
-and find their positions in the assembly (’–repeats’ option). Depending<br>
-on the dataset, you may get a significant increase in the assembly<br>
-coverage, therefore decreasing scaffolds gaps. However, if there are copy number<br>
-variations between the reference and target genomes, the algorithm could make<br>
+<p>To incorporate these repetitive fragments into the assembly, you can
+use the optional algorithm, which tries to resolve the repetitive contigs
+and find their positions in the assembly (’–repeats’ option). Depending
+on the dataset, you may get a significant increase in the assembly
+coverage, therefore decreasing scaffolds gaps. However, if there are copy number
+variations between the reference and target genomes, the algorithm could make
 some false insertions.</p>
 <h2><a id="Chimera_Detection_275"></a>Chimera Detection</h2>
-<p>Ragout detects chimeric adjacencies inside the input sequences and fixes<br>
-them by breaking the sequences into parts. The chimera detection algorithm<br>
-tries to distinguish such erroneous joins from target-specific adjacencies,<br>
-that are not observed in the references. By default, the adjacency which is<br>
-not supported by references is considered chimeric, unless there is an<br>
-evidence of a rearrangement in the target genome. Sometimes, due to the<br>
-fragmentation of the target genome, the evidence support is missing.<br>
-If you have high quality contigs/scaffolds,<br>
+<p>Ragout detects chimeric adjacencies inside the input sequences and fixes
+them by breaking the sequences into parts. The chimera detection algorithm
+tries to distinguish such erroneous joins from target-specific adjacencies,
+that are not observed in the references. By default, the adjacency which is
+not supported by references is considered chimeric, unless there is an
+evidence of a rearrangement in the target genome. Sometimes, due to the
+fragmentation of the target genome, the evidence support is missing.
+If you have high quality contigs/scaffolds,
 you may choose to turn chimera detection off by specifying ‘–solid-scaffolds’ option.</p>
 <h2><a id="Refinement_with_the_Assembly_Graph_289"></a>Refinement with the Assembly Graph</h2>
-<p>Ragout optionally uses assembly (overlap) graph to incorporate very short / repetitive<br>
-contigs into the assembly (’–refine’ option). First, this graph is reconstructed by overlapping<br>
-input contigs/scaffolds. Then current Ragout scaffolds are “threaded”<br>
-through this graph to find the true “genome path”.<br>
-This procedure increases number of contigs in output scaffolds and also<br>
-improves the scaffold gaps estimates. Sometimes assembly graphs are not very accurate,<br>
-which may lead to incorrectly inserted contigs. However, for the most bacterial<br>
-assemblies the fraction of errors should be minor. This procedure is generally recommended<br>
-for bacterial assemblies, however, the effect is usually minor for large genomes<br>
+<p>Ragout optionally uses assembly (overlap) graph to incorporate very short / repetitive
+contigs into the assembly (’–refine’ option). First, this graph is reconstructed by overlapping
+input contigs/scaffolds. Then current Ragout scaffolds are “threaded”
+through this graph to find the true “genome path”.
+This procedure increases number of contigs in output scaffolds and also
+improves the scaffold gaps estimates. Sometimes assembly graphs are not very accurate,
+which may lead to incorrectly inserted contigs. However, for the most bacterial
+assemblies the fraction of errors should be minor. This procedure is generally recommended
+for bacterial assemblies, however, the effect is usually minor for large genomes
 because of complications with assembly graph reconstruction.</p>
 <h2><a id="Links_File_304"></a>Links File</h2>
-<p>Ragout outputs information about generated adjacencies in “*.links” file.<br>
+<p>Ragout outputs information about generated adjacencies in “*.links” file.
 It is organized as a table for each scaffold with the values below:</p>
 <ul>
 <li><strong>sequence</strong> : input fragment’s name and strand (possibly with coordinates in form [start:end])</li>
@@ -273,14 +273,14 @@ It is organized as a table for each scaffold with the values below:</p>
 <p>Input fragments are described in a form:</p>
 <pre><code>[+/-]seq_name[start:end]
 </code></pre>
-<p>The sign corresponds to the fragment’s strand. The [start:end] structure is omitted<br>
-if the full fragment is used. A symbol “~&gt;” in support field corresponds to the<br>
+<p>The sign corresponds to the fragment’s strand. The [start:end] structure is omitted
+if the full fragment is used. A symbol “~&gt;” in support field corresponds to the
 assembly graph support</p>
 <h2><a id="Useful_Scripts_325"></a>Useful Scripts</h2>
 <p>Scripts are located in “scripts” directory</p>
-<p><strong>verify-order.py</a>:</strong></p>
-<p>Tests the correctness of the inferred contigs order if a “true” reference<br>
-is available. First, contigs should be mapped on that reference using<br>
+<p><strong>verify-order.py:</strong></p>
+<p>Tests the correctness of the inferred contigs order if a “true” reference
+is available. First, contigs should be mapped on that reference using
 <em>nucmer</em> software:</p>
 <pre><code>nucmer --maxmatch --coords reference contigs
 </code></pre>

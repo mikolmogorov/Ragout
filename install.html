@@ -49,8 +49,8 @@
 <li>Sibelia [<a href="http://github.com/bioinf/Sibelia">http://github.com/bioinf/Sibelia</a>] or HAL Tools [<a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>]</li>
 </ul>
 <h2><a id="Binary_Distribution_21"></a>Binary Distribution</h2>
-<p>Pre-compiled binaries are available for Linux and Mac OS from<br>
-the releases page [<a href="https://github.com/fenderglass/Ragout/releases">https://github.com/fenderglass/Ragout/releases</a>].<br>
+<p>Pre-compiled binaries are available for Linux and Mac OS from
+the releases page [<a href="https://github.com/fenderglass/Ragout/releases">https://github.com/fenderglass/Ragout/releases</a>].
 In this case you will not need the installation procedures below.</p>
 <h2><a id="Building_29"></a>Building</h2>
 <p>To build Ragout native modules, type:</p>
@@ -61,23 +61,23 @@ In this case you will not need the installation procedures below.</p>
 <p>To build and install Sibelia, use:</p>
 <pre><code>    python scripts/install-sibelia.py
 </code></pre>
-<p>If you already have Sieblia installed into your system, it will<br>
+<p>If you already have Sieblia installed into your system, it will
 be picked up automatically by Ragout.</p>
 <h2><a id="HAL_Tools_50"></a>HAL Tools</h2>
-<p>HAL alignment produced by <em>Progressive Cactus</em> could be used for synteny<br>
-blocks decomposition instead of <em>Sibelia</em> (recommended for large genomes).<br>
-If you want to use HAL alignment as input,<br>
-you need to install <em>HAL Tools</em> package [<a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>]<br>
-as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH<br>
+<p>HAL alignment produced by <em>Progressive Cactus</em> could be used for synteny
+blocks decomposition instead of <em>Sibelia</em> (recommended for large genomes).
+If you want to use HAL alignment as input,
+you need to install <em>HAL Tools</em> package [<a href="https://github.com/glennhickey/hal">https://github.com/glennhickey/hal</a>]
+as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH
 environment variables.</p>
 <h2><a id="Troubleshooting_61"></a>Troubleshooting</h2>
-<p>Q: Many compilation errors, possibly with<br>
+<p>Q: Many compilation errors, possibly with
 “unrecognized command line option ‘-std=c++0x’” message:</p>
-<p>A: Probably your compiler is too old and does not support C++0x. Minimum required<br>
+<p>A: Probably your compiler is too old and does not support C++0x. Minimum required
 versions of GCC and Clang are given in the beginning of this document.</p>
 <p>Q: “libstdc++.so.6: version `CXXABI_1.3.5’ not found” or similar error when running</p>
-<p>A: Ensure that the version of libc++ that was used to compile Ragout is similar<br>
-to one the you currently using. You can specify an extra search path<br>
+<p>A: Ensure that the version of libc++ that was used to compile Ragout is similar
+to one the you currently using. You can specify an extra search path
 to a specific library by setting “LD_LIBRARY_PATH” variable.</p>
 
         </section>
