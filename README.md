@@ -8,7 +8,9 @@ Website: http://fenderglass.github.io/Ragout/
 [![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
 )](https://travis-ci.org/fenderglass/Ragout)
 
-![Logo](http://fenderglass.github.io/Ragout/images/ragout.png)
+<p align="center">
+  <img src="http://fenderglass.github.io/Ragout/images/ragout.png" alt="Ragout logo"/>
+</p>
 
 Description
 -----------
