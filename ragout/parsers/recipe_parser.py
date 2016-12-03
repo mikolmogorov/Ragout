@@ -50,7 +50,7 @@ def parse_ragout_recipe(filename):
                 raise RecipeException("Error parsing recipe on line {1}"
                                       .format(filename, lineno + 1))
 
-            (obj, param_name), value = m.group(1).split("."), m.group(2)
+            (obj, param_name), value = m.group(1).rsplit(".", 1), m.group(2)
             if param_name in deprecated:
                 logger.warning("Recipe parameter '{0}' is deprecated"
                                                         .format(param_name))
