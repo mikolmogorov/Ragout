@@ -40,8 +40,6 @@ class PermutationContainer:
 
         logging.debug("Reading permutation file")
         permutations = _parse_blocks_coords(block_coords_file)
-        if not permutations:
-            raise PermException("Error reading permutations")
 
         has_sequences = set()
         draft_names = set()
@@ -220,6 +218,8 @@ def _parse_blocks_coords(filename):
         perm.blocks.sort(key=lambda b: b.start)
 
     out_perms = list(filter(lambda b: len(b.blocks), perm_by_id.values()))
+    if not len(out_perms):
+        raise PermException("Permutations file is empty")
     return out_perms
 
 
