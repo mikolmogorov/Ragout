@@ -150,8 +150,9 @@ def _update_scaffolds(scaffolds, perm_container):
                                                     new_link))
             new_contigs[-1].link = contig.link
 
-        new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
-                                                   None, new_contigs))
+        if len(new_contigs):
+            new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
+                                                       None, new_contigs))
     return new_scaffolds
 
 
