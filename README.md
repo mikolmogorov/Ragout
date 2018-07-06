@@ -72,7 +72,7 @@ Third-party
 -----------
 Ragout package includes some third-patry software (see INSTALL.md for details)
 
-* Networkx Python library [http://networkx.github.io/]
+* Networkx 1.8 Python library [http://networkx.github.io/]
 * Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]
 * Sibelia [http://github.com/bioinf/Sibelia]
 
