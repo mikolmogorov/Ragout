@@ -135,11 +135,15 @@ def _get_phylogeny_and_naming_ref(recipe, permutation_file):
 
 def _get_synteny_scale(recipe, synteny_backend):
     if "blocks" in recipe:
-        scale = recipe["blocks"]
+        if isinstance(recipe["blocks"], basestring):
+            scale = config.vals["blocks"][recipe["blocks"]]
+        else:
+            scale = recipe["blocks"]
     else:
-        scale = synteny_backend.infer_block_scale(recipe)
-        logger.info("Synteny block scale set to '{0}'".format(scale))
-    return config.vals["blocks"][scale]
+        scale = config.vals["blocks"][synteny_backend.infer_block_scale(recipe)]
+
+    logger.info("Running withs synteny block sizes '{0}'".format(scale))
+    return scale
 
 
 def _run_ragout(args):

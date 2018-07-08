@@ -71,8 +71,11 @@ def parse_ragout_recipe(filename):
                                           .format(lineno, value))
             if param_name == "blocks":
                 if value not in config.vals["blocks"]:
-                    raise RecipeException("Unknown synteny block size set: {0}"
-                                          .format(value))
+                    try:
+                        value = map(int, value.split(","))
+                    except Exception:
+                        raise RecipeException("Can't parse block size set: {0}"
+                                              .format(value))
             if param_name == "references":
                 value = list(map(lambda s: s.strip(), value.split(",")))
             if param_name in fix_path:
