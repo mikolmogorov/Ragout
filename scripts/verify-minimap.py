@@ -25,7 +25,7 @@ Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
 
 
-MINIMAP_BIN = "/home/fenderglass/Bioinf/Flye/repo/bin/flye-minimap2"
+MINIMAP_BIN = "/home/mkolmogo/projects/Flye/bin/flye-minimap2"
 
 
 def read_fasta_dict(filename):
@@ -190,10 +190,10 @@ def agreement_strands(lst_1, lst_2, increasing):
 
 
 def do_job(links_file, contigs_file, reference_file):
-    #alignment = join_collinear(alignment)
     scaffolds = parse_links_file(links_file)
     alignment = get_alignment(scaffolds, contigs_file, reference_file)
-    #alignment = filter_by_coverage(alignment, 0.45)
+    alignment = filter_by_coverage(alignment, 0.45)
+    alignment = join_collinear(alignment)
     entry_ord, chr_len, contig_len = get_order(alignment)
 
     total_breaks = 0
@@ -210,6 +210,11 @@ def do_job(links_file, contigs_file, reference_file):
             miss_ord = False
             miss_strand = False
 
+            #flipping alignments
+            for hit in entry_ord[contig.name]:
+                if contig.sign < 0:
+                    hit.sign = -hit.sign
+
             #checking order
             if prev_aln:
                 if increasing is not None:
@@ -224,8 +229,7 @@ def do_job(links_file, contigs_file, reference_file):
                                   prev_aln[0].index)
 
             #checking strand
-            cur_strand = list(map(lambda h: h.sign * contig.sign,
-                                  entry_ord[contig.name]))
+            cur_strand = list(map(lambda h: h.sign, entry_ord[contig.name]))
             if not miss_ord and prev_strand and cur_strand:
                 if not agreement_strands(prev_strand, cur_strand, increasing):
                     breaks.append(contig.name)
@@ -246,7 +250,7 @@ def do_job(links_file, contigs_file, reference_file):
             pos_list = list(map(str, entry_ord[contig.name]))
             pos_list_str = (str(pos_list) if len(pos_list) < 5 else
                             str(pos_list[:5]) + "...")
-            print("{0}{1}\t{2}\t{3}".format(sign, contig.name,
+            print("{0}{1}\t\t{2}\t{3}".format(sign, contig.name,
                                             contig_len[contig.name], pos_list_str),
                                             end="")
             print("\t<<<order" if miss_ord else "", end="")
