@@ -19,7 +19,7 @@ ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
 
 class ChimeraDetector(object):
     def __init__(self, breakpoint_graphs, run_stages, target_seqs):
-        logger.debug("Detecting chimeric adjacencies")
+        logger.info("Detecting chimeric adjacencies")
         self.bp_graphs = breakpoint_graphs
         self.run_stages = run_stages
         self.target_seqs = target_seqs
@@ -33,6 +33,7 @@ class ChimeraDetector(object):
 
         #extracting and grouping by sequence
         for stage in self.run_stages:
+            logger.debug(">>With block size: {0}".format(stage.block_size))
             breaks = self._get_contig_breaks(self.bp_graphs[stage])
             for br in breaks:
                 seq_cuts[br.seq_name][stage].append(br)

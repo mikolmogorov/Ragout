@@ -215,10 +215,18 @@ class BreakpointGraph(object):
         """
         Finds a path of alternating colors between two nodes
         """
+        completed_paths = []
         visited = set()
-        def rec_helper(node, colored):
+        dfs_stack = [(src, True, [src])]
+
+        #def rec_helper(node, colored):
+        while dfs_stack:
+            node, colored, cur_path = dfs_stack.pop()
+
             if node == dst:
-                return [[dst]]
+                completed_paths.append(cur_path)
+                continue
+                #return [[dst]]
 
             visited.add(node)
             paths = []
@@ -235,14 +243,15 @@ class BreakpointGraph(object):
                     continue
                 ##
 
-                far_paths = rec_helper(neighbor, not colored)
-                map(lambda p: p.append(node), far_paths)
-                paths.extend(far_paths)
-            visited.remove(node)
-            return paths
+                #far_paths = rec_helper(neighbor, not colored)
+                dfs_stack.append((neighbor, not colored, cur_path + [neighbor]))
+                #map(lambda p: p.append(node), far_paths)
+                #paths.extend(far_paths)
+            #visited.remove(node)
+            #return paths
 
-        paths = list(map(lambda p: p[::-1], rec_helper(src, True)))
-        return paths
+        #paths = list(map(lambda p: p[::-1], rec_helper(src, True)))
+        return completed_paths
 
 
 def _update_edge(graph, v1, v2, weight):

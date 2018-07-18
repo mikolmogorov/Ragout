@@ -121,7 +121,7 @@ def _get_phylogeny_and_naming_ref(recipe, permutation_file):
                                          allow_ref_indels=True,
                                          phylogeny=None)
         phylogeny = Phylogeny.from_permutations(perm_cont)
-        logger.info(phylogeny.tree_string)
+        logger.info("Inferred tree: " + phylogeny.tree_string)
 
     if "naming_ref" in recipe:
         naming_ref = recipe["naming_ref"]
