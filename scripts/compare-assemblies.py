@@ -98,8 +98,8 @@ def main():
 
     ref_blocks, qry_blocks = get_blocks(args.assembly_1, args.assembly_2,
                                         args.overwrite, int(args.block_size))
-    output_blocks(ref_blocks)
-    output_blocks(qry_blocks)
+    #output_blocks(ref_blocks)
+    #output_blocks(qry_blocks)
     print(count_discord_adj(ref_blocks, qry_blocks))
 
 

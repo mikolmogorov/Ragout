@@ -90,7 +90,7 @@ def run_lastz(reference, target, out_file):
     cmdline = [LASTZ_BIN, reference + "[multiple,nameparse=darkspace]",
                target + "[nameparse=darkspace]","--notransition",
                "--step=20", "--chain", "--gapped", "--gfextend",
-               "--ambiguous=n", "--format=maf", "--output=" + out_file,
+               "--ambiguous=iupac", "--format=maf", "--output=" + out_file,
                "--rdotplot=dotplot.txt"]
     devnull = os.devnull
     subprocess.check_call(cmdline, stderr=open(devnull, "w"))
