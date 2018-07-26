@@ -133,10 +133,11 @@ class Phylogeny:
 
         rec_helper(self.tree)
         distances = nx.single_source_dijkstra_path_length(graph, start[0])
-        leaves = [g.identifier for g in distances.keys()
+        leaves = [g for g in distances.keys()
                   if g.terminal and g.identifier != genome]
 
-        return list(map(str, sorted(leaves, key=distances.get)))
+        return list(map(lambda n: n.identifier,
+                        sorted(leaves, key=distances.get)))
 
 
 def _median(values):
