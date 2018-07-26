@@ -123,7 +123,7 @@ class Phylogeny:
         graph = nx.Graph()
         start = [None]
         def rec_helper(root):
-            if root.identifier == genome:
+            if root.terminal and root.identifier == genome:
                 start[0] = root
             if root.terminal:
                 return
@@ -133,8 +133,9 @@ class Phylogeny:
 
         rec_helper(self.tree)
         distances = nx.single_source_dijkstra_path_length(graph, start[0])
-        leaves = [g for g in distances.keys()
+        leaves = [g.identifier for g in distances.keys()
                   if g.terminal and g.identifier != genome]
+
         return list(map(str, sorted(leaves, key=distances.get)))
 
 

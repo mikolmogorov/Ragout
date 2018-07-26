@@ -12,7 +12,7 @@ import tokens
 import re
 
 _patterns = [
-    (tokens.Number, 	re.compile(r'\s*(-?\d+(\.\d+)?([eE][+-]?\d+)?)\s*(?=[,:(); \t\n])')),
+    (tokens.Number, 	re.compile(r'\s*(-?\d+(\.\d+)?([eE][+-]?\d+)?)\s*')),
     (tokens.ID, 	re.compile(r"\s*((\"[^\"]+\")|('[^']+')|(\w[^,:(); \t\n]*|_)+)\s*")),
     (tokens.Colon, 	re.compile(r'\s*(:)\s*')),
     (tokens.SemiColon, 	re.compile(r'\s*(;)\s*')),
@@ -21,12 +21,12 @@ _patterns = [
     (tokens.RParen, 	re.compile(r'\s*(\))\s*'))
     ]
 
-class LexerError(Exception):
+class LexerError(object):
     '''Exception thrown if the lexer encounters an error.'''
     def __init__(self,err):
         self.err = err
 
-    def __str__(self):
+    def __repr__(self):
         return "LexerError: "+self.err
 
 

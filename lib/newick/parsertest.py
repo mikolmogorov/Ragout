@@ -96,11 +96,6 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(empty_edge_handler.bootstrap,None)
         self.assertEqual(empty_edge_handler.length,None)
 
-        label_edge_lexer = lexer.Lexer("(dummy,tree)label")
-        label_edge_handler = EdgeHandler()
-        label_edge_parser = _Parser(label_edge_lexer,label_edge_handler)
-        label_edge_parser.parse_edge()
-        
         bootstrap_edge_lexer = lexer.Lexer("(dummy,tree) 0.8")
         bootstrap_edge_handler = EdgeHandler()
         bootstrap_edge_parser = _Parser(bootstrap_edge_lexer,
@@ -307,7 +302,6 @@ test_suite.addTest(unittest.makeSuite(HandlerTest))
 
 if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(test_suite)
-    
 
 
 

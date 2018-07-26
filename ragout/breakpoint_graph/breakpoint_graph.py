@@ -204,6 +204,8 @@ class BreakpointGraph(object):
             if g in distances:
                 return distances[g]
 
+        raise Exception("Distance function error")
+
     def debug_output(self):
         if not debugger.debugging:
             return

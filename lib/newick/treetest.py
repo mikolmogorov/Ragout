@@ -103,17 +103,6 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual([str(l.parent) for l in t.leaves],
                          ["('A', 'B')", "('A', 'B')", "(('A', 'B'), 'C')"])
 
-    def testLabel(self):
-        ''' Test if trees with labels are parsed correctly. '''
-        t = parse_tree("(('A', 'B')label, 'C')")
-        self.assertEqual(str(t), "(('A', 'B')label, 'C')")
-
-        t = parse_tree("(('A', 'B')label, 'C')treelabel")
-        self.assertEqual(t.identifier, "treelabel")
-
-        t = parse_tree("(('A', 'B')label, 'C')1")
-        self.assertEqual(t.identifier, "1")
-
 
     def testAddDistanceFromRoot(self):
         ''' Test the add_distance_from_root() function. '''
