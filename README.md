@@ -4,8 +4,9 @@ Ragout
 Version: 2.1
 
 
-[![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
-)](https://travis-ci.org/fenderglass/Ragout)
+[![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master)](https://travis-ci.org/fenderglass/Ragout)
+
+[![BioConda Install](https://img.shields.io/conda/dn/bioconda/ragout.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/ragout)
 
 <p align="center">
   <img src="http://fenderglass.github.io/Ragout/images/ragout.png" alt="Ragout logo"/>
