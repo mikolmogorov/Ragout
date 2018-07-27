@@ -1,9 +1,8 @@
 Ragout
 ======
 
-Version: 2.0
+Version: 2.1
 
-Website: http://fenderglass.github.io/Ragout/
 
 [![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
 )](https://travis-ci.org/fenderglass/Ragout)
@@ -26,13 +25,12 @@ and reconstructing the most parsimonious structure of the target genome.
 Ragout now supports both small and large genomes (of mammalian scale and complexity).
 The assembly of highly polymorphic genomes is currently limited.
 
-Install
--------
-See *docs/INSTALL.md* file.
 
-Usage
------
-See *docs/USAGE.md* file.
+Manuals
+-------
+
+- [Installation instructions](docs/INSTALL.md)
+- [Usage](docs/USAGE.md)
 
 
 Authors
@@ -59,7 +57,7 @@ Also, you can send your feedback to fenderglass@gmail.com
 
 
 Acknowledgments
-----------------
+---------------
 The work was partially supported by VP Foundation.
 
 We would like to thank:
@@ -73,7 +71,7 @@ Third-party
 Ragout package includes some third-patry software (see INSTALL.md for details)
 
 * Networkx 1.8 Python library [http://networkx.github.io/]
-* Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]
+* Newick 1.3 [http://www.daimi.au.dk/~mailund/newick.html]
 * Sibelia [http://github.com/bioinf/Sibelia]
 
 

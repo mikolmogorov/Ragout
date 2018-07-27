@@ -20,7 +20,7 @@ Quick Usage
                             path to the working directory (default: ragout-out)
     
       -s {sibelia,hal}, --synteny {sibelia,hal}
-                            backend for synteny block decomposition (default:
+                            tool for synteny block decomposition (default:
                             sibelia)
     
       --refine              enable refinement with assembly graph (default:
@@ -46,10 +46,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    ./ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-    ./ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-    ./ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-    ./ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
+    ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
 
 
 Algorithm Overview
@@ -77,23 +77,24 @@ assembly.
 Input
 -----
 
-Ragout takes as input:
+Ragout needs as input:
 
-* Reference genomes [in *FASTA* format or packed into *HAL*]
-* Target assembly in [in *FASTA* format or packed into *HAL*]
+* Reference genomes [in FASTA format or packed into HAL]
+* Target assembly in [in FASTA format or packed into HAL]
 
 Optionally, you can add:
 
-* Phylogenetic tree with the reference and target genomes [in *NEWICK* format]
-* Synteny block scale
+* Phylogenetic tree with the reference and target genomes [in NEWICK format]
+* HAL multiple alignment (produced by Progressive Cactus)
 
-All these parameters should be described in a single recipe file (see below)
+All parameters are be described in a single configuration file (see below)
 
 
 Output
 ------
 
-After running Ragout, output directory will contain:
+After running Ragout, the output directory will contain (where "target" is the name
+of your target genome).
 
 * __target_scaffolds.fasta__: scaffolds
 * __target_unplaced.fasta__: unplaced input sequences
@@ -101,41 +102,51 @@ After running Ragout, output directory will contain:
 * __target_scaffolds.agp__: same as below, but in NCBI AGP format
 
 
-Recipe File
------------
+Configuration (Recipe) File
+---------------------------
 
 A recipe file describes the Ragout run configuration.
-Here is an example of such file (full version, some parameters could be ommited):
+Here is an explicit example of such file (some parameters are not required):
 
-    .references = rf122,col,jkd,n315
+    #reference and target genome names
+    
+    .references = rf123,col,jkd,n315
     .target = usa
+    
+    #phylogenetic tree for all genomes (optional)
 
+    .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
+    
+    #paths to genome fasta files
+    
     col.fasta = references/COL.fasta
     jkd.fasta = references/JKD6008.fasta
     rf122.fasta = references/RF122.fasta
     n315.fasta = references/N315.fasta
     usa.fasta = usa300_contigs.fasta
+    
+    #synteny blocks scale (optional)
 
-    .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
     .blocks = small
+    
+    #reference to use for scaffold naming (optional)
+    
     .naming_ref = rf122
     
 
-or, if using *HAL* as input, tree, blocks scale and naming reference are inferred automatically
+or, alternatively, if using HAL as input:
 
     .references = miranda,simulans,melanogaster
     .target = yakuba
     .hal = genomes/alignment.hal
    
 
-###Parameters description:
-
-Each parameter could be "global" (related to the run) or "local" (for a particular genome).
-Global parameters start from dot:
+Each configuration parameter could be "global" (related to the run) or 
+"genomic" (for a particular genome). Global parameters start from dot:
 
     .global_param_name = value
 
-To set local parameter, use:
+To set genomic parameter, use:
 
     genome_name.param_name = value
 
@@ -145,35 +156,31 @@ To set local parameter, use:
 * __target__: target genome name [*required*]
 * __tree__: phylogenetic tree in NEWICK format
 * __blocks__: synteny blocks scale
-* __hal__: path to the alignment in *HAL* format
+* __hal__: path to the alignment in HAL format
 * __naming_ref__: reference to use for output scaffolds naming
-
-###Local parameters
-
-* __fasta__: path to *FASTA* [default = not set]
-* __draft__: indicates that reference is in a draft form (not chromosomes) [default = false]
-
-###Default values
-
-You can change default values of the local parameters by assigning the 
-parameter value to the special "star" object:
-for instance, if all input references except one are in a draft form, you can write:
-
-    *.draft = true
-    complete_ref.draft = false
-
-###Quick comments
-
-Paths to *FASTA*/*HAL* can be both relative and absolute. 
-
-If you use *Sibelia* for synteny blocks decomposition you must specify 
-FASTA for each input genome. If you use *HAL*, all sequences will be taken from it.
-
-*Sibelia* requires all sequence headers (">gi...") 
-among ALL *FASTA* files to be unique.
 
 If you do not specify phylogenetic tree or synteny block scale, 
 they will be inferred automatically.
+
+###Genomic parameters
+
+* __fasta__: path to FASTA [default = not set]
+* __draft__: indicates that reference is in a draft form (not chromosomes) [default = false]
+
+Paths to FASTA/HAL can be relative or absolute. 
+
+If you use *Sibelia* for synteny blocks decomposition you must specify 
+FASTA for each input genome. If you use HAL, sequnces will be extracted 
+from the alignment.
+
+Sibelia requires all sequence identifiers (">gi...") among ALL FASTA files to be unique.
+
+You can change default values of the genome parameters by assigning the 
+parameter value to the special "star" object.
+For instance, if all input references except one are in a draft form, you can write:
+
+    *.draft = true
+    complete_ref.draft = false
 
 
 Parameters Description
@@ -181,13 +188,11 @@ Parameters Description
 
 ### Phylogenetic tree
 
-Ragout algorithm requires a phylogenetic tree as input. This tree
-could be inferred automatically from the breakpoint configuration
-of the input genomes. The automatic inference
+Ragout algorithm requires a phylogenetic tree as input. If the tree
+if not provided, if will be inferred automatically from the 
+breakpoint configuration of the input genomes. The automatic inference
 generally produces a good approximation of a real phylogeny
-and is therefore recommended for most of the purposes.
-However, if you already have the tree structure from a different source,
-you may guide the algorithm with it by setting the corresponding parameter.
+and is therefore recommended for most runs.
 
 
 ### Synteny block scale
@@ -200,22 +205,27 @@ that are long enough and then insert shorter ones into final scaffolds.
 There are two pre-defined scales: "small" and "large". We recommend
 "small" for relatively small genomes (bacterial) and large otherwise 
 (mammalian). If the parameter is not set, it is automatically inferred
-based on input genomes size (recommended).
+based on input genomes size (recommended). You may also use
+custom set of block sizes, for example:
+
+    .blocks = 50000,5000
 
 
 ### Reference genome in draft form
 
 Ragout can use an incomplete assembly (contigs/scaffolds) as a reference.
-In such a case you should specify that the reference is in draft from by
-setting the corresponding parameter in the recipe file.
+In this case you should set the corresponding parameter in the recipe file
+as shown above.
 
 
 ### Naming reference
 
-Output scaffolds will be named according to a homology to one of the input 
+Output scaffolds will be named according to homology to one of the input 
 references (naming reference). This reference can be set with the corresponding
 recipe parameter, otherwise it will be chosen as the closest reference in the
-phylogenetic tree. The naming pattern is as follows. If a scaffold is homologous
+phylogenetic tree. 
+
+The naming rule is as follows. If a scaffold is homologous
 to a single reference chromosome "A", it will be named as "chr_A". If there
 are multiple homologous chromosomes, for example "A" and "B" (in case of 
 chromosomal fusion), it will be named "chr_A_B". If there are multiple
@@ -223,8 +233,8 @@ scaffolds with a same name, the longest one would be chosen as primary,
 others will get an extra "_unlocalized" suffix.
 
 
-Synteny Backends
-----------------
+Synteny Block Reconstruction
+----------------------------
 
 Ragout has two different options for synteny block decomposition:
 
@@ -237,23 +247,17 @@ You can choose between backends by specifying --synteny (-s) option.
 ### Sibelia
 
 "Sibelia" is the default option and recommended for bacterial genomes.
+Rgaout automatically runs Sibelia in the beginning.
 
-### Whole genome alignment in *HAL* format
+### Whole genome alignment in HAL format
 
-Alternatively, Ragout can use *HAL* whole genome alignment for synteny blocks
-decomposition. This option is recommended for large (over 100MB) genomes, which
-*Sibelia* can not process. This alignment is done by Progressive Cactus 
-aligner [https://github.com/glennhickey/progressiveCactus]. Currently, we do not
-provide bindings for running Progressive Cactus from Ragout, as the procedure
-might vary for different setups. Ragout starts with the alignment
-result in *HAL* format, *HAL tools* should be installed in your system.
+Alternatively, Ragout can use HAL whole genome alignment for synteny blocks
+decomposition. This option is recommended for larger (over 100MB) genomes, which
+*Sibelia* can not process. This alignment first should be done using Progressive Cactus 
+aligner [https://github.com/glennhickey/progressiveCactus]. 
+Afterwards, run Ragout with the produced HAL file 
+("HAL tools" package should be installed in your system).
 
-
-### MAF backend is deprecated
-
-The support of MAF synteny backend is deprecated, because it is more 
-convenient to work directly with *HAL*, which is a default output of
-Progressive Cactus.
 
 
 Repeat Resolution
@@ -264,9 +268,8 @@ all repetitive blocks before building the breakpoint graph. Therefore, some
 target sequences (generally, short and repetitive contigs) will be ignored
 (some of them could be put back during the refinement step below).
 
-To incorporate these repetitive fragments into the assembly, you can
-use the optional algorithm, which tries to resolve the repetitive contigs
-and find their positions in the assembly ('--repeats' option). Depending
+To incorporate these repetitive fragments into the final assembly, you can
+use the optional repeat resolution algorithm ('--repeats' option). Depending
 on the dataset, you may get a significant increase in the assembly
 coverage, therefore decreasing scaffolds gaps. However, if there are copy number 
 variations between the reference and target genomes, the algorithm could make 
@@ -276,14 +279,11 @@ some false insertions.
 Chimera Detection
 -----------------
 
-Ragout detects chimeric adjacencies inside the input sequences and fixes
-them by breaking the sequences into parts. The chimera detection algorithm
-tries to distinguish such erroneous joins from target-specific adjacencies,
-that are not observed in the references. By default, the adjacency which is
-not supported by references is considered chimeric, unless there is an
-evidence of a rearrangement in the target genome. Sometimes, due to the 
-fragmentation of the target genome, the evidence support is missing.
-If you have high quality contigs/scaffolds,
+Ragout detects chimeric adjacencies inside the input sequences and brakes them. 
+By default, an adjacency which is not supported by references is considered chimeric, 
+unless there is a clear evidence of a rearrangement in the target genome (from
+breakpoint analysis). Sometimes, due to the fragmentation of the target genome, 
+the breakpoint support is missing. If you have high quality contigs/scaffolds,
 you may choose to turn chimera detection off by specifying '--solid-scaffolds' option.
 
 

@@ -6,55 +6,54 @@ Availability
 Ragout is available for Mac OS and Linux.
 
 
+Bioconda distribitions
+----------------------
+
+Ragout binary releases are available through Bioconda:
+
+    conda install ragout
+
+
 Build Requirements
 ------------------
 * C++ compiler with C++0x support (GCC 4.6+ / Clang 3.2+ / Apple Clang 4.2+)
-* GNU make / Cmake (for building Sibelia)
+* GNU make 
+* Cmake
 
 
 Runtime Depenencies
 -------------------
 
 * Python 2.7
-* Sibelia [http://github.com/bioinf/Sibelia] or HAL Tools [https://github.com/glennhickey/hal]
-
-
-Binary Distribution
--------------------
-
-Pre-compiled binaries are available for Linux and Mac OS from 
-the releases page [https://github.com/fenderglass/Ragout/releases].
-In this case you will not need the installation procedures below.
+* Sibelia [http://github.com/bioinf/Sibelia]
+* HAL Tools [https://github.com/glennhickey/hal] (alternatively to Sibelia)
 
 
 Building
 --------
 
-To build Ragout native modules, type:
+To build Ragout binaries, type:
     
         make
 
-You will also need either *Sibelia* or *HAL tools* installed (see below)
-
-
-Sibelia
--------
+You will also need either Sibelia or HAL Tools installed
 
 To build and install Sibelia, use:
 
         python scripts/install-sibelia.py
 
-If you already have Sieblia installed into your system, it will
-be picked up automatically by Ragout.
+If you already have Sibelia installed into your system, it will
+be picked up automatically.
 
 
 HAL Tools
 ---------
 
-HAL alignment produced by *Progressive Cactus* could be used for synteny 
-blocks decomposition instead of *Sibelia* (recommended for large genomes). 
+HAL alignment produced by Progressive Cactus could be used for synteny 
+blocks decomposition instead of Sibelia (recommended for large genomes). 
+
 If you want to use HAL alignment as input,
-you need to install *HAL Tools* package [https://github.com/glennhickey/hal]
+you need to install HAL Tools package [https://github.com/glennhickey/hal]
 as it is described in the manual. Do not forget to properly set PATH and PYTHONPATH
 environment variables.
 
