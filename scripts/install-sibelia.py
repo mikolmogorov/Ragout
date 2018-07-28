@@ -19,7 +19,7 @@ except ImportError:
     from urllib.request import urlretrieve
 
 SIBELIA_LINK = "https://github.com/bioinf/Sibelia/archive/master.tar.gz"
-DEFAULT_PREFIX = "lib"
+DEFAULT_PREFIX = "bin"
 
 def install_deps(prefix):
     if which("Sibelia"):
