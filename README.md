@@ -1,7 +1,7 @@
 Ragout
 ======
 
-Version: 2.1
+Version: 2.1.1
 
 
 [![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master)](https://travis-ci.org/fenderglass/Ragout)
@@ -15,9 +15,10 @@ Version: 2.1
 Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
-is a tool for chromosome assembly using multiple references. Given a set of assembly fragments
-(contigs/scaffolds) and one or multiple related references (complete or draft),
-it produces a chromosome-scale assembly (as a set of scaffolds).
+is a tool for chromosome-level scaffolding using multiple references. 
+Given initial assembly fragments (contigs/scaffolds) and one or multiple 
+related references (complete or draft), it produces a chromosome-scale assembly
+(as a set of scaffolds).
 
 The approach is based on the analysis of genome rearrangements
 (like inversions or chromosomal translocations) between the input genomes
