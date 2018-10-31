@@ -46,7 +46,7 @@ Authors
 Publications
 ------------
 - Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
-bioRxiv preprint, 2016
+Genome Research, 2018
 
 - Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
