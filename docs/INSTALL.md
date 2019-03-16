@@ -34,7 +34,7 @@ Building
 
 To build Ragout binaries, type:
     
-        make
+        python setup.py build
 
 You will also need either Sibelia or HAL Tools installed
 
@@ -44,6 +44,10 @@ To build and install Sibelia, use:
 
 If you already have Sibelia installed into your system, it will
 be picked up automatically.
+
+Optionally, you may isntall Ragout into your system by typing:
+
+        python setup.py install
 
 
 HAL Tools

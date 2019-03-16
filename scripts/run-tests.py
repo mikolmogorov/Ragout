@@ -50,7 +50,7 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                      "scaf_pref" : "usa_scaffolds"}}
 
 TEST_DIR = "test-dir"
-RAGOUT_EXEC = "ragout.py"
+RAGOUT_EXEC = "bin/ragout"
 VERIFY_EXEC = os.path.join("scripts", "verify-order.py")
 
 
@@ -64,7 +64,7 @@ def test_environment():
 
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
-    cmd = ["python2.7", "ragout.py", parameters["recipe"],
+    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
            "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
@@ -98,7 +98,7 @@ def run_test(parameters):
                     raise RuntimeError("Too many scaffolds")
 
     #checking after refinement
-    cmd = ["python2.7", "ragout.py", parameters["recipe"],
+    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
            "--outdir", outdir, "--debug", "--refine"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)

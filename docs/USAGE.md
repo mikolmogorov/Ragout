@@ -4,7 +4,7 @@ Usage Instructions for Ragout
 Quick Usage
 -----------
 
-    usage: ragout.py [-h] [-o output_dir] [-s {sibelia,hal}]
+    usage: ragout    [-h] [-o output_dir] [-s {sibelia,hal}]
                      [--no-refine] [--overwrite] [--repeats] [--debug]
                      [-t THREADS] [--version]
                      recipe_file
@@ -46,10 +46,10 @@ Examples
 
 You can try Ragout on the provided ready-to-use examples:
 
-    ragout.py examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
-    ragout.py examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
-    ragout.py examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
-    ragout.py examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
+    bin/ragout examples/E.Coli/ecoli.rcp --outdir examples/E.Coli/out/ --refine
+    bin/ragout examples/H.Pylori/helicobacter.rcp --outdir examples/H.Pylori/out/ --refine
+    bin/ragout examples/S.Aureus/aureus.rcp --outdir examples/S.Aureus/out/ --refine
+    bin/ragout examples/V.Cholerae/cholerae.rcp --outdir examples/V.Cholerae/out/ --refine
 
 
 Algorithm Overview

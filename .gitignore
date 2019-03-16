@@ -2,6 +2,7 @@
 *.pyc
 *.o
 *.so
-lib/Sibelia
-lib/ragout-maf2synteny
-lib/ragout-overlap
+bin/Sibelia
+bin/ragout-maf2synteny
+bin/ragout-overlap
+build

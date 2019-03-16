@@ -1,6 +1,6 @@
 OVLP_DIR := ragout/overlap/cpp_impl
 M2S_DIR := ragout/maf2synteny/cpp_impl
-BIN_DIR := $(shell pwd)/lib
+BIN_DIR := $(shell pwd)/bin
 
 #setting compiler (if not set)
 ifeq (${CXX},)
