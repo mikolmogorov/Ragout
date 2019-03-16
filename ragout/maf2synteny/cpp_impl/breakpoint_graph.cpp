@@ -29,6 +29,7 @@ BreakpointGraph::~BreakpointGraph()
 BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 {
 	DEBUG_PRINT("Building breakpoint graph");
+	int maxBlockOverlap = 0;
 	for (auto &perm : permutations)
 	{
 		assert(!perm.blocks.empty());
@@ -62,11 +63,14 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 			int leftPos = blockPair.first.end;
 			int rightPos = blockPair.second.start;
 
-			if (rightPos < leftPos)
+			maxBlockOverlap = std::max(maxBlockOverlap, leftPos - rightPos);
+			if (rightPos < leftPos) leftPos = rightPos;
+
+			/*if (rightPos < leftPos)
 				std::cerr << "WARNING: overlapping blocks\n"
 						  << blockPair.first.start << " " << blockPair.first.end
 						  << " " << blockPair.second.start << " "
-						  << blockPair.second.end << " | " << perm.seqId << "\n";
+						  << blockPair.second.end << " | " << perm.seqId << "\n";*/
 
 			curEdge = this->addEdge(-blockPair.first.signedId(),
 									blockPair.second.signedId(), perm.seqId);
@@ -82,10 +86,19 @@ BreakpointGraph::BreakpointGraph(const std::vector<Permutation>& permutations)
 		tailEdge->prevEdge = curEdge;
 	}
 
+	if (maxBlockOverlap > 0)
+	{
+		std::cerr << "\n\tWARNING: some alignment blocks were overlapping "
+			"by at most " << maxBlockOverlap << "\n" <<
+			"\tIt is unexpected and might result into nonsense synteny blocks.\n" <<
+			"\tPlease note that this tool currently support alignments\n" <<
+			"\tproduced by either Cactus or SibeliaZ.\n\n";
+
+	}
 	DEBUG_PRINT("Constructed graph with " << _nodes.size() << " nodes");
 }
 
-namespace
+/*namespace
 {
 	std::unordered_map<Edge*, int> getConjunctionEdges(BreakpointGraph& bg)
 	{
@@ -128,7 +141,7 @@ namespace
 		DEBUG_PRINT("Getting conjunction edges - done");
 		return edgeToGroup;
 	}
-}
+}*/
 
 void BreakpointGraph::getPermutations(PermVec& permutations, 
 									  BlockGroups& blockGroups)
