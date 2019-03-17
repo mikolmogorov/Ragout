@@ -100,6 +100,26 @@ std::vector<ParamPair> parseSimplParamsFile(const std::string& filename)
 	return out;
 }
 
+bool isMaf(const std::string& filename)
+{
+	size_t dotPos = filename.rfind(".");
+	if (dotPos == std::string::npos)
+	{
+		throw std::runtime_error("Can't identify input file type");
+	}
+	std::string suffix = filename.substr(dotPos + 1);
+
+	if (suffix == "maf")
+	{
+		return true;
+	}
+	else if (suffix == "gff")
+	{
+		return false;
+	}
+	throw std::runtime_error("Can't identify input file type");
+}
+
 static std::vector<ParamPair> DEFAULT_PARAMS = 
 			{{30, 10}, {100, 100}, {500, 1000}, {1000, 5000}, {5000, 15000}};
 
@@ -117,9 +137,17 @@ void doJob(const std::string& inputMaf, const std::string& outDir,
 	std::sort(minBlockSizes.begin(), minBlockSizes.end(), std::greater<int>());
 	makeDirectory(outDir);
 
-	//read maf alignment and join adjacent columns
-	std::cerr << "\tParsing MAF file\n";
-	PermVec mafBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
+	//read block coordinates from file (either maf or gff)
+	PermVec mafBlocks;
+	if (isMaf(inputMaf))
+	{
+		mafBlocks = mafToPermutations(inputMaf, MIN_ALIGNMENT);
+	}
+	else
+	{
+		mafBlocks = parseGff(inputMaf, MIN_ALIGNMENT);
+	}
+
 	compressPaths(mafBlocks, MAX_ALIGNMENT_GAP, currentBlocks, blockGroups);
 
 	//iterative simplification

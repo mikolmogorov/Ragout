@@ -8,3 +8,5 @@
 #include "breakpoint_graph.h"
 
 PermVec mafToPermutations(const std::string& mafFile, int minBlockLen);
+
+PermVec parseGff(const std::string& filename, int minBlockLen);
