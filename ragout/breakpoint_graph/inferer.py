@@ -151,7 +151,7 @@ def _min_weight_matching(graph):
                      "size {0}".format(len(graph)))
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = set()
-    for v1, v2 in edges.items():
+    for v1, v2 in edges:
         if not (v2, v1) in unique_edges:
             unique_edges.add((v1, v2))
 
