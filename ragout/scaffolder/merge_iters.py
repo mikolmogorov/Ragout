@@ -174,7 +174,7 @@ class RearrangementProjector:
         subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
         for subgr in subgraphs:
             #this is a cycle
-            if any(len(subgr.neighbors(node)) != 2 for node in subgr.nodes()):
+            if any(len(subgr[node]) != 2 for node in subgr.nodes()):
                 continue
 
             red_edges = []
@@ -193,6 +193,7 @@ class RearrangementProjector:
                 self.bp_graph.remove_edge(u, v)
                 self.adj_graph.remove_edge(u, v)
             for u, v in black_edges:
+                print(self.bp_graph[u][v])
                 link = self.bp_graph[u][v][0]["link"]
                 infinity = self.bp_graph[u][v][0]["infinity"]
                 self.bp_graph.add_edge(u, v, scf_set="old",
