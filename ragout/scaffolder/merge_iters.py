@@ -179,7 +179,7 @@ class RearrangementProjector:
 
             red_edges = []
             black_edges = []
-            for (u, v, data) in subgr.edges_iter(data=True):
+            for (u, v, data) in subgr.edges(data=True):
                 if data["scf_set"] == "old":
                     red_edges.append((u, v))
                 else:
@@ -201,7 +201,7 @@ class RearrangementProjector:
 
         logger.debug("Made {0} k-breaks".format(num_kbreaks))
         adjacencies = {}
-        for (u, v, data) in self.bp_graph.edges_iter(data=True):
+        for (u, v, data) in self.bp_graph.edges(data=True):
             if data["scf_set"] == "old":
                 gap, support = 0, []
                 if not data["infinity"]:

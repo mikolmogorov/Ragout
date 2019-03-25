@@ -113,11 +113,11 @@ def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
     predicted_edges = nx.read_dot(predicted_dot)
     out_graph = nx.MultiGraph()
 
-    for v1, v2, data in base_graph.edges_iter(data=True):
+    for v1, v2, data in base_graph.edges(data=True):
         color = g2c(data["genome_id"])
         label = "oo" if data["infinity"] == "True" else ""
         out_graph.add_edge(v1, v2, color=color, label=label)
-    for v1, v2 in predicted_edges.edges_iter():
+    for v1, v2 in predicted_edges.edges():
         out_graph.add_edge(v1, v2, color="red", style="dashed")
     for (v1, v2, infinite) in true_edges:
         label = "oo" if infinite else ""
@@ -140,7 +140,7 @@ def output_graph(graph, output_dir, only_predicted):
 
         if only_predicted:
             to_show = False
-            for v1, v2, data in subgr.edges_iter(data=True):
+            for v1, v2, data in subgr.edges(data=True):
                 if data.get("style") == "dashed":
                     to_show = True
                     break

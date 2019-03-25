@@ -115,7 +115,7 @@ class AdjacencyInferer(object):
         Removes edges with known target adjacencies (red edges from paper)
         """
         trimmed_graph = graph.copy()
-        for v1, v2 in graph.edges_iter():
+        for v1, v2 in graph.edges():
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
                 continue
 
@@ -142,7 +142,7 @@ def _min_weight_matching(graph):
     """
     Finds a perfect matching with minimum weight
     """
-    for v1, v2 in graph.edges_iter():
+    for v1, v2 in graph.edges():
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weght
 
     MIN_LOG_SIZE = 20

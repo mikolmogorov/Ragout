@@ -98,7 +98,7 @@ class ChimeraDetector(object):
                 logger.debug("Processing component of size {0}"
                              .format(len(subgr.bp_graph)))
 
-            for (u, v, data) in subgr.bp_graph.edges_iter(data=True):
+            for (u, v, data) in subgr.bp_graph.edges(data=True):
                 if data["genome_id"] != subgr.target:
                     continue
 
