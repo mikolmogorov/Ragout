@@ -3,6 +3,6 @@ compiler:
   - gcc
   - clang
 before_script:
-  - pip install --upgrade pip
+  - pip install --upgrade --user pip
   - pip install --user networkx
 script: make; make dependencies; make test
