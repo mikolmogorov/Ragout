@@ -2,4 +2,6 @@ language: cpp
 compiler:
   - gcc
   - clang
+before_script: 
+  - pip install networkx
 script: make; make dependencies; make test
