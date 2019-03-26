@@ -130,7 +130,7 @@ class ChimeraDetector(object):
         """
         assert len(bp_graph) == 4
         red_1, red_2 = red_edge
-        cand_1, cand_2 = tuple(set(bp_graph.nodes()) - set(red_edge))
+        cand_1, cand_2 = tuple(set(bp_graph.nodes) - set(red_edge))
         if abs(cand_1) == abs(cand_2):
             return False
 

@@ -75,7 +75,7 @@ def count_discord_adj(ref_blocks, qry_blocks):
             graph.add_edge(-block_1, block_2, name=seq, color="green")
 
     counter = 0
-    for node in graph.nodes():
+    for node in graph.nodes:
         if len(graph.neighbors(node)) > 1:
             counter += 1
 

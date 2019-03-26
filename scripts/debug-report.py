@@ -117,7 +117,7 @@ def compose_breakpoint_graph(base_dot, predicted_dot, true_edges):
         color = g2c(data["genome_id"])
         label = "oo" if data["infinity"] == "True" else ""
         out_graph.add_edge(v1, v2, color=color, label=label)
-    for v1, v2 in predicted_edges.edges():
+    for v1, v2 in predicted_edges.edges:
         out_graph.add_edge(v1, v2, color="red", style="dashed")
     for (v1, v2, infinite) in true_edges:
         label = "oo" if infinite else ""
@@ -194,7 +194,7 @@ def add_overlap_edges(graph, overlap_dot, contigs_file):
 
     subgraphs = nx.connected_component_subgraphs(graph)
     for subgr in subgraphs:
-        for v1, v2 in combinations(subgr.nodes(), 2):
+        for v1, v2 in combinations(subgr.nodes, 2):
             v1, v2 = int(v1), int(v2)
 
             if v1 in contig_ends and v2 in contig_begins:

@@ -76,7 +76,7 @@ class AdjacencyInferer(object):
         """
         adjacency = subgraph.to_weighted_graph(self.phylogeny)
         trimmed_graph = self._trim_known_edges(adjacency)
-        unused_nodes = set(trimmed_graph.nodes())
+        unused_nodes = set(trimmed_graph.nodes)
 
         chosen_edges = []
         for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
@@ -84,8 +84,8 @@ class AdjacencyInferer(object):
                 continue
 
             if len(trim_subgraph) == 2:
-                chosen_edges.append(tuple(trim_subgraph.nodes()))
-                for n in trim_subgraph.nodes():
+                chosen_edges.append(tuple(trim_subgraph.nodes))
+                for n in trim_subgraph.nodes:
                     unused_nodes.remove(n)
                 continue
 
@@ -115,7 +115,7 @@ class AdjacencyInferer(object):
         Removes edges with known target adjacencies (red edges from paper)
         """
         trimmed_graph = graph.copy()
-        for v1, v2 in graph.edges():
+        for v1, v2 in graph.edges:
             if not trimmed_graph.has_node(v1) or not trimmed_graph.has_node(v2):
                 continue
 
@@ -142,7 +142,7 @@ def _min_weight_matching(graph):
     """
     Finds a perfect matching with minimum weight
     """
-    for v1, v2 in graph.edges():
+    for v1, v2 in graph.edges:
         graph[v1][v2]["weight"] = -graph[v1][v2]["weight"] #want minimum weght
 
     MIN_LOG_SIZE = 20

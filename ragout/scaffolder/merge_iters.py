@@ -174,7 +174,7 @@ class RearrangementProjector:
         subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
         for subgr in subgraphs:
             #this is a cycle
-            if any(len(subgr[node]) != 2 for node in subgr.nodes()):
+            if any(len(subgr[node]) != 2 for node in subgr.nodes):
                 continue
 
             red_edges = []
@@ -228,10 +228,10 @@ class RearrangementProjector:
         for u, v in new_edges:
             new_adj_graph.add_edge(u, v)
 
-        all_nodes = new_adj_graph.nodes()
-        old_sets = list(map(lambda g: set(g.nodes()),
+        all_nodes = new_adj_graph.nodes
+        old_sets = list(map(lambda g: set(g.nodes),
                             nx.connected_component_subgraphs(self.adj_graph)))
-        new_sets = list(map(lambda g: set(g.nodes()),
+        new_sets = list(map(lambda g: set(g.nodes),
                             nx.connected_component_subgraphs(new_adj_graph)))
         if len(old_sets) != len(new_sets):
             return False

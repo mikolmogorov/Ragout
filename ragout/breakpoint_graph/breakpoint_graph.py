@@ -101,9 +101,9 @@ class BreakpointGraph(object):
         """
         assert len(self.bp_graph) >= 2
         g = nx.Graph()
-        g.add_nodes_from(self.bp_graph.nodes())
+        g.add_nodes_from(self.bp_graph.nodes)
 
-        for node in self.bp_graph.nodes():
+        for node in self.bp_graph.nodes:
             adjacencies = {}
             for neighbor in self.bp_graph.neighbors(node):
                 for edge in self.bp_graph[node][neighbor].values():

@@ -53,7 +53,7 @@ def _load_dot(filename):
 
 
 def _check_overaps_number(graph, contigs_fasta):
-    rate = float(len(graph.edges())) / len(contigs_fasta)
+    rate = float(len(graph.edges)) / len(contigs_fasta)
     if rate < config.vals["min_overlap_rate"]:
         logger.warning("Too few overlaps ({0}) between contigs were detected "
                        "-- refine procedure will be useless. Possible reasons:"
@@ -61,7 +61,7 @@ def _check_overaps_number(graph, contigs_fasta):
                        "2. Contigs overlap not on a constant value "
                        "(like k-mer for assemblers which use debruijn graph)\n"
                        "3. Contigs ends are trimmed/postprocessed\n"
-                       .format(len(graph.edges())))
+                       .format(len(graph.edges)))
 
 
 def _insert_from_graph(graph, scaffolds_in, max_path_len, contigs_fasta):
