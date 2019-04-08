@@ -193,7 +193,7 @@ class RearrangementProjector:
                 self.bp_graph.remove_edge(u, v)
                 self.adj_graph.remove_edge(u, v)
             for u, v in black_edges:
-                print(self.bp_graph[u][v])
+                #print(self.bp_graph[u][v])
                 link = self.bp_graph[u][v][0]["link"]
                 infinity = self.bp_graph[u][v][0]["infinity"]
                 self.bp_graph.add_edge(u, v, scf_set="old",
