@@ -144,8 +144,8 @@ def get_alignment(scaffolds, contigs_file, reference_file):
                            "--secondary=no", "-t", "8"], stdout=open(minimap_file, "w"))
     aln = read_paf(minimap_file)
 
-    #os.remove(query_file)
-    #os.remove(minimap_file)
+    os.remove(query_file)
+    os.remove(minimap_file)
     return aln
 
 
@@ -195,7 +195,6 @@ def do_job(links_file, contigs_file, reference_file):
     alignment = filter_by_coverage(alignment, 0.45)
     alignment = join_collinear(alignment)
     entry_ord, chr_len, contig_len = get_order(alignment)
-    print(alignment)
 
     total_breaks = 0
     total_gaps = 0
