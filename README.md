@@ -1,7 +1,7 @@
 Ragout
 ======
 
-Version: 2.1.1
+Version: 2.2
 
 
 [![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master)](https://travis-ci.org/fenderglass/Ragout)
