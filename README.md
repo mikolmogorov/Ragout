@@ -92,4 +92,4 @@ ISMB 2014 supplementary
 -----------------------
 
 Supplementary materials for ISMB submission could be found at:
-https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
+https://zenodo.org/record/2633314/files/ismb_171_supplementary.zip
