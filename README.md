@@ -35,20 +35,21 @@ Manuals
 - [Usage](docs/USAGE.md)
 
 
-Authors
--------
-- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)
-- Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
-- Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
-- Son Pham (UCSD)
+Code contributions
+------------------
+* Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)
+* Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
+* Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
+* Son Pham (UCSD)
+* Tatiana Malygina
 
 
 Publications
 ------------
-- Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
+* Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
 Genome Research, 2018
 
-- Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
+* Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
 
 
@@ -62,19 +63,20 @@ Acknowledgments
 ---------------
 The work was partially supported by VP Foundation.
 
-We would like to thank:
-- Anna Liosnova (benchmarks and useful suggestions)
-- Nikolay Vyahhi (testing and useful suggestions)
-- Aleksey Gurevich (testing)
+We also would like to thank:
+* Anna Liosnova (benchmarks and useful suggestions)
+* Nikolay Vyahhi (testing and useful suggestions)
+* Aleksey Gurevich (testing)
 
 
 Third-party
 -----------
-Ragout package includes some third-patry software (see INSTALL.md for details)
+Ragout is using some third-patry software (see INSTALL.md for details):
 
-* Networkx 1.8 Python library [http://networkx.github.io/]
-* Newick 1.3 [http://www.daimi.au.dk/~mailund/newick.html]
+* Networkx Python library [http://networkx.github.io/]
+* Newick parser by Thomas Mailund [https://www.mailund.dk/]
 * Sibelia [http://github.com/bioinf/Sibelia]
+* HAL Tools [https://github.com/ComparativeGenomicsToolkit/hal]
 
 
 License

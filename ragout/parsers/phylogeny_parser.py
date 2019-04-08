@@ -7,15 +7,15 @@ This module parses newick string and contains some helper function
 to deal with trees
 """
 
-import newick
-import newick.parser
-from newick.tree import Tree, Leaf
+import ragout.newick
+import ragout.newick.parser
+from ragout.newick.tree import Tree, Leaf
 
 class PhyloException(Exception):
     pass
 
 
-class _RagoutTreeBuilder(newick.parser.AbstractHandler):
+class _RagoutTreeBuilder(ragout.newick.parser.AbstractHandler):
     """
     A custom parser handler for newick library
     """
@@ -52,8 +52,8 @@ class _RagoutTreeBuilder(newick.parser.AbstractHandler):
 def parse_tree(newick_str):
     tree = None
     try:
-        tree = newick.parser.parse(newick_str, _RagoutTreeBuilder())
-    except newick.lexer.LexerError as e:
+        tree = ragout.newick.parser.parse(newick_str, _RagoutTreeBuilder())
+    except ragout.newick.lexer.LexerError as e:
         raise PhyloException("Error parsing tree")
     return tree
 

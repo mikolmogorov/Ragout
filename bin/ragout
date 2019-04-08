@@ -12,7 +12,6 @@ and invokes Ragout
 import os
 import sys
 
-LIB_DIR = "lib"
 BIN_DIR = "bin"
 
 #Check Python version
@@ -23,8 +22,6 @@ if sys.version_info[:2] != (2, 7):
 
 #Setting executable paths
 ragout_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-lib_absolute = os.path.join(ragout_root, LIB_DIR)
-sys.path.insert(0, lib_absolute)
 sys.path.insert(0, ragout_root)
 
 bin_absolute = os.path.join(ragout_root, BIN_DIR)
