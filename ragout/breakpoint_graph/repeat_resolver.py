@@ -362,7 +362,7 @@ def _profile_similarity(profile, genome_ctx, repeats, same_len):
 def _max_weight_matching(graph):
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = set()
-    for v1, v2 in edges.items():
+    for v1, v2 in edges:
         if not (v2, v1) in unique_edges:
             unique_edges.add((v1, v2))
 

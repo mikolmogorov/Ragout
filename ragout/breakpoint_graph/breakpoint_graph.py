@@ -101,9 +101,9 @@ class BreakpointGraph(object):
         """
         assert len(self.bp_graph) >= 2
         g = nx.Graph()
-        g.add_nodes_from(self.bp_graph.nodes())
+        g.add_nodes_from(self.bp_graph.nodes)
 
-        for node in self.bp_graph.nodes():
+        for node in self.bp_graph.nodes:
             adjacencies = {}
             for neighbor in self.bp_graph.neighbors(node):
                 for edge in self.bp_graph[node][neighbor].values():
@@ -272,7 +272,7 @@ def _output_graph(graph, out_file):
     """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
-        for v1, v2, data in graph.edges_iter(data=True):
+        for v1, v2, data in graph.edges(data=True):
             fout.write("{0} -- {1}".format(v1, v2))
             if len(data):
                 extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),
