@@ -37,7 +37,7 @@ setup(name='ragout',
       packages=['ragout', 'ragout/assembly_graph', 'ragout/breakpoint_graph',
                 'ragout/maf2synteny', 'ragout/overlap', 'ragout/parsers',
                 'ragout/phylogeny', 'ragout/scaffolder', 'ragout/shared',
-                'ragout/synteny_backend'],
+                'ragout/synteny_backend', 'ragout/newick'],
       package_data={'ragout': ['LICENSE']},
       scripts = ['bin/ragout-maf2synteny', 'bin/ragout-overlap', 'bin/ragout'],
       cmdclass={'build': MakeBuild}
