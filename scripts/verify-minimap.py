@@ -25,7 +25,7 @@ Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
 
 
-MINIMAP_BIN = "/home/mkolmogo/projects/Flye/bin/flye-minimap2"
+MINIMAP_BIN = "minimap2"
 
 
 def read_fasta_dict(filename):
@@ -100,7 +100,7 @@ def read_paf(filename):
     alignment = []
     for line in open(filename, "r"):
         line = line.strip()
-        if not len(line) or not line[0].isdigit():
+        if not len(line):
             continue
 
         vals = line.split("\t")
@@ -144,8 +144,8 @@ def get_alignment(scaffolds, contigs_file, reference_file):
                            "--secondary=no", "-t", "8"], stdout=open(minimap_file, "w"))
     aln = read_paf(minimap_file)
 
-    os.remove(query_file)
-    os.remove(minimap_file)
+    #os.remove(query_file)
+    #os.remove(minimap_file)
     return aln
 
 
@@ -195,6 +195,7 @@ def do_job(links_file, contigs_file, reference_file):
     alignment = filter_by_coverage(alignment, 0.45)
     alignment = join_collinear(alignment)
     entry_ord, chr_len, contig_len = get_order(alignment)
+    print(alignment)
 
     total_breaks = 0
     total_gaps = 0
