@@ -26,7 +26,7 @@ Runtime Depenencies
 
 * Python 2.7
 * Sibelia [http://github.com/bioinf/Sibelia]
-* python-networkx >= 2.2
+* python-networkx == 2.2
 * HAL Tools (optionally) [https://github.com/ComparativeGenomicsToolkit/hal]
 
 
