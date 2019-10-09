@@ -15,13 +15,60 @@ import os
 import argparse
 from collections import namedtuple, defaultdict
 from itertools import product
+import subprocess
 
-from utils.nucmer_parser import parse_nucmer_coords
+from utils.common import AlignmentRow, AlignmentColumn
 from utils.common import (filter_by_coverage, join_collinear,
                           group_by_chr, get_order)
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
+
+
+MINIMAP_BIN = "minimap2"
+
+
+def read_fasta_dict(filename):
+    """
+    Reads fasta file into dictionary. Also preforms some validation
+    """
+    #logger.debug("Reading contigs file")
+
+    header = None
+    seq = []
+    fasta_dict = {}
+
+    try:
+        with open(filename, "r") as f:
+            for lineno, line in enumerate(f):
+                line = line.strip()
+                if line.startswith(">"):
+                    if header:
+                        fasta_dict[header] = "".join(seq)
+                        seq = []
+                    header = line[1:].split(" ")[0]
+                else:
+                    seq.append(line)
+
+            if header and len(seq):
+                fasta_dict[header] = "".join(seq)
+
+    except IOError as e:
+        raise Exception(e)
+
+    return fasta_dict
+
+
+def write_fasta_dict(fasta_dict, filename):
+    """
+    Writes dictionary with fasta to file
+    """
+    with open(filename, "w") as f:
+        for header in sorted(fasta_dict):
+            f.write(">{0}\n".format(header))
+
+            for i in range(0, len(fasta_dict[header]), 60):
+                f.write(fasta_dict[header][i:i + 60] + "\n")
 
 
 def parse_links_file(filename):
@@ -30,8 +77,6 @@ def parse_links_file(filename):
     def add_contig(string):
         name = string.replace("=", "_")      #fix for nucmer
         without_sign = name[1:].strip()
-        if "[" in without_sign:
-            without_sign = without_sign[:without_sign.index("[")]
         sign = 1 if name[0] == "+" else -1
         scaffolds[-1].contigs.append(Contig(without_sign, sign))
 
@@ -51,30 +96,58 @@ def parse_links_file(filename):
     return scaffolds
 
 
-def parse_ord_file(filename):
-    scaffolds = []
+def read_paf(filename):
+    alignment = []
+    for line in open(filename, "r"):
+        line = line.strip()
+        if not len(line):
+            continue
 
-    with open(filename, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
+        vals = line.split("\t")
+        s_ref, e_ref = int(vals[7]), int(vals[8])
+        s_qry, e_qry = int(vals[2]), int(vals[3])
+        len_ref, len_qry = int(vals[6]), int(vals[1])
+        ref_id, qry_id = vals[5], vals[0]
 
-            if line.startswith(">"):
-                scaffolds.append(Scaffold(line[1:], []))
+        ref_strand = 1
+        qry_strand = 1
+        if vals[4] == "-":
+            qry_strand = -1
+
+        ref_row = AlignmentRow(s_ref, e_ref, ref_strand, len_ref, ref_id)
+        qry_row = AlignmentRow(s_qry, e_qry, qry_strand, len_qry, qry_id)
+        alignment.append(AlignmentColumn(ref_row, qry_row))
+
+    return alignment
+
+
+def get_alignment(scaffolds, contigs_file, reference_file):
+    query_file = "_minimap-query.fasta"
+    query_fasta = {}
+    contigs_fasta = read_fasta_dict(contigs_file)
+
+    for scf in scaffolds:
+        for ctg in scf.contigs:
+            if "[" not in ctg.name:
+                query_fasta[ctg.name] = contigs_fasta[ctg.name]
             else:
-                sign = 1 if line[0] == "+" else -1
-                scaffolds[-1].contigs.append(Contig(line[1:], sign))
+                bracket = ctg.name.index("[")
+                start, end = map(int, ctg.name[bracket + 1: -1].split(":"))
+                seq_name = ctg.name[:bracket]
+                query_fasta[ctg.name] = contigs_fasta[seq_name][start:end]
 
-    return scaffolds
+    write_fasta_dict(query_fasta, query_file)
 
+    #run minimap here
+    minimap_file = "_minimap.paf"
+    subprocess.check_call([MINIMAP_BIN, reference_file, query_file,  "-x", "asm5",
+                           "--secondary=no", "-t", "8"], stdout=open(minimap_file, "w"))
+    aln = read_paf(minimap_file)
 
-def parse_contigs_order(filename):
-    _filename, ext = os.path.splitext(filename)
-    if ext[1:] == "ord":
-        return parse_ord_file(filename)
-    else:
-        return parse_links_file(filename)
+    os.remove(query_file)
+    os.remove(minimap_file)
+    return aln
+
 
 
 def gap_count(lst_1, lst_2):
@@ -116,12 +189,12 @@ def agreement_strands(lst_1, lst_2, increasing):
     return False
 
 
-def do_job(nucmer_coords, scaffolds_ord):
-    alignment = parse_nucmer_coords(nucmer_coords)
-    alignment = join_collinear(alignment)
+def do_job(links_file, contigs_file, reference_file):
+    scaffolds = parse_links_file(links_file)
+    alignment = get_alignment(scaffolds, contigs_file, reference_file)
     alignment = filter_by_coverage(alignment, 0.45)
+    alignment = join_collinear(alignment)
     entry_ord, chr_len, contig_len = get_order(alignment)
-    scaffolds = parse_contigs_order(scaffolds_ord)
 
     total_breaks = 0
     total_gaps = 0
@@ -137,6 +210,11 @@ def do_job(nucmer_coords, scaffolds_ord):
             miss_ord = False
             miss_strand = False
 
+            #flipping alignments
+            for hit in entry_ord[contig.name]:
+                if contig.sign < 0:
+                    hit.sign = -hit.sign
+
             #checking order
             if prev_aln:
                 if increasing is not None:
@@ -151,8 +229,7 @@ def do_job(nucmer_coords, scaffolds_ord):
                                   prev_aln[0].index)
 
             #checking strand
-            cur_strand = list(map(lambda h: h.sign * contig.sign,
-                                  entry_ord[contig.name]))
+            cur_strand = list(map(lambda h: h.sign, entry_ord[contig.name]))
             if not miss_ord and prev_strand and cur_strand:
                 if not agreement_strands(prev_strand, cur_strand, increasing):
                     breaks.append(contig.name)
@@ -173,7 +250,7 @@ def do_job(nucmer_coords, scaffolds_ord):
             pos_list = list(map(str, entry_ord[contig.name]))
             pos_list_str = (str(pos_list) if len(pos_list) < 5 else
                             str(pos_list[:5]) + "...")
-            print("{0}{1}\t{2}\t{3}".format(sign, contig.name,
+            print("{0}{1}\t\t{2}\t{3}".format(sign, contig.name,
                                             contig_len[contig.name], pos_list_str),
                                             end="")
             print("\t<<<order" if miss_ord else "", end="")
@@ -190,19 +267,10 @@ def do_job(nucmer_coords, scaffolds_ord):
 
 
 def main():
-    descr = ("A verification script for Ragout. It requires a contigs "
-            "alignment on \"true\" reference in nucmer coords format. "
-            "Given an alignment and a \"links\" file output by Ragout "
-            "the script finds missassembled contigs and calculates some "
-            "statistics.")
-    parser = argparse.ArgumentParser(description=descr)
-    parser.add_argument("nucmer_coords", metavar="nucmer_coords",
-                        help="path to contigs alignment on 'true' reference")
-    parser.add_argument("links_file", metavar="links_file",
-                        help="path to 'links' file output by Ragout")
-    args = parser.parse_args()
-
-    do_job(args.nucmer_coords, args.links_file)
+    if len(sys.argv) != 4:
+        print("Usage: verify-minimap links contigs reference")
+        return 1
+    do_job(sys.argv[1], sys.argv[2], sys.argv[3])
 
 
 if __name__ == "__main__":

@@ -98,8 +98,7 @@ class HalBackend(SyntenyBackend):
 
             cmdline = [HAL2MAF, recipe["hal"], out_maf, "--noAncestors",
                         "--numProc", str(self.threads),  "--refGenome",
-                        ref_genome, "--targetGenomes", export_genomes,
-                        "--inMemory"]
+                        ref_genome, "--targetGenomes", export_genomes]
             logger.debug(" ".join(cmdline))
             subprocess.check_call(cmdline, stdout=open(os.devnull, "w"))
 

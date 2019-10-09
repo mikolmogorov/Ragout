@@ -53,7 +53,7 @@ def _load_dot(filename):
 
 
 def _check_overaps_number(graph, contigs_fasta):
-    rate = float(len(graph.edges())) / len(contigs_fasta)
+    rate = float(len(graph.edges)) / len(contigs_fasta)
     if rate < config.vals["min_overlap_rate"]:
         logger.warning("Too few overlaps ({0}) between contigs were detected "
                        "-- refine procedure will be useless. Possible reasons:"
@@ -61,7 +61,7 @@ def _check_overaps_number(graph, contigs_fasta):
                        "2. Contigs overlap not on a constant value "
                        "(like k-mer for assemblers which use debruijn graph)\n"
                        "3. Contigs ends are trimmed/postprocessed\n"
-                       .format(len(graph.edges())))
+                       .format(len(graph.edges)))
 
 
 def _insert_from_graph(graph, scaffolds_in, max_path_len, contigs_fasta):
@@ -90,16 +90,18 @@ def _insert_from_graph(graph, scaffolds_in, max_path_len, contigs_fasta):
 
             #insert contigs along the path
             supp_genomes = prev_cont.link.supporting_genomes
+            prev_cont.link.supporting_assembly = True
+            prev_cont.link.gap = config.vals["min_scaffold_gap"]
             for node in path_nodes:
                 sign = 1 if node[0] == "+" else -1
                 name = node[1:]
 
-                seq_len = len(contigs_fasta[name])
-                new_scaffolds[-1].contigs.append(Contig.with_sequence(name, seq_len, sign))
-                new_scaffolds[-1].contigs[-2].link.supporting_assembly = True
-                new_scaffolds[-1].contigs[-1].link.supporting_assembly = True
-                new_scaffolds[-1].contigs[-1].link.supporting_genomes = \
-                                                                supp_genomes
+                new_contig = Contig.with_sequence(name, 
+                                    len(contigs_fasta[name]), sign)
+                new_contig.link.supporting_assembly = True
+                new_contig.link.gap = config.vals["min_scaffold_gap"]
+                new_contig.link.supporting_genomes = supp_genomes
+                new_scaffolds[-1].contigs.append(new_contig)
 
         new_scaffolds[-1].contigs.append(scf.contigs[-1])
 

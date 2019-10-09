@@ -54,11 +54,11 @@ def write_fasta_dict(fasta_dict, filename):
     Writes dictionary with fasta to file
     """
     with open(filename, "w") as f:
-        for header, seq in _iter_dict(fasta_dict):
+        for header in sorted(fasta_dict):
             f.write(">{0}\n".format(header))
 
-            for i in range(0, len(seq), 60):
-                f.write(seq[i:i + 60] + "\n")
+            for i in range(0, len(fasta_dict[header]), 60):
+                f.write(fasta_dict[header][i:i + 60] + "\n")
 
 
 COMPL = maketrans("ATGCURYKMSWBVDHNXatgcurykmswbvdhnx",
@@ -72,15 +72,3 @@ def _validate_seq(sequence):
     if len(sequence.translate(None, VALID_CHARS)):
         return False
     return True
-
-
-def _iter_dict(d):
-    """
-    Helper fundtion to iterate through dictionary in both Python 2 and 3
-    """
-    iter_d = None
-    try:
-        iter_d = d.iteritems()
-    except AttributeError:
-        iter_d = d.items()
-    return iter_d

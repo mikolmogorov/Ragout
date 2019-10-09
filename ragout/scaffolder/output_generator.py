@@ -97,7 +97,7 @@ class OutputGenerator:
             f.write("#ASSEMBLY NAME: {0}\n".format(assembly_name))
             f.write("#DESCRIPTION: Pseudochromosome assembly\n")
             f.write("#PROGRAM: Ragout v{0}\n".format(__version__))
-            for scf in self.scaffolds:
+            for scf in sorted(self.scaffolds, key=lambda s: s.name):
                 chr_pos = 0
                 for contig_id, contig in enumerate(scf.contigs):
                     chr_start = chr_pos
@@ -228,7 +228,7 @@ def output_links(scaffolds, out_links):
     COL_GAP = 4
 
     with open(out_links, "w") as f:
-        for scf in scaffolds:
+        for scf in sorted(scaffolds, key=lambda s: s.name):
             rows = []
             cur_pos = 0
 

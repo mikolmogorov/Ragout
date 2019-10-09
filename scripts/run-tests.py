@@ -17,8 +17,8 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                     "coords" : "examples/E.Coli/mg1655.coords",
                     "max_errors" : 0,
                     "max_errors_refine" : 0,
-                    "min_contigs" : 79,
-                    "min_contigs_refine" : 146,
+                    "min_contigs" : 78,
+                    "min_contigs_refine" : 145,
                     "max_scaffolds" : 1,
                     "outdir" : "ecoli-test",
                     "scaf_pref" : "mg1655_scaffolds"},
@@ -33,9 +33,9 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
          "cholerae" : {"recipe" : "examples/V.Cholerae/cholerae.rcp",
                        "coords" : "examples/V.Cholerae/h1.coords",
                        "max_errors" : 0,
-                       "max_errors_refine" : 13,
-                       "min_contigs" : 170,
-                       "min_contigs_refine" : 720,
+                       "max_errors_refine" : 16,
+                       "min_contigs" : 169,
+                       "min_contigs_refine" : 719,
                        "max_scaffolds" : 4,
                        "outdir" : "cholerae-test",
                        "scaf_pref" : "h1_scaffolds"},
@@ -43,14 +43,14 @@ TESTS = {"ecoli" : {"recipe" : "examples/E.Coli/ecoli.rcp",
                      "coords" : "examples/S.Aureus/usa300.coords",
                      "max_errors" : 0,
                      "max_errors_refine" : 2,
-                     "min_contigs" : 90,
-                     "min_contigs_refine" : 165,
+                     "min_contigs" : 89,
+                     "min_contigs_refine" : 164,
                      "max_scaffolds" : 1,
                      "outdir" : "aureus-test",
                      "scaf_pref" : "usa_scaffolds"}}
 
 TEST_DIR = "test-dir"
-RAGOUT_EXEC = "ragout.py"
+RAGOUT_EXEC = "bin/ragout"
 VERIFY_EXEC = os.path.join("scripts", "verify-order.py")
 
 
@@ -64,8 +64,8 @@ def test_environment():
 
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
-    cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--debug", "--no-refine"]
+    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
+           "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
@@ -98,8 +98,8 @@ def run_test(parameters):
                     raise RuntimeError("Too many scaffolds")
 
     #checking after refinement
-    cmd = ["python2.7", "ragout.py", parameters["recipe"],
-           "--outdir", outdir, "--debug"]
+    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
+           "--outdir", outdir, "--debug", "--refine"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 

@@ -101,9 +101,9 @@ class BreakpointGraph(object):
         """
         assert len(self.bp_graph) >= 2
         g = nx.Graph()
-        g.add_nodes_from(self.bp_graph.nodes())
+        g.add_nodes_from(self.bp_graph.nodes)
 
-        for node in self.bp_graph.nodes():
+        for node in self.bp_graph.nodes:
             adjacencies = {}
             for neighbor in self.bp_graph.neighbors(node):
                 for edge in self.bp_graph[node][neighbor].values():
@@ -204,6 +204,8 @@ class BreakpointGraph(object):
             if g in distances:
                 return distances[g]
 
+        raise Exception("Distance function error")
+
     def debug_output(self):
         if not debugger.debugging:
             return
@@ -215,10 +217,18 @@ class BreakpointGraph(object):
         """
         Finds a path of alternating colors between two nodes
         """
+        completed_paths = []
         visited = set()
-        def rec_helper(node, colored):
+        dfs_stack = [(src, True, [src])]
+
+        #def rec_helper(node, colored):
+        while dfs_stack:
+            node, colored, cur_path = dfs_stack.pop()
+
             if node == dst:
-                return [[dst]]
+                completed_paths.append(cur_path)
+                continue
+                #return [[dst]]
 
             visited.add(node)
             paths = []
@@ -235,14 +245,15 @@ class BreakpointGraph(object):
                     continue
                 ##
 
-                far_paths = rec_helper(neighbor, not colored)
-                map(lambda p: p.append(node), far_paths)
-                paths.extend(far_paths)
-            visited.remove(node)
-            return paths
+                #far_paths = rec_helper(neighbor, not colored)
+                dfs_stack.append((neighbor, not colored, cur_path + [neighbor]))
+                #map(lambda p: p.append(node), far_paths)
+                #paths.extend(far_paths)
+            #visited.remove(node)
+            #return paths
 
-        paths = list(map(lambda p: p[::-1], rec_helper(src, True)))
-        return paths
+        #paths = list(map(lambda p: p[::-1], rec_helper(src, True)))
+        return completed_paths
 
 
 def _update_edge(graph, v1, v2, weight):
@@ -261,7 +272,7 @@ def _output_graph(graph, out_file):
     """
     with open(out_file, "w") as fout:
         fout.write("graph {\n")
-        for v1, v2, data in graph.edges_iter(data=True):
+        for v1, v2, data in graph.edges(data=True):
             fout.write("{0} -- {1}".format(v1, v2))
             if len(data):
                 extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),

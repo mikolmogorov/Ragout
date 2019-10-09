@@ -38,10 +38,8 @@ class PermutationContainer:
         self.target_perms = []
         self.recipe = recipe
 
-        logging.debug("Reading permutation file")
+        logging.info("Reading " + block_coords_file)
         permutations = _parse_blocks_coords(block_coords_file)
-        if not permutations:
-            raise PermException("Error reading permutations")
 
         has_sequences = set()
         draft_names = set()
@@ -91,6 +89,9 @@ class PermutationContainer:
         self._filter_repeats(repeats)
         logger.debug("{0} target sequences left after repeat filtering"
                      .format(len(self.target_perms)))
+        if not len(self.target_perms):
+            raise PermException("No synteny blocks found in the target "
+                                "genome after repeat/indel filtering.")
 
         if debugger.debugging:
             file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
@@ -217,6 +218,8 @@ def _parse_blocks_coords(filename):
         perm.blocks.sort(key=lambda b: b.start)
 
     out_perms = list(filter(lambda b: len(b.blocks), perm_by_id.values()))
+    if not len(out_perms):
+        raise PermException("Permutations file is empty")
     return out_perms
 
 
@@ -228,6 +231,7 @@ def _check_coverage(permutations):
     for perm in permutations:
         by_genome[perm.genome_name].append(perm)
 
+    warning_genomes = []
     for genome_name, genome_perms in by_genome.items():
         total_length = 0
         total_covered = 0
@@ -237,14 +241,20 @@ def _check_coverage(permutations):
                 total_covered += block.length()
 
         coverage = float(total_covered) / total_length
-        logger.debug("\"{0}\" synteny blocks coverage: {1:2.4}%"
+        logger.info("\"{0}\" synteny blocks coverage: {1:2.4}%"
                      .format(genome_name, 100 * coverage))
         if coverage < config.vals["min_synteny_coverage"]:
-            logger.warning("\"{0}\" synteny blocks coverage ({1:2.4}%) "
-                           "is too low -- results can be inaccurate. "
-                           "Possible reasons are: \n\n"
-                           "1. Genome is too distant from others\n"
-                           "2. Synteny block parameters are chosen incorrectly"
-                           "\n\nTry to change synteny blocks paramsters or "
-                           "remove this genome from the comparison"
-                           .format(genome_name, 100 * coverage))
+            warning_genomes.append((genome_name, coverage))
+
+    if warning_genomes:
+        #for genome_name, coverage in warning_genomes:
+        #    logger.warning("\"{0}\" synteny blocks coverage: {1:2.4}%"
+        #                 .format(genome_name, 100 * coverage))
+        logger.warning("Some genomes have low synteny block coverage "
+                       "- results can be inaccurate. "
+                       "Possible reasons: \n"
+                       "\t1. Genome is too distant from others\n"
+                       "\t2. Synteny block parameters are chosen incorrectly"
+                       "\n\tTry to change synteny blocks paramsters or "
+                       "remove this genome from the comparison"
+                       .format(genome_name, 100 * coverage))

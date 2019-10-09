@@ -1,88 +1,82 @@
 Ragout
 ======
 
-Version: 1.2
-
-Release date: 28 Sep 2015
-
-Website: http://fenderglass.github.io/Ragout/
-
-[![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master
-)](https://travis-ci.org/fenderglass/Ragout)
+Version: 2.2
 
 
+[![Build Status](https://travis-ci.org/fenderglass/Ragout.svg?branch=master)](https://travis-ci.org/fenderglass/Ragout)
 
-       	         (
-		     )    )
-		  _.(--"("""--.._
-		 /, _..-----).._,\
-		|  `'''-----'''`  |
-		 \               /
-		  '.           .'
-		    '--.....--'
+[![BioConda Install](https://img.shields.io/conda/dn/bioconda/ragout.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/ragout)
+
+<p align="center">
+  <img src="http://fenderglass.github.io/Ragout/images/ragout.png" alt="Ragout logo"/>
+</p>
 
 Description
 -----------
 Ragout (Reference-Assisted Genome Ordering UTility)
-is a tool for reference-assisted assembly. Given a set of initial sequences 
-(contigs/scaffolds) and one or multiple references (complete or draft) as input
-it produces a chromosome-scaled assembly (as a set of gapped scaffolds).
+is a tool for chromosome-level scaffolding using multiple references. 
+Given initial assembly fragments (contigs/scaffolds) and one or multiple 
+related references (complete or draft), it produces a chromosome-scale assembly
+(as a set of scaffolds).
 
-The approach is based on the analysis of medium- and large-scale rearrangements
+The approach is based on the analysis of genome rearrangements
 (like inversions or chromosomal translocations) between the input genomes
-using breakpoint graph.
+and reconstructing the most parsimonious structure of the target genome.
 
-The first version of Ragout was limited to bacterial genomes only,
-but currently there is an experimental support of mammalian-scaled genomes as well.
+Ragout now supports both small and large genomes (of mammalian scale and complexity).
+The assembly of highly polymorphic genomes is currently limited.
 
 
-Install
+Manuals
 -------
-See *docs/INSTALL.md* file.
 
-Usage
------
-See *docs/USAGE.md* file.
+- [Installation instructions](docs/INSTALL.md)
+- [Usage](docs/USAGE.md)
 
 
-Authors
--------
-- Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)
-- Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
-- Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
-- Son Pham (UCSD)
+Code contributions
+------------------
+* Mikhail Kolmogorov (St. Petersburg University of the Russian Academy of Sciences, UCSD)
+* Pavel Avdeev (St. Petersburg University of the Russian Academy of Sciences)
+* Dmitriy Meleshko (St. Petersburg University of the Russian Academy of Sciences)
+* Son Pham (UCSD)
+* Tatiana Malygina
 
 
-Citation
---------
-- Mikhail Kolmogorov, Brian Raney, Benedict Paten, and Son Pham. 
-"Ragout: A reference-assisted assembly tool for bacterial genomes",
+Publications
+------------
+* Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
+Genome Research, 2018
+
+* Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
 Bioinformatics, 2014
 
 
 Contacts
 --------
-Please report any problems directly to the github issue tracker.
+Please report any issues directly to the github issue tracker.
 Also, you can send your feedback to fenderglass@gmail.com
 
 
-Acknowledgements
-----------------
+Acknowledgments
+---------------
 The work was partially supported by VP Foundation.
 
-We would like to thank:
-- Anna Liosnova (benchmarks and useful suggestions)
-- Nikolay Vyahhi (testing and useful suggestions)
-- Aleksey Gurevich (testing)
+We also would like to thank:
+* Anna Liosnova (benchmarks and useful suggestions)
+* Nikolay Vyahhi (testing and useful suggestions)
+* Aleksey Gurevich (testing)
 
 
 Third-party
 -----------
-Ragout package includes some third-patry software (see INSTALL.md for details)
+Ragout is using some third-patry software (see INSTALL.md for details):
 
 * Networkx Python library [http://networkx.github.io/]
-* Newick Python parser [http://www.daimi.au.dk/~mailund/newick.html]
+* Newick parser by Thomas Mailund [https://www.mailund.dk/]
 * Sibelia [http://github.com/bioinf/Sibelia]
+* HAL Tools [https://github.com/ComparativeGenomicsToolkit/hal]
 
 
 License
@@ -98,4 +92,4 @@ ISMB 2014 supplementary
 -----------------------
 
 Supplementary materials for ISMB submission could be found at:
-https://drive.google.com/file/d/0B1pUguR1yn7TMjNpX09JdFphT3c/edit?usp=sharing
+https://zenodo.org/record/2633314/files/ismb_171_supplementary.zip

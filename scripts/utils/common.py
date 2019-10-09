@@ -103,7 +103,7 @@ class Hit:
         self.sign = sign
 
     def __str__(self):
-        return str(self.index) + " : " + str(self.chr)
+        return ("+" if self.sign > 0 else "-") + str(self.index) + " : " + str(self.chr)
 
 
 def get_order(alignment):

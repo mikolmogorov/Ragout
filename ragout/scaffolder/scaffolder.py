@@ -31,7 +31,7 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     Assembles scaffolds wrt to inferred adjacencies
     """
     if debug_output:
-        logger.info("Building scaffolds")
+        logger.debug("Building scaffolds")
     contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index,
                                   correct_distances)

@@ -1,3 +1,16 @@
+Ragout 2.1 (26 Jul 2018)
+========================
+* Various small bigfixes and improvements
+* Better compatability with Bioconda packages
+
+Ragout 2.0 (28 Nov 2016)
+========================
+* The support of large genomes if finally stable
+* Fixes in scaffold gaps estimations
+* maf2synteny module updated
+* Assembly graph refinement is now disabled by default
+* Various improvements and bugfixes
+
 Ragout 1.2 (28 Sep 2015)
 ========================
 * A significant improvement in missassmblies detection

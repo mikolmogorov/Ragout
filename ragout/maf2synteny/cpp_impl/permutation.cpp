@@ -3,6 +3,7 @@
 //Released under the BSD license (see LICENSE file)
 
 #include "permutation.h"
+#include "utility.h"
 #include <stdexcept>
 #include <fstream>
 #include <unordered_map>
@@ -79,13 +80,13 @@ void outputStatistics(PermVec& permutations, const std::string& outFile)
 		covered[perm.seqName] /= perm.nucLength;
 	}
 	
-	fout << "Seq_id\tSize\tDescription\n";
-	for (const Permutation& perm : permutations)
-	{
-		fout << perm.seqId << "\t" << perm.nucLength << "\t"
-			 << perm.seqName << std::endl;
-	}
-	fout << SEPARATOR << std::endl;
+	//fout << "Seq_id\tSize\tDescription\n";
+	//for (const Permutation& perm : permutations)
+	//{
+	//	fout << perm.seqId << "\t" << perm.nucLength << "\t"
+	//		 << perm.seqName << std::endl;
+	//}
+	//fout << SEPARATOR << std::endl;
 
 	auto blocksIndex = groupByBlockId(permutations);
 	for (auto &blockPair : blocksIndex)
@@ -207,8 +208,8 @@ PermVec mergePermutations(PermVec& loosePerms, PermVec& finePerms)
 PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
 					 int minBlock, bool requireAll)
 {
-	const float MIN_FLANK_RATE = 0.3;
-	const int minFlank = minBlock * MIN_FLANK_RATE;
+	//const float MIN_FLANK_RATE = 0.3;
+	//const int minFlank = minBlock * MIN_FLANK_RATE;
 
 	PermVec outPerms;
 
@@ -228,6 +229,7 @@ PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
 
 	std::unordered_set<int> shouldOutput;
 	auto blocksIndex = groupByBlockId(permutations);
+	//int acceptedGroup = 0;
 	for (auto &itBlocks : blocksIndex)
 	{
 		size_t numAccepted = 0;
@@ -237,16 +239,17 @@ PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
 			{
 				++numAccepted;
 			}
-			else
-			{
-				auto groupId = blockGroups.find(bp.block->blockId);
-				if (groupId != blockGroups.end() &&
-					groupLen[bp.seqId][groupId->second] >= minBlock &&
-					bp.block->getLen() >= minFlank)
-				{
-					++numAccepted;
-				}
-			}
+			//else
+			//{
+			//	auto groupId = blockGroups.find(bp.block->blockId);
+			//	if (groupId != blockGroups.end() &&
+			//		groupLen[bp.seqId][groupId->second] >= minBlock &&
+			//		bp.block->getLen() >= minFlank)
+			//	{
+			//		++numAccepted;
+			//		++acceptedGroup;
+			//	}
+			//}
 		}
 		if (numAccepted == itBlocks.second.size() ||
 			(numAccepted && !requireAll))
@@ -270,6 +273,7 @@ PermVec filterBySize(PermVec& permutations, const BlockGroups& blockGroups,
 		}
 		if (outPerms.back().blocks.empty()) outPerms.pop_back();
 	}
+	//DEBUG_PRINT("Accepted by group: " << acceptedGroup);
 
 	return outPerms;
 }

@@ -38,7 +38,7 @@ from ragout.__version__ import __version__
 
 #register backends
 import synteny_backend.sibelia
-import synteny_backend.cactus
+#import synteny_backend.cactus
 import synteny_backend.maf
 import synteny_backend.hal
 
@@ -48,9 +48,10 @@ debugger = DebugConfig.get_instance()
 
 RunStage = namedtuple("RunStage", ["name", "block_size", "ref_indels",
                                    "repeats", "rearrange"])
+ID_SMALLEST = -1
 
 
-def enable_logging(log_file, debug):
+def _enable_logging(log_file, debug):
     """
     Turns on logging, sets debug levels and assigns a log file
     """
@@ -71,7 +72,7 @@ def enable_logging(log_file, debug):
     logger.addHandler(file_handler)
 
 
-def check_extern_modules(backend):
+def _check_extern_modules(backend):
     """
     Checks if all necessary native modules are available
     """
@@ -88,37 +89,25 @@ def check_extern_modules(backend):
                                "did you run 'make'?")
 
 
-def run_ragout(args):
+def _make_run_stages(block_sizes, resolve_repeats):
     """
-    A wrapper to catch possible exceptions
-    """
-    try:
-        run_unsafe(args)
-    except (RecipeException, PhyloException, PermException,
-            BackendException, OverlapException, FastaError) as e:
-        logger.error("An error occured while running Ragout:")
-        logger.error(e)
-        return 1
-
-    return 0
-
-
-def make_run_stages(block_sizes, resolve_repeats):
-    """
-    Setting parameters of run stages
+    Setting parameters of run stages (iterations)
     """
     stages = []
+    #general stages for structural assembly
     for block in block_sizes:
         stages.append(RunStage(name=str(block), block_size=block,
                                ref_indels=False, repeats=False,
                                rearrange=True))
-    stages.append(RunStage(name="refine", block_size=block_sizes[-1],
+
+    #refining stage to close assembly gaps
+    stages.append(RunStage(name="refine", block_size=block_sizes[ID_SMALLEST],
                            ref_indels=True, repeats=resolve_repeats,
                            rearrange=False))
     return stages
 
 
-def get_phylogeny_and_naming_ref(recipe, permutation_file):
+def _get_phylogeny_and_naming_ref(recipe, permutation_file):
     """
     Retrieves phylogeny (infers if necessary) as well as
     naming reference genome
@@ -128,22 +117,37 @@ def get_phylogeny_and_naming_ref(recipe, permutation_file):
         phylogeny = Phylogeny.from_newick(recipe["tree"])
     else:
         logger.info("Inferring phylogeny from synteny blocks data")
-        perm_cont = PermutationContainer(permutation_file,
-                                           recipe, False, True, None)
+        perm_cont = PermutationContainer(permutation_file, recipe,
+                                         resolve_repeats=False,
+                                         allow_ref_indels=True,
+                                         phylogeny=None)
         phylogeny = Phylogeny.from_permutations(perm_cont)
-        logger.info(phylogeny.tree_string)
+        logger.info("Inferred tree: " + phylogeny.tree_string)
 
-    leaves_sorted = phylogeny.leaves_by_distance(recipe["target"])
     if "naming_ref" in recipe:
         naming_ref = recipe["naming_ref"]
     else:
+        leaves_sorted = phylogeny.leaves_by_distance(recipe["target"])
         naming_ref = leaves_sorted[0]
         logger.info("'{0}' is chosen as a naming reference".format(naming_ref))
 
     return phylogeny, naming_ref
 
 
-def run_unsafe(args):
+def _get_synteny_scale(recipe, synteny_backend):
+    if "blocks" in recipe:
+        if isinstance(recipe["blocks"], basestring):
+            scale = config.vals["blocks"][recipe["blocks"]]
+        else:
+            scale = recipe["blocks"]
+    else:
+        scale = config.vals["blocks"][synteny_backend.infer_block_scale(recipe)]
+
+    logger.info("Running withs synteny block sizes '{0}'".format(scale))
+    return scale
+
+
+def _run_ragout(args):
     """
     Top-level logic of the program
     """
@@ -156,33 +160,31 @@ def run_unsafe(args):
     debugger.clear_debug_dir()
 
     out_log = os.path.join(args.out_dir, "ragout.log")
-    enable_logging(out_log, args.debug)
+    _enable_logging(out_log, args.debug)
     logger.info("Starting Ragout v{0}".format(__version__))
 
-    check_extern_modules(args.synteny_backend)
-    all_backends = SyntenyBackend.get_available_backends()
-    backend = all_backends[args.synteny_backend]
+    #parsing recipe, preparing synteny backend
+    _check_extern_modules(args.synteny_backend)
+    synteny_backend = SyntenyBackend.get_available_backends() \
+                                        [args.synteny_backend]
     recipe = parse_ragout_recipe(args.recipe)
+    synteny_sizes = _get_synteny_scale(recipe, synteny_backend)
 
-    #Setting synteny block sizes
-    if "blocks" in recipe:
-        scale = recipe["blocks"]
-    else:
-        scale = backend.infer_block_scale(recipe)
-        logger.info("Synteny block scale set to '{0}'".format(scale))
-    synteny_blocks = config.vals["blocks"][scale]
+    #Running synteny backend to get synteny blocks
+    perm_files = synteny_backend.make_permutations(recipe, synteny_sizes,
+                                                   args.out_dir, args.overwrite,
+                                                   args.threads)
 
-    #Running backend to get synteny blocks
-    perm_files = backend.make_permutations(recipe, synteny_blocks, args.out_dir,
-                                           args.overwrite, args.threads)
-    run_stages = make_run_stages(synteny_blocks, args.resolve_repeats)
-    phylo_perm_file = perm_files[synteny_blocks[-1]]
-    phylogeny, naming_ref = get_phylogeny_and_naming_ref(recipe,
-                                                         phylo_perm_file)
+    #setting up phylogenetic tree
+    phylo_perm_file = perm_files[synteny_sizes[ID_SMALLEST]]
+    phylogeny, naming_ref = _get_phylogeny_and_naming_ref(recipe,
+                                                          phylo_perm_file)
 
+    #parsing permutation files, apply filters and build breakpoint graph
     logger.info("Processing permutation files")
     raw_bp_graphs = {}
     stage_perms = {}
+    run_stages = _make_run_stages(synteny_sizes, args.resolve_repeats)
     for stage in run_stages:
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         stage_perms[stage] = PermutationContainer(perm_files[stage.block_size],
@@ -190,10 +192,13 @@ def run_unsafe(args):
                                                   stage.ref_indels, phylogeny)
         raw_bp_graphs[stage] = BreakpointGraph(stage_perms[stage])
 
-    target_sequences = read_fasta_dict(backend.get_target_fasta())
-    chim_detect = ChimeraDetector(raw_bp_graphs, run_stages, target_sequences)
+    #initializing chimera detector
+    target_sequences = read_fasta_dict(synteny_backend.get_target_fasta())
+    chim_detect = None
+    if not args.solid_scaffolds:
+        chim_detect = ChimeraDetector(raw_bp_graphs, run_stages, target_sequences)
 
-    #####
+    #inferring adjacencies: loop over stages (iterations)
     scaffolds = None
     prev_stages = []
     for stage in run_stages:
@@ -201,8 +206,10 @@ def run_unsafe(args):
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         prev_stages.append(stage)
 
-        fixed_container = chim_detect.break_contigs(stage_perms[stage], [stage])
-        breakpoint_graph = BreakpointGraph(fixed_container)
+        broken_perms = stage_perms[stage]
+        if not args.solid_scaffolds:
+            broken_perms = chim_detect.break_contigs(stage_perms[stage], [stage])
+        breakpoint_graph = BreakpointGraph(broken_perms)
 
         if stage == run_stages[0]:
             chr_map_name = os.path.join(os.path.dirname(args.recipe), "chr_map.txt")
@@ -211,26 +218,33 @@ def run_unsafe(args):
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()
-        cur_scaffolds = scfldr.build_scaffolds(adjacencies, fixed_container)
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, broken_perms)
 
         if scaffolds is not None:
-            all_breaks = chim_detect.break_contigs(stage_perms[stage],
-                                                   prev_stages)
-            scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
-                                              all_breaks, stage.rearrange)
-        else:
-            scaffolds = cur_scaffolds
+            if not args.solid_scaffolds:
+                broken_perms = chim_detect.break_contigs(stage_perms[stage],
+                                                         prev_stages)
+            cur_scaffolds = merge.merge_scaffolds(scaffolds, cur_scaffolds,
+                                                  broken_perms,
+                                                  stage.rearrange)
+
+        merge.get_breakpoints(cur_scaffolds, breakpoint_graph, broken_perms)
+
+        scaffolds = cur_scaffolds
+
     debugger.set_debug_dir(debug_root)
     ####
 
-    last_stage = run_stages[-1]
+    last_stage = run_stages[ID_SMALLEST]
     chr_names = os.path.join(os.path.dirname(args.recipe), "chr_names.txt")
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage],
                                  naming_ref, chr_names)
 
-    if not args.no_refine:
+    #refine with the assembly graph
+    if args.refine:
         out_overlap = os.path.join(args.out_dir, "contigs_overlap.dot")
-        overlap.make_overlap_graph(backend.get_target_fasta(), out_overlap)
+        overlap.make_overlap_graph(synteny_backend.get_target_fasta(),
+                                   out_overlap)
         scaffolds = asref.refine_scaffolds(out_overlap, scaffolds,
                                            target_sequences)
         if args.debug:
@@ -243,9 +257,10 @@ def run_unsafe(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="A tool for reference-assisted"
-                                                 " assembly", formatter_class= \
-                                        argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+                description="Chromosome assembly with multiple "
+                "references",
+                formatter_class= argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("recipe", metavar="recipe_file",
                         help="path to recipe file")
@@ -255,17 +270,21 @@ def main():
                         default="ragout-out")
     parser.add_argument("-s", "--synteny", dest="synteny_backend",
                         default="sibelia",
-                        choices=["sibelia", "cactus", "maf", "hal"],
+                        choices=["sibelia", "maf", "hal"],
                         help="backend for synteny block decomposition")
-    parser.add_argument("--no-refine", action="store_true",
-                        dest="no_refine", default=False,
-                        help="disable refinement with assembly graph")
+    parser.add_argument("--refine", action="store_true",
+                        dest="refine", default=False,
+                        help="enable refinement with assembly graph")
+    parser.add_argument("--solid-scaffolds", action="store_true",
+                        dest="solid_scaffolds", default=False,
+                        help="do not break input sequences - disables "
+                        "chimera detection module")
     parser.add_argument("--overwrite", action="store_true", default=False,
                         dest="overwrite",
                         help="overwrite results from the previous run")
     parser.add_argument("--repeats", action="store_true", default=False,
                         dest="resolve_repeats",
-                        help="resolve repetitive input sequences")
+                        help="enable repeat resolution algorithm")
     parser.add_argument("--debug", action="store_true",
                         dest="debug", default=False,
                         help="enable debug output")
@@ -274,4 +293,12 @@ def main():
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
-    return run_ragout(args)
+    try:
+        _run_ragout(args)
+    except (RecipeException, PhyloException, PermException,
+            BackendException, OverlapException, FastaError) as e:
+        logger.error("An error occured while running Ragout:")
+        logger.error(e)
+        return 1
+
+    return 0

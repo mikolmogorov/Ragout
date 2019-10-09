@@ -8,6 +8,7 @@
 #include <utility>
 #include <iostream>
 #include <ctime>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -15,7 +16,7 @@
 #include <sys/stat.h>
 #endif
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOG
 #define DEBUG_PRINT(x) do {std::cerr << timestamp() << " " << x << std::endl;} \
 					   while(0)
 #else

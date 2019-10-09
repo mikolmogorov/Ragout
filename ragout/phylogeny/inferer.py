@@ -12,7 +12,7 @@ from collections import defaultdict
 from itertools import (combinations, product,
                        combinations_with_replacement, chain)
 
-from newick.tree import Leaf, Tree
+from ragout.newick.tree import Leaf, Tree
 
 class TreeInferer:
     def __init__(self, perm_container):
