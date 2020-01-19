@@ -11,7 +11,7 @@ Bioconda distribitions
 
 Ragout binary releases are available through Bioconda:
 
-    conda install ragout
+    conda install -c bioconda ragout
 
 
 Build Requirements
