@@ -54,7 +54,7 @@ def parse_tree(newick_str):
     try:
         tree = ragout.newick.parser.parse(newick_str, _RagoutTreeBuilder())
     except ragout.newick.lexer.LexerError as e:
-        raise PhyloException("Error parsing tree")
+        raise PhyloException("Error parsing tree: " + str(e))
     return tree
 
 
@@ -66,4 +66,4 @@ def get_leaves_names(newick_str):
     if tree is None:
         return None
 
-    return list(map(lambda n: n.identifier, tree.get_leaves()))
+    return [n.identifier for n in tree.get_leaves()]

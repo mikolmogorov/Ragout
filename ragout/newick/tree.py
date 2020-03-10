@@ -6,8 +6,8 @@ Copyright (C) 2003-2008, Thomas Mailund <mailund@birc.au.dk>
 This module contains the representation of trees and a parser for
 creating trees from a Newick string or file. '''
 
-import lexer
-import parser
+import ragout.newick.lexer as lexer
+import ragout.newick.parser as parser
 
 
 class Tree(object):
@@ -193,16 +193,16 @@ class _TreeBuilder(parser.AbstractHandler):
         return self.root
 
 
-def parse_tree(input):
+def parse_tree(tree):
     '''Parse input as a Newick description of a tree and return the
     tree in a tree data structure.'''
-    return parser.parse(input,_TreeBuilder())
+    return parser.parse(tree, _TreeBuilder())
 
     
 def add_parent_links(tree):
     '''Extend all nodes (except for the root, of course) with a parent link.'''
     class V(TreeVisitor):
-        def pre_visit_edge(self,src,b,l,dst):
+        def pre_visit_edge(self,src,_b,_l,dst):
             dst.parent = src
     tree.dfs_traverse(V())
 
@@ -210,13 +210,8 @@ def add_distance_from_root(tree):
     '''Extend all nodes with the distance (branch length) from the root'''
     tree.distance_from_root = 0.0       # 'tree' is the root...
     class V(TreeVisitor):
-        def pre_visit_edge(self,src,b,l,dst):
+        def pre_visit_edge(self,src,_b,_l,dst):
             if l is None: l = 0
             dst.distance_from_root = src.distance_from_root + l
     tree.dfs_traverse(V())
 
-
-if __name__ == '__main__':
-    import unittest
-    from treetest import test_suite
-    unittest.TextTestRunner(verbosity=2).run(test_suite)

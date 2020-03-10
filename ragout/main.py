@@ -7,12 +7,10 @@ The main Ragout module. It defines top-level logic of the program
 """
 
 import os
-import sys
 import shutil
 import logging
 import argparse
 from collections import namedtuple
-from copy import deepcopy
 
 import ragout.assembly_graph.assembly_refine as asref
 import ragout.scaffolder.scaffolder as scfldr
@@ -22,7 +20,8 @@ import ragout.overlap.overlap as overlap
 import ragout.shared.config as config
 from ragout.scaffolder.output_generator import OutputGenerator
 from ragout.overlap.overlap import OverlapException
-from ragout.phylogeny.phylogeny import Phylogeny, PhyloException
+from ragout.phylogeny.phylogeny import Phylogeny
+from ragout.parsers.phylogeny_parser import PhyloException
 from ragout.breakpoint_graph.permutation import (PermutationContainer,
                                                  PermException)
 from ragout.synteny_backend.synteny_backend import (SyntenyBackend,
@@ -36,10 +35,10 @@ from ragout.breakpoint_graph.chimera_detector import ChimeraDetector
 from ragout.__version__ import __version__
 
 #register backends
-import synteny_backend.sibelia
+import ragout.synteny_backend.sibelia
 #import synteny_backend.cactus
-import synteny_backend.maf
-import synteny_backend.hal
+import ragout.synteny_backend.maf
+import ragout.synteny_backend.hal
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -121,14 +120,14 @@ def _get_phylogeny_and_naming_ref(recipe, permutation_file):
                                          allow_ref_indels=True,
                                          phylogeny=None)
         phylogeny = Phylogeny.from_permutations(perm_cont)
-        logger.info("Inferred tree: " + phylogeny.tree_string)
+        logger.info("Inferred tree: %s", phylogeny.tree_string)
 
     if "naming_ref" in recipe:
         naming_ref = recipe["naming_ref"]
     else:
         leaves_sorted = phylogeny.leaves_by_distance(recipe["target"])
         naming_ref = leaves_sorted[0]
-        logger.info("'{0}' is chosen as a naming reference".format(naming_ref))
+        logger.info("'%s' is chosen as a naming reference", naming_ref)
 
     return phylogeny, naming_ref
 
@@ -142,7 +141,7 @@ def _get_synteny_scale(recipe, synteny_backend):
     else:
         scale = config.vals["blocks"][synteny_backend.infer_block_scale(recipe)]
 
-    logger.info("Running withs synteny block sizes '{0}'".format(scale))
+    logger.info("Running withs synteny block sizes '%s'", str(scale))
     return scale
 
 
@@ -160,7 +159,7 @@ def _run_ragout(args):
 
     out_log = os.path.join(args.out_dir, "ragout.log")
     _enable_logging(out_log, args.debug)
-    logger.info("Starting Ragout v{0}".format(__version__))
+    logger.info("Starting Ragout v%s", str(__version__))
 
     #parsing recipe, preparing synteny backend
     _check_extern_modules(args.synteny_backend)
@@ -201,7 +200,7 @@ def _run_ragout(args):
     scaffolds = None
     prev_stages = []
     for stage in run_stages:
-        logger.info("Stage \"{0}\"".format(stage.name))
+        logger.info("Stage \"%s\"", stage.name)
         debugger.set_debug_dir(os.path.join(debug_root, stage.name))
         prev_stages.append(stage)
 

@@ -14,7 +14,7 @@ import logging
 
 import networkx as nx
 
-from ragout.parsers.phylogeny_parser import (parse_tree, PhyloException)
+from ragout.parsers.phylogeny_parser import (parse_tree)
 from ragout.phylogeny.inferer import TreeInferer
 logger = logging.getLogger()
 
@@ -57,7 +57,7 @@ class Phylogeny:
         lengths = tree_length(self.tree)
         assert len(lengths)
         self.mu = float(1) / _median(lengths)
-        logger.debug("Branch lengths: {0}, mu = {1}".format(lengths, self.mu))
+        logger.debug("Branch lengths: %s, mu = %f", str(lengths), self.mu)
 
     def estimate_tree(self, leaf_states):
         """
@@ -111,7 +111,8 @@ class Phylogeny:
 
             edges = sorted(root.get_edges(), key=lambda e: e[2], reverse=True)
             edges = sorted(edges, key=lambda e: e[0].terminal)
-            return list(chain(*map(lambda e: get_labels(e[0]), edges)))
+            #return list(chain(*map(lambda e: get_labels(e[0]), edges)))
+            return list(chain(*[get_labels(e[0]) for e in edges]))
 
         return get_labels(self.tree)
 
@@ -136,8 +137,10 @@ class Phylogeny:
         leaves = [g for g in distances.keys()
                   if g.terminal and g.identifier != genome]
 
-        return list(map(lambda n: n.identifier,
-                        sorted(leaves, key=distances.get)))
+        #return list(map(lambda n: n.identifier,
+        #                sorted(leaves, key=distances.get)))
+        return [n.identifier for n in
+                sorted(leaves, key=distances.get)]
 
 
 def _median(values):

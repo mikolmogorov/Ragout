@@ -6,7 +6,6 @@
 This module parses Ragout configuration file
 """
 
-from collections import namedtuple
 import re
 import os
 import logging
@@ -47,17 +46,16 @@ def parse_ragout_recipe(filename):
 
             m = param_matcher.match(line)
             if not m or not "." in m.group(1):
-                raise RecipeException("Error parsing recipe on line {1}"
-                                      .format(filename, lineno + 1))
+                raise RecipeException("Error parsing recipe on line {0}"
+                                      .format(lineno + 1))
 
             (obj, param_name), value = m.group(1).rsplit(".", 1), m.group(2)
             if param_name in deprecated:
-                logger.warning("Recipe parameter '{0}' is deprecated"
-                                                        .format(param_name))
+                logger.warning("Recipe parameter '%s' is deprecated", param_name)
                 continue
             if param_name not in known_params:
                 raise RecipeException("Unknown recipe parameter '{0}' on line {1}"
-                                      .format(param_name, lineno, filename))
+                                      .format(param_name, lineno))
 
             #checking values, casting
             if param_name in cast_bool:
@@ -77,7 +75,7 @@ def parse_ragout_recipe(filename):
                         raise RecipeException("Can't parse block size set: {0}"
                                               .format(value))
             if param_name == "references":
-                value = list(map(lambda s: s.strip(), value.split(",")))
+                value = [s.strip() for s in value.split(",")]
             if param_name in fix_path:
                 value = os.path.expanduser(value)
                 value = os.path.join(prefix, value)

@@ -9,7 +9,7 @@ breakpoints data
 
 from __future__ import print_function
 from collections import defaultdict
-from itertools import (combinations, product,
+from itertools import (combinations,
                        combinations_with_replacement, chain)
 
 from ragout.newick.tree import Leaf, Tree

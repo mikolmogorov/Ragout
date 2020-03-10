@@ -5,11 +5,12 @@ Copyright (C) 2003-2008, Thomas Mailund <mailund@birc.au.dk>
 
 This module contains the functionality for grammatical analysis. '''
 
-import tokens
+import ragout.newick.tokens as tokens
 
-class ParserError(object):
+class ParserError(Exception):
     '''Exception thrown if the parser encounters an error.'''
     def __init__(self,err):
+        Exception.__init__(self)
         self.err = err
 
     def __repr__(self):
@@ -126,21 +127,14 @@ class _Parser(object):
         self.handler.new_edge(bootstrap,length)
 
 
-def parse(input, event_handler):
+def parse(stream, event_handler):
     '''Parse input and invoke callbacks in event_handler.  If
     event_handler implements a get_result() method, parse will return
     the result of calling this after complete parsing, otherwise None
     is returned.'''
-    import lexer
-    l = lexer.Lexer(input)
+    import ragout.newick.lexer as lexer
+    l = lexer.Lexer(stream)
     _Parser(l,event_handler).parse()
     if hasattr(event_handler,"get_result"):
         return event_handler.get_result()
     
-
-    
-
-if __name__ == '__main__':
-    import unittest
-    from parsertest import test_suite
-    unittest.TextTestRunner(verbosity=2).run(test_suite)

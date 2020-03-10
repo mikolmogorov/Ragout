@@ -8,7 +8,7 @@ rarely need to access it in your own modules and should probably only
 use the parser or tree modules, and from those most likely only the
 objects loaded into the mail package.  '''
 
-import tokens
+import ragout.newick.tokens as tokens
 import re
 
 _patterns = [
@@ -21,9 +21,10 @@ _patterns = [
     (tokens.RParen, 	re.compile(r'\s*(\))\s*'))
     ]
 
-class LexerError(object):
+class LexerError(Exception):
     '''Exception thrown if the lexer encounters an error.'''
     def __init__(self,err):
+        Exception.__init__(self)
         self.err = err
 
     def __repr__(self):
@@ -88,10 +89,3 @@ class Lexer(object):
         ''' Checks whether the next token is of the specified class. '''
         token = self.peek_next_token()
         return token.__class__ == token_class
-
-
-
-if __name__ == '__main__':
-    import unittest
-    from lexertest import test_suite
-    unittest.TextTestRunner(verbosity=2).run(test_suite)
