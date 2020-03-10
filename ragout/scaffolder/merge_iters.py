@@ -7,8 +7,8 @@ This module provides some functions for
 moving between two consecutive iterations
 """
 
-from collections import namedtuple, defaultdict
-from itertools import product, chain, combinations
+from collections import defaultdict
+from itertools import chain
 import os
 import logging
 from copy import deepcopy
@@ -16,8 +16,8 @@ from copy import deepcopy
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
-from ragout.shared.datatypes import (Contig, Scaffold, Permutation, Link,
-                                     output_scaffolds_premutations, output_permutations)
+from ragout.shared.datatypes import (Contig, Scaffold, Link,
+                                     output_scaffolds_premutations)
 from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
 from ragout.breakpoint_graph.inferer import Adjacency
@@ -61,7 +61,7 @@ def get_breakpoints(scaffolds, bp_graph, perm_container):
     """
     Counts target-specific adjacencies in scaffolds
     """
-    updated_scaffolds = _update_scaffolds(scaffolds, perm_container)
+    _updated_scaffolds = _update_scaffolds(scaffolds, perm_container)
     specific = 0
     for scf in scaffolds:
         for cnt in scf.contigs:
@@ -71,8 +71,7 @@ def get_breakpoints(scaffolds, bp_graph, perm_container):
                 if set(genomes) == set([bp_graph.target]):
                     specific += 1
 
-    logger.debug("Target-specific adjacencies in scaffolds: {0}"
-                 .format(specific))
+    logger.debug("Target-specific adjacencies in scaffolds: %d", specific)
     return specific
 
 
@@ -112,7 +111,7 @@ def _merge_consecutive_contigs(scaffolds):
         new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
                                                    None, new_contigs))
 
-    logger.debug("Merging consequtive contigs: {0} left".format(num_contigs))
+    logger.debug("Merging consequtive contigs: %d left", num_contigs)
     return new_scaffolds
 
 
@@ -138,7 +137,7 @@ def _update_scaffolds(scaffolds, perm_container):
                             <= contig.perm.seq_end)
 
             if not inner_perms:
-                logger.debug("Lost: {0}".format(contig.perm))
+                logger.debug("Lost: %s", str(contig.perm))
                 continue
 
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
@@ -200,7 +199,7 @@ class RearrangementProjector:
                                        link=link, infinity=infinity)
                 self.adj_graph.add_edge(u, v)
 
-        logger.debug("Made {0} k-breaks".format(num_kbreaks))
+        logger.debug("Made %d k-breaks", num_kbreaks)
         adjacencies = {}
         for (u, v, data) in self.bp_graph.edges(data=True):
             if data["scf_set"] == "old":
@@ -228,11 +227,10 @@ class RearrangementProjector:
         for u, v in new_edges:
             new_adj_graph.add_edge(u, v)
 
-        all_nodes = new_adj_graph.nodes
-        old_sets = list(map(lambda g: set(g.nodes),
-                            nx.connected_component_subgraphs(self.adj_graph)))
-        new_sets = list(map(lambda g: set(g.nodes),
-                            nx.connected_component_subgraphs(new_adj_graph)))
+        old_sets = [set(g.nodes) for g in
+                    nx.connected_component_subgraphs(self.adj_graph)]
+        new_sets = [set(g.nodes) for g in
+                    nx.connected_component_subgraphs(new_adj_graph)]
         if len(old_sets) != len(new_sets):
             return False
 
@@ -272,6 +270,7 @@ class RearrangementProjector:
 
         for scf in self.new_scaffolds:
             prev_cont = None
+            pos = 0
             for pos, contig in enumerate(scf.contigs):
                 if contig.name() in old_contigs:
                     prev_cont = contig
@@ -344,9 +343,11 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
     new_scafflods = []
     for big_scf in big_scaffolds:
         new_contigs = []
-        non_repeats = list(filter(lambda i: big_scf.contigs[i].perm
-                                        not in repeats,
-                                  xrange(len(big_scf.contigs))))
+        #non_repeats = list(filter(lambda i: big_scf.contigs[i].perm
+        #                                not in repeats,
+        #                          xrange(len(big_scf.contigs))))
+        non_repeats = [i for i in xrange(len(big_scf.contigs))
+                       if big_scf.contigs[i].perm not in repeats]
         for left_idx, right_idx in zip(non_repeats[:-1], non_repeats[1:]):
             left_cnt = big_scf.contigs[left_idx]
             right_cnt = big_scf.contigs[right_idx]
@@ -379,8 +380,9 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
                         consistent = False
 
                     if not same_dir:
-                        weak_contigs = list(map(lambda c: c.reverse_copy(),
-                                                weak_contigs[::-1]))
+                        #weak_contigs = list(map(lambda c: c.reverse_copy(),
+                        #                        weak_contigs[::-1]))
+                        weak_contigs = [c.reverse_copy() for c in weak_contigs[::-1]]
                     link_to_change = left_scf.contigs[left_pos].link
             else:
                 not_found += 1
@@ -406,18 +408,17 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
         else:   #because of repeats
             new_scafflods.append(big_scf)
 
-    logger.debug("Fail: not found: {0}".format(not_found))
-    logger.debug("Fail: different scaffolds: {0}".format(count_diff_scaf))
-    logger.debug("Fail: different orientatilns: {0}".format(count_diff_orient))
-    logger.debug("Fail: inconsistent: {0}".format(count_inconsistent))
-    logger.debug("Total success: {0}".format(total_success))
-    logger.debug("Total fail: {0}".format(total_fail))
-    logger.debug("Total inserted: {0}".format(total_inserted))
+    logger.debug("Fail: not found: %d", not_found)
+    logger.debug("Fail: different scaffolds: %d", count_diff_scaf)
+    logger.debug("Fail: different orientatilns: %d", count_diff_orient)
+    logger.debug("Fail: inconsistent: %d", count_inconsistent)
+    logger.debug("Total success: %d", total_success)
+    logger.debug("Total fail: %d", total_fail)
+    logger.debug("Total inserted: %d", total_inserted)
 
     num_contigs = 0
     for scf in new_scafflods:
         num_contigs += len(scf.contigs)
-    logger.debug("Result: {0} contigs in {1} scaffolds"
-                                    .format(num_contigs, len(new_scafflods)))
+    logger.debug("Result: %d contigs in %d scaffolds", num_contigs, len(new_scafflods))
 
     return new_scafflods

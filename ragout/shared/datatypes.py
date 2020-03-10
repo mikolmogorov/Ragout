@@ -6,8 +6,7 @@
 This module provides some common data structures
 """
 
-from collections import namedtuple
-from copy import copy, deepcopy
+from copy import copy
 
 
 class Block:
@@ -63,7 +62,7 @@ class Permutation:
     def __str__(self):
         return ("[{0}, {1}, {2}, b:{3}, e:{4}]"
                     .format(self.genome_name, self.chr_name,
-                            list(map(lambda b: b.signed_id(), self.blocks)),
+                            [b.signed_id() for b in self.blocks],
                             self.seq_start, self.seq_end))
 
 
@@ -77,7 +76,7 @@ def output_permutations(permutations, out_file):
 
 
 class Contig:
-    def __init__(self, permutation, sign, link, dummy_param):
+    def __init__(self, permutation, sign, link, _dummy_param):
         self.perm = permutation
         self.sign = sign
         if link is None:
@@ -116,9 +115,9 @@ class Contig:
 
     def signed_perm(self):
         if self.sign > 0:
-            return list(map(lambda b: b.signed_id(), self.perm.blocks))
+            return [b.signed_id() for b in self.perm.blocks]
         else:
-            return list(map(lambda b: -b.signed_id(), self.perm.blocks[::-1]))
+            return [-b.signed_id() for b in self.perm.blocks[::-1]]
 
     def name(self):
         return self.perm.name()
@@ -174,7 +173,6 @@ class Scaffold:
 
 def output_scaffolds_premutations(scaffolds, out_file):
     with open(out_file, "w") as f:
-        permutations = []
         for scf in scaffolds:
             blocks = []
             for contig in scf.contigs:

@@ -8,10 +8,8 @@ to given adjacencies. Also, it outputs scaffolds in different
 formats
 """
 
-from collections import defaultdict, namedtuple
-from itertools import repeat
+from collections import defaultdict
 import os
-import copy
 import logging
 
 from ragout.shared.debug import DebugConfig
@@ -35,9 +33,9 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
     contigs, contig_index = _make_contigs(perm_container)
     scaffolds = _extend_scaffolds(adjacencies, contigs, contig_index,
                                   correct_distances)
-    num_contigs = sum(map(lambda s: len(s.contigs), scaffolds))
-    logger.debug("{0} contigs were joined into {1} scaffolds"
-                        .format(num_contigs, len(scaffolds)))
+    num_contigs = sum([len(s.contigs) for s in scaffolds])
+    logger.debug("%d contigs were joined into %d scaffolds",
+                 num_contigs, len(scaffolds))
 
     if debugger.debugging and debug_output:
         links_out = os.path.join(debugger.debug_dir, "scaffolder.links")
@@ -103,7 +101,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
     for scf in scaffolds:
         scf.name = assigned_names[scf]
         if need_rev_compl[scf]:
-            new_contigs = map(lambda c: c.reverse_copy(), scf.contigs)[::-1]
+            new_contigs = [c.reverse_copy() for c in scf.contigs][::-1]
             for i in xrange(len(new_contigs) - 2):
                 new_contigs[i].link = new_contigs[i + 1].link
             new_contigs[-1].link = Link(0, [])

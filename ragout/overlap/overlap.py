@@ -27,15 +27,14 @@ def check_binary():
     """
     binary = which(OVERLAP_EXEC)
     if not binary:
-        logger.error("\"{0}\" native module not found".format(OVERLAP_EXEC))
+        logger.error("\"%s\" native module not found", OVERLAP_EXEC)
         return False
 
     try:
         devnull = open(os.devnull, "w")
         subprocess.check_call([OVERLAP_EXEC, "--help"], stderr=devnull)
     except subprocess.CalledProcessError as e:
-        logger.error("Some error inside native {0} module: {1}"
-                     .format(OVERLAP_EXEC, e))
+        logger.error("Some error inside native module: %s", str(e))
         return False
 
     return True

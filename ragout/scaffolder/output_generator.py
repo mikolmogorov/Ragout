@@ -191,7 +191,7 @@ class OutputGenerator:
         fragments_len = sum(map(len, self.fragments_fasta.values()))
         output_len = self.used_fragments_len + self.introduced_gap_len
 
-        used_perc = 100 * float(self.used_fragments_len) / fragments_len
+        #used_perc = 100 * float(self.used_fragments_len) / fragments_len
         unplaced_perc = 100 * float(unplaced_len) / fragments_len
         gap_perc = 100 * float(self.introduced_gap_len) / output_len
 
