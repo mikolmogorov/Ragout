@@ -19,6 +19,9 @@ class Tree(object):
         self._edges = []
         self._leaves_cache = None
 
+    def __lt__(self, other):
+        return repr(self) < repr(other)
+
     def add_edge(self,e):
         '''
         add_edge(e) -- add edge to sub-tree.
@@ -86,7 +89,7 @@ class Tree(object):
     leaves_identifiers = property(get_leaves_identifiers, None, None,
                           "List of identifiers of the leaves in this subtree.")
 
-class Leaf(object):
+class Leaf(Tree):
     '''
     Python representation of a leaf in a tree.
     '''
