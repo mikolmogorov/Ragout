@@ -8,7 +8,6 @@ This module defines abstract SyntenyBackend class
 
 import logging
 import os
-from collections import namedtuple, defaultdict
 
 import ragout.shared.config as config
 
@@ -22,7 +21,9 @@ class BackendException(Exception):
 class SyntenyBackend:
     backends = {}
     def __init__(self):
-        pass
+        self.target_fasta = None
+        self.threads = None
+        self.blocks = None
 
     def make_permutations(self, recipe, blocks,
                           output_dir, overwrite, threads):
@@ -38,7 +39,7 @@ class SyntenyBackend:
 
         return files
 
-    def run_backend(self, recipe, output_dir, overwrite):
+    def run_backend(self, _recipe, _output_dir, _overwrite):
         """
         Runs backend and returns a dict with permutations files
         Indexed by block sizes

@@ -11,7 +11,7 @@ the code contains a lot of magic. Sorry :(
 
 from collections import namedtuple, defaultdict
 from itertools import chain, product, combinations
-from copy import deepcopy, copy
+from copy import deepcopy
 import logging
 
 import networkx as nx
@@ -27,7 +27,6 @@ class Context:
         self.right = right
 
     def __str__(self):
-        block_id = self.perm.blocks[self.pos].block_id
         return "({0}, {1}, {2}, {3})".format(self.perm.chr_name, self.pos,
                                              self.left, self.right)
 
@@ -46,12 +45,12 @@ def resolve_repeats(ref_perms, target_perms, repeats,
     Does the job
     """
     logger.info("Resolving repeats")
-    logger.debug("Unique repeat blocks: {0}".format(len(repeats)))
+    logger.debug("Unique repeat blocks: %d", len(repeats))
 
     next_block_id = 0
     for perm in chain(ref_perms, target_perms):
         next_block_id = max(next_block_id,
-                            max(map(lambda b: b.block_id, perm.blocks)) + 1)
+                            max([b.block_id for b in perm.blocks]) + 1)
     first_block_id = next_block_id
     target_name = target_perms[0].genome_name
 
@@ -60,9 +59,9 @@ def resolve_repeats(ref_perms, target_perms, repeats,
 
     purely_repetitive = 0
     for perm in target_perms:
-        if all(map(lambda b: b.block_id in repeats, perm.blocks)):
+        if all([(b.block_id in repeats) for b in perm.blocks]):
             purely_repetitive += 1
-    logger.debug("Purely repetitive sequences: {0}".format(purely_repetitive))
+    logger.debug("Purely repetitive sequences: %d", purely_repetitive)
 
     #getting matches
     repetitive_matches = []
@@ -84,12 +83,12 @@ def resolve_repeats(ref_perms, target_perms, repeats,
 
     matched_contigs = set()
     for m in repetitive_matches:
-        if all(map(lambda b: b.block_id in repeats, m.trg.perm.blocks)):
+        if all([(b.block_id in repeats) for b in m.trg.perm.blocks]):
             matched_contigs.add(m.trg.perm)
-    logger.debug("Repetitive sequences with matches: {0}".format(len(matched_contigs)))
+    logger.debug("Repetitive sequences with matches: %d", len(matched_contigs))
 
-    logger.debug("Unique matches: {0}".format(len(unique_matches)))
-    logger.debug("Repetitive matches: {0}".format(len(repetitive_matches)))
+    logger.debug("Unique matches: %d", len(unique_matches))
+    logger.debug("Repetitive matches: %d", len(repetitive_matches))
 
     ##resolving unique
     #for trg_ctx, profile in unique_matches:
@@ -125,13 +124,13 @@ def resolve_repeats(ref_perms, target_perms, repeats,
 
         if groups:
             to_remove.add(perm)
-    target_perms = list(filter(lambda p: p not in to_remove, target_perms))
+    #target_perms = list(filter(lambda p: p not in to_remove, target_perms))
+    target_perms = [p for p in target_perms if p not in to_remove]
     ##
 
-    logger.debug("Resolved {0} unique repeat instances"
-                        .format(next_block_id - first_block_id))
-    logger.debug("Saved sequences: {0}".format(len(to_remove)))
-    logger.debug("Added {0} extra contigs".format(new_contigs))
+    logger.debug("Resolved %d unique repeat instances", next_block_id - first_block_id)
+    logger.debug("Saved sequences: %d", len(to_remove))
+    logger.debug("Added %d extra contigs", new_contigs)
 
 
 def _parsimony_test(profile, phylogeny, target_name, draft_refs):
@@ -157,9 +156,11 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
     across different genomes (like an alignemnt column in MSA)
     """
     references = set(contexts_by_genome.keys())
-    genomes = filter(lambda g: g in references,
-                     phylogeny.terminals_dfs_order())
-    profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
+    #genomes = filter(lambda g: g in references,
+    #                 phylogeny.terminals_dfs_order())
+    genomes = [g for g in phylogeny.terminals_dfs_order() if g in references]
+    #profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
+    profiles  = [[c] for c in contexts_by_genome[genomes[0]]]
 
     #logger.debug(str(genomes))
     for genome in genomes[1:]:
@@ -193,7 +194,7 @@ def _match_target_contexts(profiles, target_contexts, repeats):
     """
     def is_unique(context):
         return any(b not in repeats for b in
-                   map(lambda b: b.block_id, context.perm.blocks))
+                   [b.block_id for b in context.perm.blocks])
 
     unique_matches = []
     repetitive_matches = []
@@ -266,7 +267,7 @@ def _split_by_instance(matches):
     """
     target_perm = matches[0][0].perm
     if len(target_perm.blocks) == 1:    #trivial case
-        return list(map(lambda m: [m], matches))
+        return [[m] for m in matches]
 
     by_pos = defaultdict(list)
     for match in matches:
@@ -293,7 +294,7 @@ def _split_by_instance(matches):
                 return False
         return True
 
-    groups = map(lambda x: [x], by_pos[positions[0]])
+    groups = [[x] for x in by_pos[positions[0]]]
     #now try to extend each group
     for pos in positions[1:]:
         unused_matches = set(by_pos[pos])
@@ -309,7 +310,8 @@ def _split_by_instance(matches):
 
     min_group = len(target_perm.blocks) / 2 + 1
 
-    return list(filter(lambda g: len(g) >= min_group, groups))
+    #return list(filter(lambda g: len(g) >= min_group, groups))
+    return [g for g in groups if len(g) >= min_group]
 
 
 def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
@@ -354,8 +356,9 @@ def _profile_similarity(profile, genome_ctx, repeats, same_len):
     """
     Compute similarity of set of contexts vs one context
     """
-    scores = list(map(lambda c: _context_similarity(c, genome_ctx,
-                                    repeats, same_len), profile))
+    #scores = list(map(lambda c: _context_similarity(c, genome_ctx,
+    #                                repeats, same_len), profile))
+    scores = [_context_similarity(c, genome_ctx, repeats, same_len) for c in profile]
     return float(sum(scores)) / len(scores)
 
 
@@ -384,13 +387,17 @@ def _get_contexts(permutations, repeats):
 
             left_start = max(0, pos - WINDOW)
             left_end = max(0, pos)
-            left_context = list(map(lambda b: b.signed_id() * block.sign,
-                                    perm.blocks[left_start:left_end]))
+            #left_context = list(map(lambda b: b.signed_id() * block.sign,
+            #                        perm.blocks[left_start:left_end]))
+            left_context = [b.signed_id() * block.sign for b in
+                            perm.blocks[left_start:left_end]]
 
             right_start = min(len(perm.blocks), pos + 1)
             right_end = min(len(perm.blocks), pos + WINDOW + 1)
-            right_context = list(map(lambda b: b.signed_id() * block.sign,
-                                     perm.blocks[right_start:right_end]))
+            #right_context = list(map(lambda b: b.signed_id() * block.sign,
+            #                         perm.blocks[right_start:right_end]))
+            right_context = [b.signed_id() * block.sign for b in
+                             perm.blocks[right_start:right_end]]
 
             if block.sign < 0:
                 left_context, right_context = (right_context[::-1],

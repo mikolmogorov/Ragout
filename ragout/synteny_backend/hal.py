@@ -9,7 +9,6 @@ This module works with MAF input and converts it into synteny blocks
 import os
 import logging
 import shutil
-import multiprocessing
 import subprocess
 
 from .synteny_backend import SyntenyBackend, BackendException
@@ -29,6 +28,7 @@ TARGET_FASTA = "target.fasta"
 class HalBackend(SyntenyBackend):
     def __init__(self):
         SyntenyBackend.__init__(self)
+        self.target_fasta = None
 
     def infer_block_scale(self, recipe):
         hal = recipe.get("hal")

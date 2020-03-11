@@ -25,6 +25,9 @@ class AdjacencyInferer(object):
     def __init__(self, breakpoint_graph, phylogeny):
         self.main_graph = breakpoint_graph
         self.phylogeny = phylogeny
+        self.orphans_count = 0
+        self.guessed_count = 0
+        self.trimmed_count = 0
 
     def infer_adjacencies(self):
         """
@@ -33,20 +36,17 @@ class AdjacencyInferer(object):
         logger.info("Inferring missing adjacencies")
 
         subgraphs = self.main_graph.connected_components()
-        logger.debug("Found {0} connected components"
-                             .format(len(subgraphs)))
+        logger.debug("Found %d connected components", len(subgraphs))
 
         chosen_edges = []
-        self.orphans_count = 0
-        self.guessed_count = 0
-        self.trimmed_count = 0
+
         for subgraph in subgraphs:
             chosen_edges.extend(self._process_component(subgraph))
 
-        logger.debug("Inferred {0} adjacencies".format(len(chosen_edges)))
-        logger.debug("{0} orphaned nodes".format(self.orphans_count))
-        logger.debug("{0} guessed edges".format(self.guessed_count))
-        logger.debug("{0} trimmed edges".format(self.trimmed_count))
+        logger.debug("Inferred %d adjacencies", len(chosen_edges))
+        logger.debug("%d orphaned nodes", self.orphans_count)
+        logger.debug("%d guessed edges", self.guessed_count)
+        logger.debug("%d trimmed edges", self.trimmed_count)
 
         adjacencies = {}
         for node_1, node_2 in chosen_edges:
@@ -148,7 +148,7 @@ def _min_weight_matching(graph):
     MIN_LOG_SIZE = 20
     if len(graph) > MIN_LOG_SIZE:
         logger.debug("Finding perfect matching for a component of "
-                     "size {0}".format(len(graph)))
+                     "size %d", len(graph))
     edges = nx.max_weight_matching(graph, maxcardinality=True)
     unique_edges = set()
     for v1, v2 in edges:

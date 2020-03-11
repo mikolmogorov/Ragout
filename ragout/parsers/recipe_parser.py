@@ -37,7 +37,7 @@ def parse_ragout_recipe(filename):
     defaults = {"circular" : False,
                 "draft" : False}
 
-    param_matcher = re.compile("([^\s]+)\s*=\s*([^\s].*)$")
+    param_matcher = re.compile(r"([^\s]+)\s*=\s*([^\s].*)$")
     with open(filename, "r") as f:
         for lineno, line in enumerate(f):
             line = line.strip()

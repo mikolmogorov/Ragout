@@ -12,7 +12,6 @@ import logging
 from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
 
-from ragout.breakpoint_graph.breakpoint_graph import BreakpointGraph
 
 logger = logging.getLogger()
 ContigBreak = namedtuple("ContigBreak", ["seq_name", "begin", "end", "good"])
@@ -33,7 +32,7 @@ class ChimeraDetector(object):
 
         #extracting and grouping by sequence
         for stage in self.run_stages:
-            logger.debug(">>With block size: {0}".format(stage.block_size))
+            logger.debug(">>With block size: %d", stage.block_size)
             breaks = self._get_contig_breaks(self.bp_graphs[stage])
             for br in breaks:
                 seq_cuts[br.seq_name][stage].append(br)
@@ -95,8 +94,8 @@ class ChimeraDetector(object):
         num_removed_adj = 0
         for subgr in subgraphs:
             if len(subgr.bp_graph) > 100:
-                logger.debug("Processing component of size {0}"
-                             .format(len(subgr.bp_graph)))
+                logger.debug("Processing component of size %d",
+                             len(subgr.bp_graph))
 
             for (u, v, data) in subgr.bp_graph.edges(data=True):
                 if data["genome_id"] != subgr.target:
@@ -118,10 +117,9 @@ class ChimeraDetector(object):
                 num_removed_adj += 1
 
         #bp_graph.debug_output()
-        logger.debug("Checking {0} target adjacencies".format(num_target_adj))
-        logger.debug("Found {0} target-specific adjacencies, "
-                     "{1} broken as chimeric".format(num_unique_adj,
-                                                     num_removed_adj))
+        logger.debug("Checking %d target adjacencies", num_target_adj)
+        logger.debug("Found %d target-specific adjacencies, "
+                     "%d broken as chimeric", num_unique_adj, num_removed_adj)
         return seq_cuts
 
     def _valid_2break(self, bp_graph, red_edge):
@@ -183,8 +181,8 @@ class ChimeraDetector(object):
                 num_chimeras += 1
                 new_target_perms.extend(_break_permutation(perm, break_points))
 
-        logger.debug("Chimera Detector: {0} cuts made in {1} sequences"
-                        .format(num_breaks, num_chimeras))
+        logger.debug("Chimera Detector: %d cuts made in %d sequences",
+                     num_breaks, num_chimeras)
         new_container.target_perms = new_target_perms
         return new_container
 

@@ -7,10 +7,8 @@ This module runs Sibelia
 """
 
 import os
-import sys
 import shutil
 import subprocess
-import copy
 import logging
 
 from ragout.shared import utils
@@ -26,7 +24,7 @@ SIBELIA_MAX_INPUT = 100 * 1024 * 1024
 try:
     SIBELIA_INSTALL = os.environ["SIBELIA_INSTALL"]
     os.environ["PATH"] += os.pathsep + SIBELIA_INSTALL
-except:
+except Exception:
     pass
 
 
@@ -55,11 +53,11 @@ class SibeliaBackend(SyntenyBackend):
         else:
             chr2genome, total_size = _get_sequence_info(recipe)
             if total_size > SIBELIA_MAX_INPUT:
-                logger.warning("Total size of input ({0}MB) is more "
+                logger.warning("Total size of input (%d Mb) is more "
                                "than 100MB. Processing could take a "
                                "very long time. It is recommended to use "
-                               "some other synteny backend for your data."
-                               .format(total_size / 1024 / 1024))
+                               "some other synteny backend for your data.",
+                               total_size / 1024 / 1024)
 
             os.mkdir(work_dir)
             for block_size in self.blocks:
@@ -122,13 +120,13 @@ def _get_sequence_info(recipe):
     return chr2genome, total_size
 
 
-def _postprocess_perms(chr2genome, file):
+def _postprocess_perms(chr2genome, perm_file):
     """
     Converts Sibelia's permutation file to UCSC naming convention:
     genome.chromosome
     """
-    new_file = file + "_new"
-    with open(file, "r") as fin, open(new_file, "w") as fout:
+    new_file = perm_file + "_new"
+    with open(perm_file, "r") as fin, open(new_file, "w") as fout:
         for line in fin:
             line = line.strip()
             if line.startswith(">"):
@@ -136,17 +134,17 @@ def _postprocess_perms(chr2genome, file):
                 fout.write(">{0}.{1}\n".format(chr2genome[chr_name], chr_name))
             else:
                 fout.write(line + "\n")
-    os.remove(file)
-    os.rename(new_file, file)
+    os.remove(perm_file)
+    os.rename(new_file, perm_file)
 
 
-def _postprocess_coords(chr2genome, file):
+def _postprocess_coords(chr2genome, coords_file):
     """
     Converts Sibelia's blocks_coords file to UCSC naming convention:
     genome.chromosome
     """
-    new_file = file + "_new"
-    with open(file, "r") as fin, open(new_file, "w") as fout:
+    new_file = coords_file + "_new"
+    with open(coords_file, "r") as fin, open(new_file, "w") as fout:
         header = True
         for line in fin:
             line = line.strip()
@@ -167,8 +165,8 @@ def _postprocess_coords(chr2genome, file):
             else:
                 fout.write(line + "\n")
 
-    os.remove(file)
-    os.rename(new_file, file)
+    os.remove(coords_file)
+    os.rename(new_file, coords_file)
 
 
 def _make_stagefile(stages, out_file):
@@ -181,7 +179,7 @@ def _make_stagefile(stages, out_file):
 
 
 def _run_sibelia(fasta_files, block_size, out_dir):
-    logger.info("Running Sibelia with block size " + str(block_size))
+    logger.info("Running Sibelia with block size %d", block_size)
     if not utils.which(SIBELIA_EXEC):
         raise BackendException("Sibelia is not installed")
 

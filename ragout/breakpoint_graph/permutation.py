@@ -11,9 +11,7 @@ provides some other usefull functions
 from collections import defaultdict
 import logging
 import os
-import math
 from copy import deepcopy
-from itertools import chain
 
 from ragout.shared.debug import DebugConfig
 from ragout.shared import config
@@ -38,7 +36,7 @@ class PermutationContainer:
         self.target_perms = []
         self.recipe = recipe
 
-        logging.info("Reading " + block_coords_file)
+        logging.info("Reading %s", block_coords_file)
         permutations = _parse_blocks_coords(block_coords_file)
 
         has_sequences = set()
@@ -62,20 +60,18 @@ class PermutationContainer:
                                     "recipe for correctness.".format(genome))
         _check_coverage(self.ref_perms + self.target_perms)
 
-        logger.debug("Read {0} reference sequences"
-                     .format(len(self.ref_perms)))
+        logger.debug("Read %d reference sequences", len(self.ref_perms))
         if not len(self.ref_perms):
             raise PermException("No synteny blocks found in "
                                 "reference sequences")
-        logger.debug("Read {0} target sequences"
-                     .format(len(self.target_perms)))
+        logger.debug("Read %d target sequences", len(self.target_perms))
         if not len(self.target_perms):
             raise PermException("No synteny blocks found in "
                                 "target sequences")
 
         self._filter_indels(allow_ref_indels)
-        logger.debug("{0} target sequences left after indel filtering"
-                                        .format(len(self.target_perms)))
+        logger.debug("%d target sequences left after indel filtering",
+                     len(self.target_perms))
 
         repeats = _find_repeats(self.ref_perms + self.target_perms)
         ###
@@ -87,15 +83,15 @@ class PermutationContainer:
                                repeats, phylogeny, draft_names)
         ###
         self._filter_repeats(repeats)
-        logger.debug("{0} target sequences left after repeat filtering"
-                     .format(len(self.target_perms)))
+        logger.debug("%d target sequences left after repeat filtering",
+                     len(self.target_perms))
         if not len(self.target_perms):
             raise PermException("No synteny blocks found in the target "
                                 "genome after repeat/indel filtering.")
 
         if debugger.debugging:
-            file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
-            output_permutations(self.target_perms, file)
+            filtered_file = os.path.join(debugger.debug_dir, "filtered_contigs.txt")
+            output_permutations(self.target_perms, filtered_file)
 
     def _filter_indels(self, allow_ref_indels):
         """
@@ -118,8 +114,9 @@ class PermutationContainer:
             to_keep = target_blocks.intersection(reference_blocks)
         else:
             num_genomes = len(self.recipe["genomes"])
-            to_keep = set(filter(lambda b: multiplicity[b] >= num_genomes,
-                                 multiplicity))
+            #to_keep = set(filter(lambda b: multiplicity[b] >= num_genomes,
+            #                     multiplicity))
+            to_keep = set([b for b in multiplicity if multiplicity[b] >= num_genomes])
 
         self.ref_perms = _filter_permutations(self.ref_perms, to_keep)
         self.target_perms = _filter_permutations(self.target_perms, to_keep)
@@ -204,7 +201,7 @@ def _parse_blocks_coords(filename):
                     block_id = int(line.split(" ")[1][1:])
                     continue
 
-                seq_id, sign, start, end, length = line.split("\t")
+                seq_id, sign, start, end, _length = line.split("\t")
                 if sign == "-":
                     start, end = end, start
                 if int(end) < int(start):
@@ -217,7 +214,8 @@ def _parse_blocks_coords(filename):
     for perm in perm_by_id.values():
         perm.blocks.sort(key=lambda b: b.start)
 
-    out_perms = list(filter(lambda b: len(b.blocks), perm_by_id.values()))
+    #out_perms = list(filter(lambda b: len(b.blocks), perm_by_id.values()))
+    out_perms = [b for b in  perm_by_id.values() if len(b.blocks)]
     if not len(out_perms):
         raise PermException("Permutations file is empty")
     return out_perms
@@ -256,5 +254,4 @@ def _check_coverage(permutations):
                        "\t1. Genome is too distant from others\n"
                        "\t2. Synteny block parameters are chosen incorrectly"
                        "\n\tTry to change synteny blocks paramsters or "
-                       "remove this genome from the comparison"
-                       .format(genome_name, 100 * coverage))
+                       "remove this genome from the comparison")

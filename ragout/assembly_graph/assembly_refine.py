@@ -39,7 +39,7 @@ def _load_dot(filename):
     Loads dot file (ignore heavy python-graphviz)
     """
     graph = nx.DiGraph()
-    pattern = re.compile("\"(.+)\"\s*\->\s*\"(.+)\"\s*\[.*=.*\"(.+)\".*\];")
+    pattern = re.compile(r'"(.+)"\s*\->\s*"(.+)"\s*\[.*=.*"(.+)".*\];')
     for line in open(filename, "r").read().splitlines():
         m = pattern.match(line)
         if not m:

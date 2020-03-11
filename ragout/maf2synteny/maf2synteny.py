@@ -25,15 +25,14 @@ def check_binary():
     """
     binary = which(M2S_EXEC)
     if not binary:
-        logger.error("\"{0}\" native module not found".format(M2S_EXEC))
+        logger.error("\"%s\" native module not found", M2S_EXEC)
         return False
 
     try:
         devnull = open(os.devnull, "w")
         subprocess.check_call([M2S_EXEC, "-h"], stderr=devnull)
     except subprocess.CalledProcessError as e:
-        logger.error("Some error inside native {0} module: {1}"
-                     .format(M2S_EXEC, e))
+        logger.error("Some error inside native module: %s", str(e))
         return False
 
     return True
@@ -57,8 +56,7 @@ def make_synteny(maf_file, out_dir, min_blocks_list):
         logger.debug(line.strip())
     ret_code = proc.wait()
     if ret_code:
-        logger.error("Non-zero return code when calling {0} module: {1}"
-                     .format(M2S_EXEC, ret_code))
+        logger.error("Non-zero return code: %d", ret_code)
         return False
 
     os.remove(params_file)

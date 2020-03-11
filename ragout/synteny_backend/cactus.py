@@ -7,22 +7,19 @@ This module runs progressiveCactus
 """
 
 import os
-import sys
 import shutil
 import subprocess
-import multiprocessing
 import logging
 
 from .synteny_backend import SyntenyBackend, BackendException
 from .hal import HalBackend
-from ragout.shared import config
 
 CACTUS_EXEC = "bin/runProgressiveCactus.sh"
 CACTUS_WORKDIR = "cactus-workdir"
 
 try:
     CACTUS_INSTALL = os.environ["CACTUS_INSTALL"]
-except:
+except Exception:
     CACTUS_INSTALL = ""
 logger = logging.getLogger()
 
@@ -46,7 +43,6 @@ def _make_permutations(recipe, output_dir, overwrite, threads):
     Runs Cactus, then outputs preprocessesed results into output_dir
     """
     work_dir = os.path.join(output_dir, CACTUS_WORKDIR)
-    files = {}
 
     if overwrite and os.path.isdir(work_dir):
         shutil.rmtree(work_dir)
@@ -71,7 +67,7 @@ def _make_permutations(recipe, output_dir, overwrite, threads):
 
         os.mkdir(work_dir)
         config_path = _make_cactus_config(recipe, work_dir)
-        hal_file = _run_cactus(config_path, recipe["target"], work_dir, threads)
+        hal_file = _run_cactus(config_path, work_dir, threads)
         recipe["hal"] = hal_file
 
     #now run another backend
@@ -83,18 +79,18 @@ def _make_cactus_config(recipe, directory):
     Creates cactus "seq" file
     """
     CONF_NAME = "cactus.cfg"
-    file = open(os.path.join(directory, CONF_NAME), "w")
-    file.write(recipe["tree"] + "\n")
+    conf_file = open(os.path.join(directory, CONF_NAME), "w")
+    conf_file.write(recipe["tree"] + "\n")
 
     for genome, params in recipe["genomes"].items():
         if genome != recipe["target"]:
-            file.write("*")
-        file.write("{0} {1}\n".format(genome, os.path.abspath(params["fasta"])))
+            conf_file.write("*")
+        conf_file.write("{0} {1}\n".format(genome, os.path.abspath(params["fasta"])))
 
-    return file.name
+    return conf_file.name
 
 
-def _run_cactus(config_path, ref_genome, out_dir, threads):
+def _run_cactus(config_path, out_dir, threads):
     """
     Runs Progressive Cactus
     """
@@ -104,7 +100,6 @@ def _run_cactus(config_path, ref_genome, out_dir, threads):
     work_dir = os.path.abspath(out_dir)
     out_hal = os.path.join(work_dir, CACTUS_OUT)
     config_file = os.path.abspath(config_path)
-    prev_dir = os.getcwd()
 
     threads_param = "--maxThreads=" + str(threads)
 

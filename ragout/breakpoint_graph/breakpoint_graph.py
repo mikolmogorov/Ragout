@@ -70,8 +70,7 @@ class BreakpointGraph(object):
                                        chr_name=perm.chr_name,
                                        infinity=True)
 
-        logger.debug("Built breakpoint graph with {0} nodes"
-                                        .format(len(self.bp_graph)))
+        logger.debug("Built breakpoint graph with %d nodes", len(self.bp_graph))
 
     def connected_components(self):
         subgraphs = nx.connected_component_subgraphs(self.bp_graph)
@@ -87,12 +86,11 @@ class BreakpointGraph(object):
     def genomes_chrs_support(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):
             return []
-        return list(map(lambda e: GenChrPair(e["genome_id"], e["chr_name"]),
-                    self.bp_graph[node_1][node_2].values()))
+        return [GenChrPair(e["genome_id"], e["chr_name"]) for e in
+                self.bp_graph[node_1][node_2].values()]
 
     def genomes_support(self, node_1, node_2):
-        return list(map(lambda gp: gp.genome,
-                    self.genomes_chrs_support(node_1, node_2)))
+        return [gp.genome for gp in self.genomes_chrs_support(node_1, node_2)]
 
     def to_weighted_graph(self, phylogeny):
         """
@@ -127,10 +125,8 @@ class BreakpointGraph(object):
 
         return g
 
-    """
-    def add_debug_node(self, node):
-        self.debug_nodes.add(node)
-    """
+    #def add_debug_node(self, node):
+    #    self.debug_nodes.add(node)
 
     def alternating_cycle(self, node_1, node_2):
         """
@@ -141,6 +137,7 @@ class BreakpointGraph(object):
             return self.genomes_support(u, v)
 
         good_path = False
+        path = None
         for path in self._alternating_paths(node_1, node_2):
             assert len(path) % 2 == 0
             if len(path) == 2:
@@ -148,12 +145,11 @@ class BreakpointGraph(object):
 
             edges = list(zip(path[:-1], path[1:]))
             even_colors = list(map(get_genome_ids, edges[1::2]))
-            even_good = all(map(lambda e: set(e) == set([self.target]),
-                        even_colors))
+            even_good = all([set(e) == set([self.target]) for e in even_colors])
             if not even_good:
                 continue
 
-            odd_colors = list(map(get_genome_ids, edges[0::2]))
+            odd_colors = [get_genome_ids(e) for e in edges[0::2]]
             common_genomes = set(odd_colors[0])
             for edge_colors in odd_colors:
                 common_genomes = common_genomes.intersection(edge_colors)
@@ -165,19 +161,17 @@ class BreakpointGraph(object):
 
         return len(path) / 2 if good_path else None
 
-    """
-    def _check_distances(self, path):
-        assert len(path) % 2 == 0
-        path.append(path[0])
-        edges = list(zip(path[:-1], path[1:]))
-        even_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
-                             edges[1::2]))
-        odd_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
-                            edges[0::2]))
-        diff = abs(sum(even_dist) - sum(odd_dist))
-        coeff = float(diff) / (sum(even_dist) + sum(odd_dist))
-        logger.debug(coeff)
-    """
+    #def _check_distances(self, path):
+    #    assert len(path) % 2 == 0
+    #    path.append(path[0])
+    #    edges = list(zip(path[:-1], path[1:]))
+    #    even_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
+    #                         edges[1::2]))
+    #    odd_dist = list(map(lambda (n1, n2): self.get_distance(n1, n2),
+    #                        edges[0::2]))
+    #    diff = abs(sum(even_dist) - sum(odd_dist))
+    #    coeff = float(diff) / (sum(even_dist) + sum(odd_dist))
+    #    logger.debug(coeff)
 
     def is_infinity(self, node_1, node_2):
         if not self.bp_graph.has_edge(node_1, node_2):
@@ -231,14 +225,15 @@ class BreakpointGraph(object):
                 #return [[dst]]
 
             visited.add(node)
-            paths = []
+            #paths = []
             for neighbor in self.bp_graph.neighbors(node):
                 if neighbor in visited:
                     continue
 
                 ##
                 genomes = self.genomes_support(node, neighbor)
-                non_target = set(filter(lambda g: g != self.target, genomes))
+                #non_target = set(filter(lambda g: g != self.target, genomes))
+                non_target = set([g for g in genomes if g != self.target])
                 if colored and len(non_target) == 0:
                     continue
                 if not colored and self.target not in genomes:
@@ -275,8 +270,7 @@ def _output_graph(graph, out_file):
         for v1, v2, data in graph.edges(data=True):
             fout.write("{0} -- {1}".format(v1, v2))
             if len(data):
-                extra = list(map(lambda (k, v) : "{0}=\"{1}\"".format(k, v),
-                                 data.items()))
+                extra = ["{0}=\"{1}\"".format(k, v) for (k, v) in data.items()]
                 fout.write(" [" + ", ".join(extra) + "]")
             fout.write(";\n")
         fout.write("}")
