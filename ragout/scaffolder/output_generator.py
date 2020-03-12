@@ -2,6 +2,8 @@
 #This file is a part of Ragout program.
 #Released under the BSD license (see LICENSE file)
 
+from __future__ import absolute_import
+from __future__ import division
 from itertools import repeat
 from collections import defaultdict
 import logging
@@ -10,6 +12,9 @@ import os
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 from ragout.__version__ import __version__
 import ragout.shared.config as config
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 logger = logging.getLogger()
 
@@ -60,11 +65,11 @@ class OutputGenerator:
             seq_1, seq_2 = get_seq(cnt_1), get_seq(cnt_2)
 
             left_ns, right_ns = 0, 0
-            for i in xrange(len(seq_1) - 1, 0, -1):
+            for i in range(len(seq_1) - 1, 0, -1):
                 if seq_1[i].upper() != "N":
                     break
                 left_ns += 1
-            for i in xrange(len(seq_2) - 1):
+            for i in range(len(seq_2) - 1):
                 if seq_2[i].upper() != "N":
                     break
                 right_ns += 1
@@ -187,8 +192,8 @@ class OutputGenerator:
         """
         Computes and prints some useful statistics
         """
-        unplaced_len = sum(map(len, self.unplaced_fasta.values()))
-        fragments_len = sum(map(len, self.fragments_fasta.values()))
+        unplaced_len = sum(map(len, list(self.unplaced_fasta.values())))
+        fragments_len = sum(map(len, list(self.fragments_fasta.values())))
         output_len = self.used_fragments_len + self.introduced_gap_len
 
         #used_perc = 100 * float(self.used_fragments_len) / fragments_len
@@ -281,7 +286,7 @@ def _calc_n50(scaffolds_lengths, assembly_len):
     sum_len = 0
     for l in sorted(scaffolds_lengths, reverse=True):
         sum_len += l
-        if sum_len > assembly_len / 2:
+        if sum_len > assembly_len // 2:
             n50 = l
             break
     return n50

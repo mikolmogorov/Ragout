@@ -8,9 +8,12 @@ in input sequences and breaks them if neccesary
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import logging
 from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
+from six.moves import range
 
 
 logger = logging.getLogger()
@@ -39,7 +42,7 @@ class ChimeraDetector(object):
 
         hierarchical_cuts = defaultdict(lambda : defaultdict(list))
         for seq_name in seq_cuts:
-            for i in xrange(len(self.run_stages)):
+            for i in range(len(self.run_stages)):
                 top_stage = self.run_stages[i]
 
                 for top_break in seq_cuts[seq_name][top_stage]:
@@ -47,7 +50,7 @@ class ChimeraDetector(object):
                         continue
 
                     adjusted_break = (top_break.begin, top_break.end)
-                    for j in xrange(i + 1, len(self.run_stages)):
+                    for j in range(i + 1, len(self.run_stages)):
                         lower_stage = self.run_stages[j]
                         #check if there is overlapping cut
                         for lower_break in seq_cuts[seq_name][lower_stage]:
@@ -71,7 +74,7 @@ class ChimeraDetector(object):
         cur_len = 0
         max_pos = break_start
         max_len = 0
-        for i in xrange(break_start, break_end):
+        for i in range(break_start, break_end):
             if seq[i].upper() == "N":
                 cur_len += 1
             if seq[i].upper() != "N" or i == break_end - 1:
@@ -80,7 +83,7 @@ class ChimeraDetector(object):
                     max_pos = cur_pos
                 cur_pos = i + 1
                 cur_len = 0
-        return max_pos + max_len / 2
+        return max_pos + max_len // 2
 
     def _get_contig_breaks(self, bp_graph):
         """
@@ -151,7 +154,7 @@ class ChimeraDetector(object):
         chr_2 = {}
         for data in bp_graph[known_2[0]][known_2[1]].values():
             chr_2[data["genome_id"]] = data["chr_name"]
-        common_genomes = set(chr_1.keys()).intersection(chr_2.keys())
+        common_genomes = set(chr_1.keys()).intersection(list(chr_2.keys()))
         for genome in common_genomes:
             if chr_1[genome] != chr_2[genome]:
                 return False

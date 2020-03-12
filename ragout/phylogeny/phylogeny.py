@@ -7,6 +7,8 @@ This module provides some phylogeny-related functions
 (includeing one for solving half-breakpoint state parsimony problem)
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import math
 from collections import defaultdict
 from itertools import chain
@@ -145,4 +147,4 @@ class Phylogeny:
 
 def _median(values):
     sorted_values = sorted(values)
-    return sorted_values[(len(values) - 1) / 2]
+    return sorted_values[(len(values) - 1) // 2]

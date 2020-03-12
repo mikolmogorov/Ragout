@@ -6,11 +6,14 @@
 This module performs refinement with the assembly (overlap) graph
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import networkx as nx
 import re
 import logging
+from six.moves import zip
 try:
-    import Queue
+    import six.moves.queue
 except ImportError:
     import queue as Queue
 
@@ -228,7 +231,7 @@ def _shortest_path(graph, src, dst, restricted_nodes):
     """
     Finds shortest path wrt to restricted nodes
     """
-    queue = Queue.Queue()
+    queue = six.moves.queue.Queue()
     queue.put(src)
     visited = set([src])
     parent = {src : src}

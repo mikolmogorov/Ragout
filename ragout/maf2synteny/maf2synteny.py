@@ -7,12 +7,15 @@ This module executes maf2synteny native binary
 which recovers synteny blocks from multiple alignment
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import logging
 import subprocess
 import os
 
 from ragout.shared.utils import which
 from ragout.shared import config
+from six.moves import map
 
 logger = logging.getLogger()
 
@@ -51,9 +54,9 @@ def make_synteny(maf_file, out_dir, min_blocks_list):
                "-b", ",".join(map(str, min_blocks_list))]
 
     logger.info("Running maf2synteny module")
-    proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)
-    for line in iter(proc.stderr.readline, ""):
-        logger.debug(line.strip())
+    proc = subprocess.Popen(cmdline)
+    #for line in iter(proc.stderr.readline, ""):
+    #    logger.debug(line.strip())
     ret_code = proc.wait()
     if ret_code:
         logger.error("Non-zero return code: %d", ret_code)

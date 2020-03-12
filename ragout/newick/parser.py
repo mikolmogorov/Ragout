@@ -5,6 +5,8 @@ Copyright (C) 2003-2008, Thomas Mailund <mailund@birc.au.dk>
 
 This module contains the functionality for grammatical analysis. '''
 
+from __future__ import absolute_import
+from __future__ import division
 import ragout.newick.tokens as tokens
 
 class ParserError(Exception):

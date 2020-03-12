@@ -6,6 +6,8 @@
 This module runs Sibelia
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import os
 import shutil
 import subprocess
@@ -57,7 +59,7 @@ class SibeliaBackend(SyntenyBackend):
                                "than 100MB. Processing could take a "
                                "very long time. It is recommended to use "
                                "some other synteny backend for your data.",
-                               total_size / 1024 / 1024)
+                               total_size // 1024 // 1024)
 
             os.mkdir(work_dir)
             for block_size in self.blocks:

@@ -8,6 +8,8 @@ to given adjacencies. Also, it outputs scaffolds in different
 formats
 """
 
+from __future__ import absolute_import
+from __future__ import division
 from collections import defaultdict
 import os
 import logging
@@ -17,6 +19,7 @@ from ragout.shared.datatypes import (Contig, Scaffold, Link,
                                      output_scaffolds_premutations,
                                      output_permutations)
 from ragout.scaffolder.output_generator import output_links
+from six.moves import range
 
 
 logger = logging.getLogger()
@@ -83,7 +86,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
             else:
                 break
         assigned_names[scf] = name_str
-        need_rev_compl[scf] = sign_agreement < total / 2
+        need_rev_compl[scf] = sign_agreement < total // 2
 
     #in case of same names
     same_names = defaultdict(list)
@@ -102,7 +105,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
         scf.name = assigned_names[scf]
         if need_rev_compl[scf]:
             new_contigs = [c.reverse_copy() for c in scf.contigs][::-1]
-            for i in xrange(len(new_contigs) - 2):
+            for i in range(len(new_contigs) - 2):
                 new_contigs[i].link = new_contigs[i + 1].link
             new_contigs[-1].link = Link(0, [])
             scf.contigs = new_contigs

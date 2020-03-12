@@ -6,12 +6,15 @@
 This module parses Ragout configuration file
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import re
 import os
 import logging
 
 from ragout.parsers.phylogeny_parser import get_leaves_names, PhyloException
 import ragout.shared.config as config
+from six.moves import map
 
 logger = logging.getLogger()
 
@@ -70,7 +73,7 @@ def parse_ragout_recipe(filename):
             if param_name == "blocks":
                 if value not in config.vals["blocks"]:
                     try:
-                        value = map(int, value.split(","))
+                        value = list(map(int, value.split(",")))
                     except Exception:
                         raise RecipeException("Can't parse block size set: {0}"
                                               .format(value))

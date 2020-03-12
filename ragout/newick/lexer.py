@@ -8,6 +8,8 @@ rarely need to access it in your own modules and should probably only
 use the parser or tree modules, and from those most likely only the
 objects loaded into the mail package.  '''
 
+from __future__ import absolute_import
+from __future__ import division
 import ragout.newick.tokens as tokens
 import re
 

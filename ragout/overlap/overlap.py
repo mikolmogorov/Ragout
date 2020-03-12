@@ -7,6 +7,8 @@ This module executes overlap native binary
 which reconstructs overlap graph from contigs
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import os
 import logging
 import subprocess
@@ -51,9 +53,9 @@ def make_overlap_graph(contigs_file, dot_file):
         cmdline.append("--detect-kmer")
 
     logger.info("Building assembly graph")
-    proc = subprocess.Popen(cmdline, stderr=subprocess.PIPE)
-    for line in iter(proc.stderr.readline, ""):
-        logger.debug(line.strip())
+    proc = subprocess.Popen(cmdline)
+    #for line in iter(proc.stderr.readline, ""):
+    #    logger.debug(line.strip())
     ret_code = proc.wait()
     if ret_code:
         raise OverlapException("Error building overlap graph: Non-zero return "

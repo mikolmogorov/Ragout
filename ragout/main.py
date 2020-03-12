@@ -6,6 +6,8 @@
 The main Ragout module. It defines top-level logic of the program
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import os
 import shutil
 import logging
@@ -39,6 +41,7 @@ import ragout.synteny_backend.sibelia
 #import synteny_backend.cactus
 import ragout.synteny_backend.maf
 import ragout.synteny_backend.hal
+import six
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -134,7 +137,7 @@ def _get_phylogeny_and_naming_ref(recipe, permutation_file):
 
 def _get_synteny_scale(recipe, synteny_backend):
     if "blocks" in recipe:
-        if isinstance(recipe["blocks"], basestring):
+        if isinstance(recipe["blocks"], six.string_types):
             scale = config.vals["blocks"][recipe["blocks"]]
         else:
             scale = recipe["blocks"]

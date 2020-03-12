@@ -7,6 +7,8 @@ This module infers missing adjacencies
 by recovering perfect matching
 """
 
+from __future__ import absolute_import
+from __future__ import division
 from collections import namedtuple
 import logging
 import os

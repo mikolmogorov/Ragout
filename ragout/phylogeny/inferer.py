@@ -8,11 +8,15 @@ breakpoints data
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 from collections import defaultdict
 from itertools import (combinations,
                        combinations_with_replacement, chain)
 
 from ragout.newick.tree import Leaf, Tree
+from six.moves import map
+from six.moves import zip
 
 class TreeInferer:
     def __init__(self, perm_container):
@@ -51,7 +55,7 @@ class TreeInferer:
         Implementation of neighbor-joining algorithm
         """
         MIN_LEN = 0.000001
-        genomes = self.perms_by_genome.keys()
+        genomes = list(self.perms_by_genome.keys())
         taxas = list(map(Leaf, sorted(genomes)))
         for t in taxas:
             t.terminal = True

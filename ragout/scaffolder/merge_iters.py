@@ -7,6 +7,8 @@ This module provides some functions for
 moving between two consecutive iterations
 """
 
+from __future__ import absolute_import
+from __future__ import division
 from collections import defaultdict
 from itertools import chain
 import os
@@ -21,6 +23,8 @@ from ragout.shared.datatypes import (Contig, Scaffold, Link,
 from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
 from ragout.breakpoint_graph.inferer import Adjacency
+from six.moves import range
+from six.moves import zip
 
 
 logger = logging.getLogger()
@@ -330,7 +334,7 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
             small_count[c.perm] += 1
 
     repeats = set(seq for (seq, count) in
-                  chain(big_count.items(), small_count.items()) if count > 1)
+                  chain(list(big_count.items()), list(small_count.items())) if count > 1)
     big_unique = set(seq for (seq, count) in big_count.items() if count == 1)
 
     small_index = {}
@@ -346,7 +350,7 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
         #non_repeats = list(filter(lambda i: big_scf.contigs[i].perm
         #                                not in repeats,
         #                          xrange(len(big_scf.contigs))))
-        non_repeats = [i for i in xrange(len(big_scf.contigs))
+        non_repeats = [i for i in range(len(big_scf.contigs))
                        if big_scf.contigs[i].perm not in repeats]
         for left_idx, right_idx in zip(non_repeats[:-1], non_repeats[1:]):
             left_cnt = big_scf.contigs[left_idx]

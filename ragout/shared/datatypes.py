@@ -6,7 +6,10 @@
 This module provides some common data structures
 """
 
+from __future__ import absolute_import
+from __future__ import division
 from copy import copy
+from six.moves import zip
 
 
 class Block:
@@ -59,7 +62,10 @@ class Permutation:
         for pb, nb in zip(self.blocks[:-1], self.blocks[1:]):
             yield pb, nb
 
-    def __str__(self):
+    def __lt__(self, other):
+        return repr(self) < repr(other)
+
+    def __repr__(self):
         return ("[{0}, {1}, {2}, b:{3}, e:{4}]"
                     .format(self.genome_name, self.chr_name,
                             [b.signed_id() for b in self.blocks],

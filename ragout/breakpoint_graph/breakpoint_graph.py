@@ -7,6 +7,8 @@ This module implements a breakpoint graph
 which is widely used in Ragout
 """
 
+from __future__ import absolute_import
+from __future__ import division
 from itertools import chain
 import os
 import logging
@@ -16,6 +18,8 @@ from collections import namedtuple
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
+from six.moves import map
+from six.moves import zip
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
@@ -133,7 +137,8 @@ class BreakpointGraph(object):
         Determines if there is a cycle of alternating colors
         that goes through the given red-supported (!) edge
         """
-        def get_genome_ids((u, v)):
+        def get_genome_ids(xxx_todo_changeme):
+            (u, v) = xxx_todo_changeme
             return self.genomes_support(u, v)
 
         good_path = False
@@ -159,7 +164,7 @@ class BreakpointGraph(object):
                 good_path = True
                 break
 
-        return len(path) / 2 if good_path else None
+        return len(path) // 2 if good_path else None
 
     #def _check_distances(self, path):
     #    assert len(path) % 2 == 0

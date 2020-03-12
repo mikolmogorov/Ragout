@@ -6,6 +6,8 @@ Copyright (C) 2003-2008, Thomas Mailund <mailund@birc.au.dk>
 This module contains the representation of trees and a parser for
 creating trees from a Newick string or file. '''
 
+from __future__ import absolute_import
+from __future__ import division
 import ragout.newick.lexer as lexer
 import ragout.newick.parser as parser
 

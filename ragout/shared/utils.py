@@ -2,6 +2,8 @@
 #This file is a part of Ragout program.
 #Released under the BSD license (see LICENSE file)
 
+from __future__ import absolute_import
+from __future__ import division
 import os
 
 def which(program):

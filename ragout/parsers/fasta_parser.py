@@ -6,9 +6,20 @@
 This module provides some basic FASTA I/O
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import logging
+import sys
+if sys.version_info < (3, 0):
+    from string import maketrans
+    _STR = lambda x: x
+    _BYTES = lambda x: x
+else:
+    maketrans = bytes.maketrans
+    _STR = bytes.decode
+    _BYTES = str.encode
 
-from string import maketrans
+from six.moves import range
 
 logger = logging.getLogger()
 
@@ -26,14 +37,14 @@ def read_fasta_dict(filename):
     fasta_dict = {}
 
     try:
-        with open(filename, "r") as f:
+        with open(filename, "rb") as f:
             for lineno, line in enumerate(f):
                 line = line.strip()
-                if line.startswith(">"):
+                if line.startswith(b">"):
                     if header:
-                        fasta_dict[header] = "".join(seq)
+                        fasta_dict[_STR(header)] = _STR(b"".join(seq))
                         seq = []
-                    header = line[1:].split(" ")[0]
+                    header = line[1:].split(b" ")[0]
                 else:
                     if not _validate_seq(line):
                         raise FastaError("Invalid char in \"{0}\" at line {1}"
@@ -41,7 +52,7 @@ def read_fasta_dict(filename):
                     seq.append(line)
 
             if header and len(seq):
-                fasta_dict[header] = "".join(seq)
+                fasta_dict[_STR(header)] = _STR(b"".join(seq))
 
     except IOError as e:
         raise FastaError(e)
@@ -61,14 +72,14 @@ def write_fasta_dict(fasta_dict, filename):
                 f.write(fasta_dict[header][i:i + 60] + "\n")
 
 
-COMPL = maketrans("ATGCURYKMSWBVDHNXatgcurykmswbvdhnx",
-                  "TACGAYRMKSWVBHDNXtacgayrmkswvbhdnx")
+COMPL = maketrans(b"ATGCURYKMSWBVDHNXatgcurykmswbvdhnx",
+                  b"TACGAYRMKSWVBHDNXtacgayrmkswvbhdnx")
 def reverse_complement(string):
-    return string[::-1].translate(COMPL)
+    return _STR(_BYTES(string)[::-1].translate(COMPL))
 
 
 def _validate_seq(sequence):
-    VALID_CHARS = "ACGTURYKMSWBDHVNXatgcurykmswbvdhnx"
+    VALID_CHARS = b"ACGTURYKMSWBDHVNXatgcurykmswbvdhnx"
     if len(sequence.translate(None, VALID_CHARS)):
         return False
     return True

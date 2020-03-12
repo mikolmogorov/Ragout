@@ -9,12 +9,17 @@ The underlying intuition is straitforward, however
 the code contains a lot of magic. Sorry :(
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from collections import namedtuple, defaultdict
 from itertools import chain, product, combinations
-from copy import deepcopy
+from copy import deepcopy, copy
 import logging
 
 import networkx as nx
+from six.moves import filter
+from six.moves import range
 
 logger = logging.getLogger()
 
@@ -66,9 +71,10 @@ def resolve_repeats(ref_perms, target_perms, repeats,
     #getting matches
     repetitive_matches = []
     unique_matches = []
-    for repeat_id, contexts in ref_contexts.items():
+    #for repeat_id, contexts in ref_contexts.items():
+    for repeat_id in sorted(ref_contexts):
         by_genome = defaultdict(list)
-        for ctx in contexts:
+        for ctx in ref_contexts[repeat_id]:
             by_genome[ctx.perm.genome_name].append(ctx)
 
         profiles = _split_into_profiles(by_genome, repeats, phylogeny)
@@ -106,8 +112,9 @@ def resolve_repeats(ref_perms, target_perms, repeats,
         by_target_perm[match.trg.perm].append(match)
     to_remove = set()
     new_contigs = 0
-    for perm, matches in by_target_perm.items():
-        groups = _split_by_instance(matches)
+    #for perm, matches in by_target_perm.items():
+    for perm in sorted(by_target_perm):
+        groups = _split_by_instance(by_target_perm[perm])
 
         for rep_id, group in enumerate(groups):
             new_perm = deepcopy(perm)
@@ -158,7 +165,7 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
     references = set(contexts_by_genome.keys())
     #genomes = filter(lambda g: g in references,
     #                 phylogeny.terminals_dfs_order())
-    genomes = [g for g in phylogeny.terminals_dfs_order() if g in references]
+    genomes = [g for g in phylogeny.terminals_dfs_order() if g in sorted(references)]
     #profiles  = map(lambda c: [c], contexts_by_genome[genomes[0]])
     profiles  = [[c] for c in contexts_by_genome[genomes[0]]]
 
@@ -308,7 +315,7 @@ def _split_by_instance(matches):
                     break
         groups.extend([[m] for m in unused_matches])
 
-    min_group = len(target_perm.blocks) / 2 + 1
+    min_group = len(target_perm.blocks) // 2 + 1
 
     #return list(filter(lambda g: len(g) >= min_group, groups))
     return [g for g in groups if len(g) >= min_group]
@@ -331,14 +338,14 @@ def _context_similarity(ctx_ref, ctx_trg, repeats, same_len):
                 return mult
 
         l1, l2 = len(ref) + 1, len(trg) + 1
-        table = [[0 for _ in xrange(l2)] for _ in xrange(l1)]
+        table = [[0 for _ in range(l2)] for _ in range(l1)]
         if same_len:
-            for i in xrange(l1):
+            for i in range(l1):
                 table[i][0] = i * GAP
-            for i in xrange(l2):
+            for i in range(l2):
                 table[0][i] = i * GAP
 
-        for i, j in product(xrange(1, l1), xrange(1, l2)):
+        for i, j in product(range(1, l1), range(1, l2)):
             table[i][j] = max(table[i-1][j] + GAP, table[i][j-1] + GAP,
                               table[i-1][j-1] + match(ref[i-1], trg[j-1]))
         return table[-1][-1]
@@ -380,7 +387,7 @@ def _get_contexts(permutations, repeats):
 
     contexts = defaultdict(list)
     for perm in permutations:
-        for pos in xrange(len(perm.blocks)):
+        for pos in range(len(perm.blocks)):
             block = perm.blocks[pos]
             if block.block_id not in repeats:
                 continue

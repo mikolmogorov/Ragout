@@ -3,6 +3,8 @@ This module provedes some functions
 for debug output
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import os
 import shutil
 

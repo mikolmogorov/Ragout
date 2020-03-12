@@ -7,6 +7,8 @@ This module parses newick string and contains some helper function
 to deal with trees
 """
 
+from __future__ import absolute_import
+from __future__ import division
 import ragout.newick
 import ragout.newick.parser
 from ragout.newick.tree import Tree, Leaf
