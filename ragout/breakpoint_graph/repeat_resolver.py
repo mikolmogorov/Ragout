@@ -178,8 +178,8 @@ def _split_into_profiles(contexts_by_genome, repeats, phylogeny):
                                                     enumerate(genome_ctxs)):
             node_prof = "profile" + str(pr_id)
             node_genome = "genome" + str(ctx_id)
-            graph.add_node(node_prof, profile=True, prof=prof)
-            graph.add_node(node_genome, profile=False, ctx=ctx)
+            graph.add_node(node_prof, profile=True, prof=copy(prof))
+            graph.add_node(node_genome, profile=False, ctx=copy(ctx))
 
             score = _profile_similarity(prof, ctx, repeats, same_len=True)
             if score > 0:
