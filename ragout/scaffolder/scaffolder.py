@@ -19,15 +19,17 @@ from ragout.shared.datatypes import (Contig, Scaffold, Link,
                                      output_scaffolds_premutations,
                                      output_permutations)
 from ragout.scaffolder.output_generator import output_links
+from ragout.breakpoint_graph.inferer import Adjacency
 from six.moves import range
+from six.moves import zip
 
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()
 
 
-def build_scaffolds(adjacencies, perm_container, debug_output=True,
-                    correct_distances=True):
+def build_scaffolds(adjacencies, perm_container, debug_output,
+                    correct_distances):
     """
     Assembles scaffolds wrt to inferred adjacencies
     """
@@ -49,6 +51,15 @@ def build_scaffolds(adjacencies, perm_container, debug_output=True,
         output_scaffolds_premutations(scaffolds, perms_out)
 
     return scaffolds
+
+
+def update_gaps(scaffolds):
+    """
+    Do it in the very end
+    """
+    for scf in scaffolds:
+        for c1, c2 in zip(scf.contigs[:-1], scf.contigs[1:]):
+            c1.link.gap -= c1.right_gap() + c2.left_gap()
 
 
 def assign_scaffold_names(scaffolds, perm_container, ref_genome):

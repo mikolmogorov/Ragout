@@ -214,7 +214,9 @@ def _run_ragout(args):
 
         adj_inferer = AdjacencyInferer(breakpoint_graph, phylogeny)
         adjacencies = adj_inferer.infer_adjacencies()
-        cur_scaffolds = scfldr.build_scaffolds(adjacencies, broken_perms)
+        cur_scaffolds = scfldr.build_scaffolds(adjacencies, broken_perms,
+                                               debug_output=True,
+                                               correct_distances=False)
 
         if scaffolds is not None:
             if not args.solid_scaffolds:
@@ -234,6 +236,7 @@ def _run_ragout(args):
     #name scaffolds according to one of the references
     last_stage = run_stages[ID_SMALLEST]
     scfldr.assign_scaffold_names(scaffolds, stage_perms[last_stage], naming_ref)
+    scfldr.update_gaps(scaffolds)
 
     #refine with the assembly graph
     if args.refine:
