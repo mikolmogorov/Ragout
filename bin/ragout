@@ -15,10 +15,10 @@ import sys
 BIN_DIR = "bin"
 
 #Check Python version
-if sys.version_info[:2] != (2, 7):
-    print("Error: Ragout requires Python version 2.7 ({0}.{1} detected)."
-          .format(sys.version_info[0], sys.version_info[1]))
-    sys.exit(-1)
+#if sys.version_info[:2] != (2, 7):
+#    print("Error: Ragout requires Python version 2.7 ({0}.{1} detected)."
+#          .format(sys.version_info[0], sys.version_info[1]))
+#    sys.exit(-1)
 
 #Setting executable paths
 ragout_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
