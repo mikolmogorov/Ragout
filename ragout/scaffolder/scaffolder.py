@@ -105,7 +105,7 @@ def assign_scaffold_names(scaffolds, perm_container, ref_genome):
         scf.name = assigned_names[scf]
         if need_rev_compl[scf]:
             new_contigs = [c.reverse_copy() for c in scf.contigs][::-1]
-            for i in range(len(new_contigs) - 2):
+            for i in range(len(new_contigs) - 1):
                 new_contigs[i].link = new_contigs[i + 1].link
             new_contigs[-1].link = Link(0, [])
             scf.contigs = new_contigs
@@ -188,7 +188,8 @@ def _extend_scaffolds(adjacencies, contigs, contig_index, correct_distances):
         if len(scf.contigs) > 1:
             scaffolds.append(scf)
 
-    for contig in contigs:
+    #for contig in contigs:
+    for contig in sorted(contigs, key=lambda c: c.signed_name()):
         if contig not in visited:
             extend_scaffold(contig)
 

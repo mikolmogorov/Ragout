@@ -9,11 +9,12 @@ moving between two consecutive iterations
 
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 from collections import defaultdict
 from itertools import chain
 import os
 import logging
-from copy import deepcopy
+from copy import deepcopy, copy
 
 import networkx as nx
 
@@ -23,6 +24,7 @@ from ragout.shared.datatypes import (Contig, Scaffold, Link,
 from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
 from ragout.breakpoint_graph.inferer import Adjacency
+from ragout.breakpoint_graph.breakpoint_graph import GenChrPair
 from six.moves import range
 from six.moves import zip
 
@@ -145,13 +147,16 @@ def _update_scaffolds(scaffolds, perm_container):
                 continue
 
             inner_perms.sort(key=lambda p: p.seq_start, reverse=contig.sign < 0)
-            gap_length = contig.link.gap
-            for new_perm in inner_perms:
-                gap_length -= new_perm.length()
-                new_link = Link(gap_length, contig.link.supporting_genomes)
-                new_contigs.append(Contig.with_perm(new_perm, contig.sign,
-                                                    new_link))
-            new_contigs[-1].link = contig.link
+            for prev_perm, next_perm in zip(inner_perms[:-1], inner_perms[1:]):
+                if contig.sign > 0:
+                    gap_length = next_perm.seq_start - prev_perm.seq_end
+                else:
+                    gap_length = prev_perm.seq_start - next_perm.seq_end
+                support = [GenChrPair(prev_perm.genome_name, prev_perm.chr_name)]
+                new_contigs.append(Contig.with_perm(prev_perm, contig.sign,
+                                                    Link(gap_length, support)))
+            new_contigs.append(Contig.with_perm(inner_perms[-1], contig.sign,
+                                                copy(contig.link)))
 
         if len(new_contigs):
             new_scaffolds.append(Scaffold.with_contigs(scf.name, None,
@@ -265,19 +270,21 @@ class RearrangementProjector:
         for scf in self.old_scaffolds:
             for cnt_1, cnt_2 in zip(scf.contigs[:-1], scf.contigs[1:]):
                 bp_graph.add_edge(cnt_1.right_end(), cnt_2.left_end(),
-                                  scf_set="old", link=cnt_1.link,
+                                  scf_set="old", link=copy(cnt_1.link),
                                   scf_name=scf.name, infinity=False)
             #chromosome ends
-            bp_graph.add_edge(scf.contigs[0].left_end(),
-                              scf.contigs[-1].right_end(), scf_set="old",
+            bp_graph.add_edge(scf.contigs[-1].right_end(),
+                              scf.contigs[0].left_end(), scf_set="old",
                               infinity=True)
 
         for scf in self.new_scaffolds:
             prev_cont = None
+            first_ctg = None
             pos = 0
             for pos, contig in enumerate(scf.contigs):
                 if contig.name() in old_contigs:
-                    prev_cont = contig
+                    prev_cont = deepcopy(contig)
+                    first_ctg = prev_cont
                     break
             if prev_cont is None:
                 continue
@@ -288,12 +295,16 @@ class RearrangementProjector:
                     common_genomes = (set(prev_cont.link.supporting_genomes) &
                                       set(next_cont.link.supporting_genomes))
                     prev_cont.link.supporting_genomes = list(common_genomes)
-                    continue
 
-                bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
-                                  scf_set="new", link=prev_cont.link,
-                                  scf_name=scf.name, infinity=False)
-                prev_cont = next_cont
+                else:
+                    bp_graph.add_edge(prev_cont.right_end(), next_cont.left_end(),
+                                      scf_set="new", link=copy(prev_cont.link),
+                                      scf_name=scf.name, infinity=False)
+                    prev_cont = deepcopy(next_cont)
+
+            bp_graph.add_edge(prev_cont.right_end(),
+                              first_ctg.left_end(), scf_set="new",
+                              infinity=True)
 
         self.bp_graph = bp_graph
 
@@ -305,8 +316,8 @@ class RearrangementProjector:
             for cnt in scf.contigs:
                 adj_graph.add_edge(cnt.left_end(), cnt.right_end())
             #chromosome ends
-            adj_graph.add_edge(scf.contigs[0].left_end(),
-                               scf.contigs[-1].right_end())
+            adj_graph.add_edge(scf.contigs[-1].right_end(),
+                               scf.contigs[0].left_end())
         self.adj_graph = adj_graph
 
 
@@ -357,6 +368,8 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
             right_cnt = big_scf.contigs[right_idx]
 
             consistent = False
+            weak_contigs = None
+            link_to_change = None
             if (left_cnt.perm in small_index and
                 right_cnt.perm in small_index):
                 consistent = True
@@ -383,16 +396,20 @@ def _merge_scaffolds(big_scaffolds, small_scaffolds):
                         count_inconsistent += 1
                         consistent = False
 
-                    if not same_dir:
-                        #weak_contigs = list(map(lambda c: c.reverse_copy(),
-                        #                        weak_contigs[::-1]))
+                    link_to_change = copy(left_scf.contigs[left_pos].link)
+                    #reverse complement
+                    if weak_contigs and not same_dir:
+                        link_to_change = copy(left_scf.contigs[right_pos - 1].link)
                         weak_contigs = [c.reverse_copy() for c in weak_contigs[::-1]]
-                    link_to_change = left_scf.contigs[left_pos].link
+                        for pw, nw in zip(weak_contigs[:-1], weak_contigs[1:]):
+                            pw.link = copy(nw.link)
+                        weak_contigs[-1].link = copy(left_scf.contigs[left_pos].link)
+
             else:
                 not_found += 1
 
             new_contigs.append(left_cnt)
-            if consistent:
+            if consistent and weak_contigs:
                 new_contigs[-1].link = link_to_change
                 new_contigs.extend(weak_contigs)
                 total_success += 1
