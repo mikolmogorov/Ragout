@@ -236,11 +236,13 @@ def _shortest_path(graph, src, dst, restricted_nodes):
     visited = set([src])
     parent = {src : src}
     found = False
+    if not graph.has_node(src):
+        return None
 
     while not queue.empty():
         node = queue.get()
 
-        for _, u in graph.edges(node):
+        for u in sorted(graph.neighbors(node)):
             if u == dst:
                 parent[u] = node
                 found = True
