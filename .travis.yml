@@ -8,7 +8,6 @@ compiler:
   - clang
 
 before_script:
-  - pip install --upgrade --user pip
   - pip install --user networkx==2.2
 
 script: 
