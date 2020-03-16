@@ -15,8 +15,8 @@ from itertools import (combinations,
                        combinations_with_replacement, chain)
 
 from ragout.newick.tree import Leaf, Tree
-from six.moves import map
-from six.moves import zip
+from ragout.six.moves import map
+from ragout.six.moves import zip
 
 class TreeInferer:
     def __init__(self, perm_container):

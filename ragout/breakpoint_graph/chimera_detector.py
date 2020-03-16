@@ -13,7 +13,7 @@ from __future__ import division
 import logging
 from collections import defaultdict, namedtuple
 from copy import copy, deepcopy
-from six.moves import range
+from ragout.six.moves import range
 
 
 logger = logging.getLogger()

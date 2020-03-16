@@ -14,7 +14,7 @@ import logging
 
 from ragout.parsers.phylogeny_parser import get_leaves_names, PhyloException
 import ragout.shared.config as config
-from six.moves import map
+from ragout.six.moves import map
 
 logger = logging.getLogger()
 

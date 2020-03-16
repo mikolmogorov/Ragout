@@ -18,8 +18,8 @@ from collections import namedtuple
 import networkx as nx
 
 from ragout.shared.debug import DebugConfig
-from six.moves import map
-from six.moves import zip
+from ragout.six.moves import map
+from ragout.six.moves import zip
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

@@ -11,9 +11,9 @@ from __future__ import division
 import networkx as nx
 import re
 import logging
-from six.moves import zip
+from ragout.six.moves import zip
 try:
-    import six.moves.queue
+    import ragout.six.moves.queue
 except ImportError:
     import queue as Queue
 
@@ -231,7 +231,7 @@ def _shortest_path(graph, src, dst, restricted_nodes):
     """
     Finds shortest path wrt to restricted nodes
     """
-    queue = six.moves.queue.Queue()
+    queue = ragout.six.moves.queue.Queue()
     queue.put(src)
     visited = set([src])
     parent = {src : src}

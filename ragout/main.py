@@ -41,7 +41,7 @@ import ragout.synteny_backend.sibelia
 #import synteny_backend.cactus
 import ragout.synteny_backend.maf
 import ragout.synteny_backend.hal
-import six
+import ragout.six as six
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

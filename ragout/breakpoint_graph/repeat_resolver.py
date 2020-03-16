@@ -18,8 +18,8 @@ from copy import deepcopy, copy
 import logging
 
 import networkx as nx
-from six.moves import filter
-from six.moves import range
+from ragout.six.moves import filter
+from ragout.six.moves import range
 
 logger = logging.getLogger()
 

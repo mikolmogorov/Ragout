@@ -15,7 +15,7 @@ import os
 
 from ragout.shared.utils import which
 from ragout.shared import config
-from six.moves import map
+from ragout.six.moves import map
 
 logger = logging.getLogger()
 

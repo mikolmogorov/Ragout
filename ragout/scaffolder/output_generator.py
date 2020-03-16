@@ -12,9 +12,7 @@ import os
 from ragout.parsers.fasta_parser import write_fasta_dict, reverse_complement
 from ragout.__version__ import __version__
 import ragout.shared.config as config
-from six.moves import map
-from six.moves import range
-from six.moves import zip
+from ragout.six.moves import map, range, zip
 
 logger = logging.getLogger()
 

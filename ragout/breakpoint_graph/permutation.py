@@ -19,7 +19,7 @@ from ragout.shared.debug import DebugConfig
 from ragout.shared import config
 from ragout.shared.datatypes import Block, Permutation, output_permutations
 import ragout.breakpoint_graph.repeat_resolver as rr
-from six.moves import filter
+from ragout.six.moves import filter
 
 logger = logging.getLogger()
 debugger = DebugConfig.get_instance()

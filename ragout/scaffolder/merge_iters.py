@@ -25,8 +25,8 @@ from ragout.scaffolder.output_generator import output_links
 from ragout.scaffolder.scaffolder import build_scaffolds
 from ragout.breakpoint_graph.inferer import Adjacency
 from ragout.breakpoint_graph.breakpoint_graph import GenChrPair
-from six.moves import range
-from six.moves import zip
+from ragout.six.moves import range
+from ragout.six.moves import zip
 
 
 logger = logging.getLogger()

@@ -19,7 +19,7 @@ else:
     _STR = bytes.decode
     _BYTES = str.encode
 
-from six.moves import range
+from ragout.six.moves import range
 
 logger = logging.getLogger()
 

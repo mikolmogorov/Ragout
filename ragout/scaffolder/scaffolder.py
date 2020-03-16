@@ -20,8 +20,7 @@ from ragout.shared.datatypes import (Contig, Scaffold, Link,
                                      output_permutations)
 from ragout.scaffolder.output_generator import output_links
 from ragout.breakpoint_graph.inferer import Adjacency
-from six.moves import range
-from six.moves import zip
+from ragout.six.moves import range, zip
 
 
 logger = logging.getLogger()

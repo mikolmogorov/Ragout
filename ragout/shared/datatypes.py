@@ -9,7 +9,7 @@ This module provides some common data structures
 from __future__ import absolute_import
 from __future__ import division
 from copy import copy
-from six.moves import zip
+from ragout.six.moves import zip
 
 
 class Block:
