@@ -1,4 +1,3 @@
-from collections import namedtuple, defaultdict
 
 from .common import AlignmentRow, AlignmentColumn
 
@@ -6,9 +5,7 @@ from .common import AlignmentRow, AlignmentColumn
 #This file is a part of Ragout program.
 #Released under the BSD license (see LICENSE file)
 
-"""
-Some helper functions to parse/process nucmer output
-"""
+#Some helper functions to parse/process nucmer output
 
 def parse_nucmer_coords(filename):
     chr_alias = {}

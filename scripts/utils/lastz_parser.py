@@ -63,13 +63,13 @@ def filter_intersecting(alignments):
                     to_filter.add(row_1)
             continue
 
-            if row_2.start <= row_1.start <= row_2.end:
-                to_filter.add(row_1)
-                if not (row_2.start <= row_1.end <= row_2.end):
-                    to_filter.add(row_2)
+            #if row_2.start <= row_1.start <= row_2.end:
+            #    to_filter.add(row_1)
+            #    if not (row_2.start <= row_1.end <= row_2.end):
+            #        to_filter.add(row_2)
 
-    filter_by_rows(list(map(lambda ap: ap.ref, alignments)))
-    filter_by_rows(list(map(lambda ap: ap.qry, alignments)))
+    filter_by_rows([ap.ref for ap in alignments])
+    filter_by_rows([ap.qry for ap in alignments])
 
     return [a for a in alignments if a.ref not in to_filter and
                                      a.qry not in to_filter]

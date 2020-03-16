@@ -52,8 +52,8 @@ def get_blocks(reference, target, overwrite, min_alignmtnt):
         return blocks
 
     #IMPORTANT: ref/qry rows should have corresponding order
-    ref_blocks = enum_blocks(list(map(lambda ap: ap.ref, alignment)))
-    qry_blocks = enum_blocks(list(map(lambda ap: ap.qry, alignment)))
+    ref_blocks = enum_blocks([ap.ref for ap in alignment])
+    qry_blocks = enum_blocks([ap.qry for ap in alignment])
 
     return ref_blocks, qry_blocks
 
@@ -61,7 +61,7 @@ def get_blocks(reference, target, overwrite, min_alignmtnt):
 def output_blocks(blocks):
     for seq, bl in blocks.items():
         print(">{0}".format(seq))
-        print(" ".join(map(lambda b: "{0:+d}".format(b),bl)))
+        print(" ".join(["{0:+d}".format(b) for b in bl]))
 
 
 def count_discord_adj(ref_blocks, qry_blocks):

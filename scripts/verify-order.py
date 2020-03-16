@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 import os
 import argparse
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from itertools import product
 
 from utils.nucmer_parser import parse_nucmer_coords
@@ -129,7 +129,7 @@ def do_job(nucmer_coords, scaffolds_ord):
     for s in scaffolds:
         print("\n>" + s.name)
 
-        prev_aln = None
+        prev_aln = []
         prev_strand = None
         increasing = None
         breaks = []
@@ -151,8 +151,7 @@ def do_job(nucmer_coords, scaffolds_ord):
                                   prev_aln[0].index)
 
             #checking strand
-            cur_strand = list(map(lambda h: h.sign * contig.sign,
-                                  entry_ord[contig.name]))
+            cur_strand = [h.sign * contig.sign for h in entry_ord[contig.name]]
             if not miss_ord and prev_strand and cur_strand:
                 if not agreement_strands(prev_strand, cur_strand, increasing):
                     breaks.append(contig.name)

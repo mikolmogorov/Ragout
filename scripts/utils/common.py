@@ -8,7 +8,6 @@ Some helping function for alignment manipulations
 """
 
 from collections import namedtuple, defaultdict
-from itertools import combinations
 
 
 AlignmentColumn = namedtuple("AlignmentColumn", ["ref", "qry"])
@@ -124,7 +123,7 @@ def get_order(alignment):
     for chr_id, alignment in by_chr.items():
         for e in alignment:
             if prev_start is not None and e.ref.start > prev_start:
-                    contig_pos += 1
+                contig_pos += 1
             prev_start = e.ref.start
             sign = e.ref.strand * e.qry.strand
             entry_ord[e.qry.seq_id].append(Hit(contig_pos, chr_id,

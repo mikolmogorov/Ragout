@@ -12,8 +12,7 @@ if a 'true' reference is available
 from __future__ import print_function
 import sys
 import os
-import argparse
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from itertools import product
 import subprocess
 
@@ -202,7 +201,7 @@ def do_job(links_file, contigs_file, reference_file):
     for s in scaffolds:
         print("\n>" + s.name)
 
-        prev_aln = None
+        prev_aln = []
         prev_strand = None
         increasing = None
         breaks = []
@@ -229,7 +228,7 @@ def do_job(links_file, contigs_file, reference_file):
                                   prev_aln[0].index)
 
             #checking strand
-            cur_strand = list(map(lambda h: h.sign, entry_ord[contig.name]))
+            cur_strand = [h.sign for h in entry_ord[contig.name]]
             if not miss_ord and prev_strand and cur_strand:
                 if not agreement_strands(prev_strand, cur_strand, increasing):
                     breaks.append(contig.name)
