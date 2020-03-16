@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 #(c) 2013-2014 by Authors
 #This file is a part of Ragout program.
@@ -11,6 +11,7 @@ A script for automatic testing
 from __future__ import print_function
 from __future__ import absolute_import
 import os
+import sys
 import subprocess
 import shutil
 
@@ -65,7 +66,7 @@ def test_environment():
 
 def run_test(parameters):
     outdir = os.path.join(TEST_DIR, parameters["outdir"])
-    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
+    cmd = [sys.executable, RAGOUT_EXEC, parameters["recipe"],
            "--outdir", outdir, "--debug"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
@@ -74,7 +75,7 @@ def run_test(parameters):
     links_simple_out = links_simple  + "_verify"
 
     #checking before refinement
-    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
+    cmd = [sys.executable, VERIFY_EXEC, parameters["coords"], links_simple]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd, stdout=open(links_simple_out, "w"))
 
@@ -99,12 +100,12 @@ def run_test(parameters):
                     raise RuntimeError("Too many scaffolds")
 
     #checking after refinement
-    cmd = ["python2.7", RAGOUT_EXEC, parameters["recipe"],
+    cmd = [sys.executable, RAGOUT_EXEC, parameters["recipe"],
            "--outdir", outdir, "--debug", "--refine"]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd)
 
-    cmd = ["python2.7", VERIFY_EXEC, parameters["coords"], links_simple]
+    cmd = [sys.executable, VERIFY_EXEC, parameters["coords"], links_simple]
     print("Running:", " ".join(cmd), "\n")
     subprocess.check_call(cmd, stdout=open(links_simple_out, "w"))
 
