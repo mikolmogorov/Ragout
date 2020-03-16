@@ -10,6 +10,7 @@ if a 'true' reference is available
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 from collections import namedtuple
@@ -19,6 +20,8 @@ import subprocess
 from utils.common import AlignmentRow, AlignmentColumn
 from utils.common import (filter_by_coverage, join_collinear,
                           group_by_chr, get_order)
+from six.moves import map
+from six.moves import range
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])
@@ -131,7 +134,7 @@ def get_alignment(scaffolds, contigs_file, reference_file):
                 query_fasta[ctg.name] = contigs_fasta[ctg.name]
             else:
                 bracket = ctg.name.index("[")
-                start, end = map(int, ctg.name[bracket + 1: -1].split(":"))
+                start, end = list(map(int, ctg.name[bracket + 1: -1].split(":")))
                 seq_name = ctg.name[:bracket]
                 query_fasta[ctg.name] = contigs_fasta[seq_name][start:end]
 

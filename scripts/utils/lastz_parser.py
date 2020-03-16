@@ -7,11 +7,14 @@
 Functions for lastz input handling
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import subprocess
 import os
 from itertools import combinations
 
 from .common import AlignmentColumn, AlignmentRow
+from six.moves import filter
 
 def parse_lastz_maf(filename):
     alignments = []

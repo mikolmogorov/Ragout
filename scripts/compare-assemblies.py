@@ -10,6 +10,7 @@ thus evaluating 'agreement level' between them
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 from collections import defaultdict
 import sys
 import os
@@ -19,6 +20,8 @@ import networkx as nx
 
 from utils.lastz_parser import (parse_lastz_maf, run_lastz,
                                 filter_intersecting, filter_by_length)
+from six.moves import map
+from six.moves import zip
 
 
 def get_alignment(reference, target, overwrite):
@@ -46,7 +49,7 @@ def get_blocks(reference, target, overwrite, min_alignmtnt):
             blocks[row.seq_id].append((r_id, row))
         for seq_id in blocks:
             blocks[seq_id].sort(key=lambda pair: pair[1].start)
-            to_block = lambda (r_id, row): (r_id + 1) * row.strand
+            to_block = lambda r_id_row: (r_id_row[0] + 1) * r_id_row[1].strand
             blocks[seq_id] = list(map(to_block, blocks[seq_id]))
 
         return blocks

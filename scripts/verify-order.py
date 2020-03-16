@@ -10,6 +10,7 @@ if a 'true' reference is available
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import os
 import argparse
@@ -19,6 +20,7 @@ from itertools import product
 from utils.nucmer_parser import parse_nucmer_coords
 from utils.common import (filter_by_coverage, join_collinear,
                           group_by_chr, get_order)
+from six.moves import map
 
 Scaffold = namedtuple("Scaffold", ["name", "contigs"])
 Contig = namedtuple("Contig", ["name", "sign"])

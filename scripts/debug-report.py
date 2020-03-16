@@ -9,6 +9,7 @@ A script for Ragout debug output postprocessing
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 import sys, os
 import argparse
 from collections import namedtuple, defaultdict
@@ -23,6 +24,7 @@ from Bio import Phylo
 from utils.nucmer_parser import parse_nucmer_coords
 from utils.common import (filter_by_coverage, join_collinear,
                           group_by_chr, get_order, aln_len)
+from six.moves import map
 
 Edge = namedtuple("Edge", ["start", "end"])
 Adjacency = namedtuple("Adjacency", ["left", "right", "infinite"])
@@ -34,8 +36,7 @@ def verify_alignment(alignment, contigs):
         by_name[entry.qry.seq_id].append(entry)
     for name in contigs:
         if len(by_name[name]) > 1:
-            hits = list(map(lambda e: (e.ref.start, aln_len(e.qry)),
-                            by_name[name]))
+            hits = list([(e.ref.start, aln_len(e.qry)) for e in by_name[name]])
             print("WARNING: Duplicated contig", name, hits, file=sys.stderr)
             problematic_contigs.append(name)
         if not by_name[name]:
@@ -62,7 +63,7 @@ def get_true_adjacencies(alignment, contig_permutations,
             blocks = contig_permutations[hit.qry.seq_id]
 
             if sign < 0:
-                blocks = list(map(lambda x: -x, blocks))[::-1]
+                blocks = list([-x for x in blocks])[::-1]
             if prev_block:
                 adjacencies.append(Adjacency(-prev_block, blocks[0], False))
             prev_block = blocks[-1]
@@ -248,7 +249,7 @@ def do_job(nucmer_coords, debug_dir, circular, only_predicted):
     contigs = get_contig_permutations(used_contigs)
     if nucmer_coords != "-":
         alignment = parse_nucmer_coords(nucmer_coords)
-        alignment = list(filter(lambda e: e.qry.seq_id in contigs, alignment))
+        alignment = list([e for e in alignment if e.qry.seq_id in contigs])
         #alignment = join_collinear(alignment)
         alignment = filter_by_coverage(alignment, 0.7)
         alignment = join_collinear(alignment)

@@ -8,6 +8,8 @@
 A script that simulates inversions in a given genome.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import random
 from collections import defaultdict
@@ -16,6 +18,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from utils.nucmer_parser import *
+from six.moves import range
 
 
 def get_unique_contigs(alignment):
@@ -65,7 +68,7 @@ def do_job(nucmer_coords, number_of_inv, orig_reference,
         compl = refer[start : end].reverse_complement()
         refer = refer[:start] + compl + refer[end:]
 
-        print(contig + " (" + str(start) + ", " + str(end) +  ")")
+        print((contig + " (" + str(start) + ", " + str(end) +  ")"))
 
         unique_seq.remove(contig)
         if not unique_seq:

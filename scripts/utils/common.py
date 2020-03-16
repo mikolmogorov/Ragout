@@ -7,7 +7,9 @@
 Some helping function for alignment manipulations
 """
 
+from __future__ import absolute_import
 from collections import namedtuple, defaultdict
+from six.moves import filter
 
 
 AlignmentColumn = namedtuple("AlignmentColumn", ["ref", "qry"])

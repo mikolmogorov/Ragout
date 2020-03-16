@@ -1,5 +1,6 @@
 
 from .common import AlignmentRow, AlignmentColumn
+from six.moves import map
 
 #(c) 2013-2014 by Authors
 #This file is a part of Ragout program.
