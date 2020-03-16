@@ -5,4 +5,7 @@ compiler:
 before_script:
   - pip install --upgrade --user pip
   - pip install --user networkx
-script: make; make dependencies; make test
+script: 
+  - make; make dependencies
+  - python2 scripts/run-tests.py
+  - python3 scripts/run-tests.py
