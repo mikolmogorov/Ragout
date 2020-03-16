@@ -304,7 +304,7 @@ class RearrangementProjector:
 
             bp_graph.add_edge(prev_cont.right_end(),
                               first_ctg.left_end(), scf_set="new",
-                              infinity=True)
+                              infinity=True, link=None)
 
         self.bp_graph = bp_graph
 
