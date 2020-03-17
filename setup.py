@@ -6,10 +6,10 @@ from __future__ import print_function
 import sys
 
 #Check Python version
-if sys.version_info[:2] != (2, 7):
-    print("Error: Flye requires Python version 2.7 ({0}.{1} detected)."
-          .format(sys.version_info[0], sys.version_info[1]))
-    sys.exit(-1)
+#if sys.version_info[:2] != (2, 7):
+#    print("Error: Flye requires Python version 2.7 ({0}.{1} detected)."
+#          .format(sys.version_info[0], sys.version_info[1]))
+#    sys.exit(-1)
 
 from distutils.core import setup
 from distutils.command.build import build as DistutilsBuild
