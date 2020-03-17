@@ -20,7 +20,7 @@ class RParen(Token):
 
 class ID(Token):
     def __init__(self, identifier):
-        Token.__init__(self)
+        Token.__init__(self, "")
         identifier = identifier.strip()
         if identifier[0] in ("'",'"'):
             identifier = identifier[1:-1]
@@ -43,7 +43,7 @@ class Comma(Token):
 
 class Number(Token):
     def __init__(self, number):
-        Token.__init__(self)
+        Token.__init__(self, "")
         self.number = float(number)
 
     def get_number(self):
