@@ -74,7 +74,7 @@ setup(name='ragout',
                 'ragout/maf2synteny', 'ragout/overlap', 'ragout/parsers',
                 'ragout/phylogeny', 'ragout/scaffolder', 'ragout/shared',
                 'ragout/synteny_backend', 'ragout/newick'],
-      #package_data={'flye': ['config/bin_cfg/*', 'tests/data/*']},
+      package_data={'ragout': ['tests/data/*']},
       entry_points={'console_scripts': ['ragout = ragout.main:main']},
       cmdclass={'build': MakeBuild,
                 'install' : MakeInstall}

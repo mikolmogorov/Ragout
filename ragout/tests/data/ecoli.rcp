@@ -1,0 +1,5 @@
+.references = dh1
+.target = mg1655
+
+dh1.fasta = DH1.fasta
+mg1655.fasta = mg1655_contigs.fasta
