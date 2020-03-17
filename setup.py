@@ -3,33 +3,69 @@
 #Released under the BSD license (see LICENSE file)
 
 from __future__ import print_function
+
+import os
 import sys
-
-#Check Python version
-#if sys.version_info[:2] != (2, 7):
-#    print("Error: Flye requires Python version 2.7 ({0}.{1} detected)."
-#          .format(sys.version_info[0], sys.version_info[1]))
-#    sys.exit(-1)
-
-from distutils.core import setup
-from distutils.command.build import build as DistutilsBuild
 import subprocess
+import shutil
+
+try:
+    import setuptools
+except ImportError:
+    sys.exit("setuptools package not found. "
+             "Please use 'pip install setuptools' first")
+
+from setuptools import setup
+from setuptools.command.install import install as SetuptoolsInstall
+from distutils.command.build import build as DistutilsBuild
+from distutils.spawn import find_executable
+
+# Make sure we're running from the setup.py directory.
+script_dir = os.path.dirname(os.path.realpath(__file__))
+if script_dir != os.getcwd():
+    os.chdir(script_dir)
 
 from ragout.__version__ import __version__
 
 
 class MakeBuild(DistutilsBuild):
     def run(self):
-        try:
-            subprocess.check_call(['make'])
-        except subprocess.CalledProcessError as e:
-            print ("Compilation error: ", e)
-            return
         DistutilsBuild.run(self)
+
+        if not find_executable("make"):
+            sys.exit("ERROR: 'make' command is unavailable")
+        try:
+            subprocess.check_call(["make"])
+        except subprocess.CalledProcessError as e:
+            sys.exit("Compilation error: ", e)
+
+
+class MakeInstall(SetuptoolsInstall):
+    def run(self):
+        SetuptoolsInstall.run(self)
+
+        print('Installing C++ binaries')
+        if os.path.isdir(self.install_lib) and not os.access(self.install_lib, os.W_OK):
+            sys.exit('Error: no write permission for ' + self.install_lib + '  ' +
+                     'Perhaps you need to use sudo?')
+
+        if os.path.isdir(self.install_scripts) and not os.access(self.install_scripts, os.W_OK):
+            sys.exit('Error: no write permission for ' + self.install_scripts + '  ' +
+                     'Perhaps you need to use sudo?')
+
+        build_dir = os.path.join(script_dir, "bin")
+        install_dir = self.install_scripts
+        bin_files = ['ragout-maf2synteny', 'ragout-overlap']
+        for file in bin_files:
+            if not os.path.isfile(os.path.join(build_dir, file)):
+                sys.exit('Error: binary not found: ' + file)
+            shutil.copy2(os.path.join(build_dir, file),
+                         os.path.join(install_dir, file))
+
 
 setup(name='ragout',
       version=__version__,
-      description='A tool for chromosome assembly using multiple references',
+      description='Chromosome assembly using multiple references',
       url='https://github.com/fenderglass/Ragout',
       author='Mikhail Kolmogorov',
       author_email = 'fenderglass@gmail.com',
@@ -38,7 +74,8 @@ setup(name='ragout',
                 'ragout/maf2synteny', 'ragout/overlap', 'ragout/parsers',
                 'ragout/phylogeny', 'ragout/scaffolder', 'ragout/shared',
                 'ragout/synteny_backend', 'ragout/newick'],
-      package_data={'ragout': ['LICENSE']},
-      scripts = ['bin/ragout-maf2synteny', 'bin/ragout-overlap', 'bin/ragout'],
-      cmdclass={'build': MakeBuild}
+      #package_data={'flye': ['config/bin_cfg/*', 'tests/data/*']},
+      entry_points={'console_scripts': ['ragout = ragout.main:main']},
+      cmdclass={'build': MakeBuild,
+                'install' : MakeInstall}
       )
