@@ -1,3 +1,11 @@
+Ragout 2.3 (3 Mar 2020)
+=======================
+* Ragout now supports both Python 2 and Python 3
+
+Ragout 2.2 (8 Apr 2019)
+=======================
+* Migration to networkx 2.2
+
 Ragout 2.1 (26 Jul 2018)
 ========================
 * Various small bigfixes and improvements
