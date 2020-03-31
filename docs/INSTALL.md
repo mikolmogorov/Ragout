@@ -68,7 +68,7 @@ Sibelia / HAL tools should also be installed / integrated separately.
 HAL Tools
 ---------
 
-HAL alignment produced by Progressive Cactus could be used for synteny 
+HAL alignment produced by Cactus could be used for synteny 
 blocks decomposition instead of Sibelia (recommended for large genomes). 
 
 If you want to use HAL alignment as input,

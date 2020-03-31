@@ -4,40 +4,32 @@ Usage Instructions for Ragout
 Quick Usage
 -----------
 
-    usage: ragout    [-h] [-o output_dir] [-s {sibelia,hal}]
-                     [--no-refine] [--overwrite] [--repeats] [--debug]
-                     [-t THREADS] [--version]
-                     recipe_file
-
-
+   usage: ragout [-h] [-o output_dir] [-s {sibelia,maf,hal}] [--refine]
+                  [--solid-scaffolds] [--overwrite] [--repeats] [--debug]
+                  [-t THREADS] [--version]
+                  recipe_file
+    
+    Chromosome assembly with multiple references
+    
     positional arguments:
       recipe_file           path to recipe file
-
+    
     optional arguments:
       -h, --help            show this help message and exit
-
       -o output_dir, --outdir output_dir
-                            path to the working directory (default: ragout-out)
-    
-      -s {sibelia,hal}, --synteny {sibelia,hal}
-                            tool for synteny block decomposition (default:
+                            output directory (default: ragout-out)
+      -s {sibelia,maf,hal}, --synteny {sibelia,maf,hal}
+                            backend for synteny block decomposition (default:
                             sibelia)
-    
-      --refine              enable refinement with assembly graph (default:
-                            False)
-
+      --refine              enable refinement with assembly graph (default: False)
       --solid-scaffolds     do not break input sequences - disables chimera
                             detection module (default: False)
-    
-      --overwrite           overwrite results from the previous run (default: False)
-    
+      --overwrite           overwrite results from the previous run (default:
+                            False)
       --repeats             enable repeat resolution algorithm (default: False)
-    
       --debug               enable debug output (default: False)
-    
       -t THREADS, --threads THREADS
                             number of threads for synteny backend (default: 1)
-    
       --version             show program's version number and exit
 
 
@@ -55,7 +47,7 @@ You can try Ragout on the provided ready-to-use examples:
 Algorithm Overview
 -------------------
 
-Ragout first uses Sibelia or HAL alignment for to decompose the input
+Ragout first uses Sibelia or HAL/MAF alignment for to decompose the input
 genomes into the sequences of synteny blocks -- this step is usually 
 the most time-consuming.
 
@@ -84,7 +76,7 @@ Ragout needs as input:
 * Optionally, a phylogenetic tree with the reference and target genomes
 
 Alternatively, to process larger genomes (>100Mb) you will need to use 
-HAL alignment as input (produced by Progressive Cactus).
+HAL/MAF alignment produced by Cactus.
 
 All input parameters are be described in a single configuration file (see below)
 
@@ -108,16 +100,13 @@ A recipe file describes the Ragout run configuration.
 Here is an explicit example (some parameters are optional):
 
     #reference and target genome names (required)
-    
     .references = rf123,col,jkd,n315
     .target = usa
     
     #phylogenetic tree for all genomes (optional)
-
     .tree = (rf122:0.02,(((usa:0.01,col:0.01):0.01,jkd:0.04):0.005,n315:0.01):0.01);
     
     #paths to genome fasta files (required for Sibelia)
-    
     col.fasta = references/COL.fasta
     jkd.fasta = references/JKD6008.fasta
     rf122.fasta = references/RF122.fasta
@@ -125,23 +114,29 @@ Here is an explicit example (some parameters are optional):
     usa.fasta = usa300_contigs.fasta
     
     #synteny blocks scale (optional)
-
     .blocks = small
     
     #reference to use for scaffold naming (optional)
-    
     .naming_ref = rf122
     
-
-or, alternatively, if using HAL as input:
+if using HAL as input:
 
     .references = miranda,simulans,melanogaster
     .target = yakuba
     
     #HAL alignment input. Sequences will be extracted from the alignment
-    
     .hal = genomes/alignment.hal
+
+or, using MAF as input:
    
+    .references = miranda,simulans,melanogaster
+    .target = yakuba
+    
+    .maf = alignment.maf
+    miranda.fasta = references/miranda.fasta
+    simulans.fasta = references/simulans.fasta
+    melanogaster.fasta = references/melanogaster.fasta
+    yakuba.fasta = yakuba.fasta
 
 Each configuration parameter could be "global" (related to the run) or 
 "genomic" (for a particular genome). Global parameters start from dot:
@@ -159,6 +154,7 @@ To set a genomic parameter, use:
 * __tree__: phylogenetic tree in NEWICK format
 * __blocks__: synteny blocks scale
 * __hal__: path to the alignment in HAL format
+* __maf__: path to the alignment in MAF format
 * __naming_ref__: reference to use for output scaffolds naming
 
 If you do not specify phylogenetic tree or synteny block scale, 
@@ -169,7 +165,7 @@ they will be inferred automatically.
 * __fasta__: path to FASTA [default = not set]
 * __draft__: indicates that reference is in a draft form (not chromosomes) [default = false]
 
-Paths to FASTA/HAL can be absolute or relative to the recipe file. 
+Paths to FASTA/HAL/MAF can be absolute or relative to the recipe file. 
 
 If you use Sibelia for synteny blocks decomposition you must specify 
 FASTA for each input genome. If you use HAL, sequnces will be extracted 
@@ -239,7 +235,7 @@ Synteny Block Reconstruction
 Ragout has two different options for synteny block decomposition:
 
 * Decomposition with Sibelia
-* HAL alignment produced by Progressive Cactus
+* HAL/MAF alignment produced by Cactus
 
 You can choose between backends by specifying --synteny (-s) option.
 
@@ -249,14 +245,20 @@ You can choose between backends by specifying --synteny (-s) option.
 Sibelia is the default option and recommended for bacterial and small eukaryotic genomes.
 Ragout automatically runs Sibelia in the beginning.
 
-### Whole genome alignment in HAL format
+### Whole genome alignment in HAL/MAF format
 
 Alternatively, Ragout can use HAL whole genome alignment for synteny blocks
 decomposition. This option is recommended for larger (over 100Mb) genomes, which
-Sibelia can not process. This alignment first should be done using Progressive Cactus 
-aligner [https://github.com/glennhickey/progressiveCactus]. 
+Sibelia can not process. This alignment first should be done using Cactus 
+aligner [https://github.com/ComparativeGenomicsToolkit/cactus]. 
 Afterwards, run Ragout with the produced HAL file 
 ("HAL tools" package should be installed in your system).
+
+If you are having troubles with coupling Ragout and HAL tools,
+you can manually convert HAL to MAF, and use the MAF alignment
+as input for Ragout (using `-s maf` option). In this case,
+you should always specify paths to FASTA files for each genome
+(as in case of using Sibelia).
 
 
 Repeat Resolution
