@@ -4,7 +4,7 @@ Usage Instructions for Ragout
 Quick Usage
 -----------
 
-   usage: ragout [-h] [-o output_dir] [-s {sibelia,maf,hal}] [--refine]
+    usage: ragout [-h] [-o output_dir] [-s {sibelia,maf,hal}] [--refine]
                   [--solid-scaffolds] [--overwrite] [--repeats] [--debug]
                   [-t THREADS] [--version]
                   recipe_file
