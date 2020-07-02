@@ -40,7 +40,7 @@ class HalBackend(SyntenyBackend):
         stats = subprocess.check_output([HAL_STATS, hal])
         size = 0
         for line in stats.splitlines():
-            tokens = line.split(",")
+            tokens = line.decode.split(",")
             if tokens[0] == recipe["target"]:
                 size = int(tokens[2])
 
