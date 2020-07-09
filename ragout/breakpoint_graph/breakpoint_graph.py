@@ -38,6 +38,10 @@ class BreakpointGraph(object):
         if perm_container is not None:
             self.build_from(perm_container)
 
+    def connected_component_subgraphs(self,G):
+        for c in nx.connected_components(G):
+            yield G.subgraph(c)
+
     def build_from(self, perm_container):
         """
         Builds breakpoint graph from permutations
@@ -77,7 +81,8 @@ class BreakpointGraph(object):
         logger.debug("Built breakpoint graph with %d nodes", len(self.bp_graph))
 
     def connected_components(self):
-        subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+        #subgraphs = nx.connected_component_subgraphs(self.bp_graph)
+        subgraphs = self.connected_component_subgraphs(self.bp_graph)
         bp_graphs = []
         for subgr in subgraphs:
             bg = BreakpointGraph()
