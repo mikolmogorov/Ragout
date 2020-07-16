@@ -176,10 +176,15 @@ class RearrangementProjector:
         self._build_adj_graph()
         self.conservative = conservative
 
+    def connected_component_subgraphs(self,G):
+        for c in nx.connected_components(G):
+            yield G.subgraph(c)
+
     def project(self):
         #look for valid k-breaks
         num_kbreaks = 0
-        subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
+        #subgraphs = list(nx.connected_component_subgraphs(self.bp_graph))
+        subgraphs = list(self.connected_component_subgraphs(self.bp_graph))
         for subgr in subgraphs:
             #this is a cycle
             if any(len(subgr[node]) != 2 for node in subgr.nodes):
@@ -237,9 +242,11 @@ class RearrangementProjector:
             new_adj_graph.add_edge(u, v)
 
         old_sets = [set(g.nodes) for g in
-                    nx.connected_component_subgraphs(self.adj_graph)]
+                    #nx.connected_component_subgraphs(self.adj_graph)]
+                    self.connected_component_subgraphs(self.adj_graph)]
         new_sets = [set(g.nodes) for g in
-                    nx.connected_component_subgraphs(new_adj_graph)]
+                    #nx.connected_component_subgraphs(new_adj_graph)]
+                    self.connected_component_subgraphs(new_adj_graph)]
         if len(old_sets) != len(new_sets):
             return False
 

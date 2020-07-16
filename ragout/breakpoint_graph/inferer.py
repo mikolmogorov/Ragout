@@ -31,6 +31,10 @@ class AdjacencyInferer(object):
         self.guessed_count = 0
         self.trimmed_count = 0
 
+    def connected_component_subgraphs(self,G):
+        for c in nx.connected_components(G):
+            yield G.subgraph(c)
+
     def infer_adjacencies(self):
         """
         Infers missing adjacencies by recovering perfect matching
@@ -81,7 +85,8 @@ class AdjacencyInferer(object):
         unused_nodes = set(trimmed_graph.nodes)
 
         chosen_edges = []
-        for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
+        #for trim_subgraph in nx.connected_component_subgraphs(trimmed_graph):
+        for trim_subgraph in self.connected_component_subgraphs(trimmed_graph):
             if len(trim_subgraph) < 2:
                 continue
 
