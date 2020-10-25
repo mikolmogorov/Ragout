@@ -46,12 +46,13 @@ Code contributions
 
 Publications
 ------------
-* Kolmogorov et al., "Chromosome assembly of large and complex genomes using multiple references",
-Genome Research, 2018
+* Kolmogorov M, Armstrong J, Raney BJ, Streeter I, Dunn M, Yang F, Odom D, Flicek P, Keane TM, 
+Thybert D, Paten B. "Chromosome assembly of large and complex genomes using multiple references" 
+Genome research. 2018 [doi:10.1101/gr.236273.118](https://genome.cshlp.org/content/28/11/1720.short)
 
-* Kolmogorov et al., "Ragout: A reference-assisted assembly tool for bacterial genomes",
-Bioinformatics, 2014
-
+* Kolmogorov, M., Raney, B., Paten, B. and Pham, S. 
+"Ragout—a reference-assisted assembly tool for bacterial genomes" 
+Bioinformatics, 2014 [doi:10.1093/bioinformatics/btu280](https://doi.org/10.1093/bioinformatics/btu280)
 
 Contacts
 --------
