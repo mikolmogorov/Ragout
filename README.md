@@ -47,7 +47,7 @@ Code contributions
 Publications
 ------------
 * Kolmogorov M, Armstrong J, Raney BJ, Streeter I, Dunn M, Yang F, Odom D, Flicek P, Keane TM, 
-Thybert D, Paten B. "Chromosome assembly of large and complex genomes using multiple references" 
+Thybert D, Paten B. and Pham S. "Chromosome assembly of large and complex genomes using multiple references" 
 Genome research. 2018 [doi:10.1101/gr.236273.118](https://genome.cshlp.org/content/28/11/1720.short)
 
 * Kolmogorov, M., Raney, B., Paten, B. and Pham, S. 
