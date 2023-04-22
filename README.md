@@ -57,7 +57,7 @@ Bioinformatics, 2014 [doi:10.1093/bioinformatics/btu280](https://doi.org/10.1093
 Contacts
 --------
 Please report any issues directly to the github issue tracker.
-Also, you can send your feedback to fenderglass@gmail.com
+Also, you can send your feedback to mikolmogorov@gmail.com
 
 
 Acknowledgments
