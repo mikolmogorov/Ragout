@@ -9,7 +9,7 @@ Version: 2.3
 [![BioConda Install](https://img.shields.io/conda/dn/bioconda/ragout.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/ragout)
 
 <p align="center">
-  <img src="http://fenderglass.github.io/Ragout/images/ragout.png" alt="Ragout logo"/>
+  <img src="http://mikolmogorov.github.io/Ragout/images/ragout.png" alt="Ragout logo"/>
 </p>
 
 Description
